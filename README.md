@@ -13,6 +13,7 @@ This repository is intended to be used for the following:
 
 If you are looking for a specific client library, see the following:
 * [.NET](https://github.com/azure/azure-service-bus-dotnet)
+* [Java](https://github.com/azure/azure-service-bus-java)
 
 ## How to provide feedback
 

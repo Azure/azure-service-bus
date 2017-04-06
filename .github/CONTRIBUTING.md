@@ -16,6 +16,7 @@ This project has adopted the [Microsoft Open Source Code of Conduct](https://ope
 
 If you have an issue for a specific client library, see the following:
 * [.NET](https://github.com/azure/azure-service-bus-dotnet)
+* [Java](https://github.com/azure/azure-service-bus-java)
 
 ## Filing Issues
 
