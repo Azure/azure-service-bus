@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ServiceConfiguration serviceName="PerformanceCounterSetup" xmlns="http://schemas.microsoft.com/ServiceHosting/2008/10/ServiceConfiguration" osFamily="4" osVersion="*" schemaVersion="2015-04.2.6">
+  <Role name="WorkerRole1">
+    <Instances count="1" />
+    <ConfigurationSettings>
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="DefaultEndpointsProtocol=https;AccountName=clemensveu;AccountKey=a+LWHv++/KQGwHXCJPMQ6VoGslG3awK6Vn5qoc0ssd4iapum0uqWl/yig5mkanEGqV0hKpMt7xcUnbHjLdpDvg==" />
+      <Setting name="Microsoft.ServiceBus.ConnectionString" value="Endpoint=sb://[your namespace].servicebus.windows.net/;SharedAccessKeyName=[key name];SharedAccessKey=[your key]" />
+    </ConfigurationSettings>
+  </Role>
+</ServiceConfiguration>
