@@ -1,12 +1,9 @@
-#Azure Service Bus Messaging samples
+# Azure Service Bus samples
 
-This repository contains the official set of samples for the Azure Service Bus Messaging service (Standard and Premium), illustrating all core 
-features of Service Bus Queues and Service Bus Topics.  
+This repository contains the official set of samples for the Azure Service Bus service (Standard and Premium), illustrating all core 
+features of Service Bus Queues and Service Bus Topics.  This samples all use the `WindowsAzure.ServiceBus` NuGet package.
 
-Fork and play!
-
-
-##Requirements and Setup
+## Requirements and Setup
 
 These samples run against the cloud service and require that you have an active Azure subscription available 
 for use. If you do not have a subscription, [sign up for a free trial](https://azure.microsoft.com/pricing/free-trial/), 
@@ -66,7 +63,7 @@ model is strongly encouraged at all times as it yields significantly more effici
 
 ## Samples
 
-###Getting Started
+### Getting Started
 
 * **Getting Started with Queues** - The [QueuesGettingStarted](./QueuesGettingStarted) sample illustrates the basic send and receive gestures 
   for interacting with a previously provisioned Service Bus Queue. Most other samples in this repository are derivatives of this basic sample. 
