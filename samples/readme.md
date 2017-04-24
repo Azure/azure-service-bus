@@ -11,7 +11,7 @@ Any samples within the `Azure.Microsoft.ServiceBus` folder target the newer .NET
 
 #### ReceiveSample
 
-[This sample](./DotNet/Microsoft.Azure.ServiceBus/ReceiveSample/readme.md) shows how to write a .NET Core console application that receives messages from an Event Hub using the **EventProcessorHost**.
+[This sample](./DotNet/Microsoft.Azure.ServiceBus/ReceiveSample/readme.md) shows how to write a .NET Core console application that receives messages from Service Bus.
 
 ### Microsoft.ServiceBus.Messaging
 Any samples within the `Microsoft.ServiceBus.Messaging` folder, reference the older `WindowsAzure.ServiceBus` NuGet package. See the readme [here](./DotNet/Microsoft.ServiceBus.Messaging/readme.md) for more details. 
