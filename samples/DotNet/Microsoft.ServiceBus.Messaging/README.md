@@ -74,7 +74,7 @@ model is strongly encouraged at all times as it yields significantly more effici
 
 * **Senders and Receivers with Queues** - The [SendersReceiversWithQueues](./SendersReceiversWithQueues) sample shows how to use the 
   ```MessagingFactory```for explicit connection management and the generic ```MessageSender``` and ```MessageReceiver``` abstractions with queues. 
-* **Senders and Receivers with with Topics** - The [SendersReceiversWithTopics](./SendersReceiversWithTopics) sample is a variation of 
+* **Senders and Receivers with Topics** - The [SendersReceiversWithTopics](./SendersReceiversWithTopics) sample is a variation of 
    the [SendersReceiversWithQueues](./SendersReceiversWithQueues) sample and shows how nearly identical code can be use with Queues and Topics
    when using the ```MessageSender``` and ```MessageReceiver``` abstractions.  
 * **Receive Loop** - [ReceiveLoop](./ReceiveLoop) shows how to use an explicit receive loop with a queues instead of the 

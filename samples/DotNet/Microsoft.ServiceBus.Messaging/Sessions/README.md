@@ -153,7 +153,7 @@ messages originate from the same sender, and how to de-multiplex interleaved mes
 ### Sending
 
 What we do in this sample is to initiate an interleaved send of four independent message sequences, 
-each labeled with a unique ```SessionId``. The interleaved send causes the messages from those
+each labeled with a unique ```SessionId```. The interleaved send causes the messages from those
 four sequences to show up interleaved representing the actual send order, very similar
 to the illustration above.
 
@@ -206,7 +206,7 @@ each message we send.
 }
 ```
 
-Inside the ``Run()``` method, we asynchronously invoke the ```SendMessagesAsync``` 
+Inside the ```Run()``` method, we asynchronously invoke the ```SendMessagesAsync``` 
 four times, which will cause the messages to be sent simultaneously and over separate connections 
 since we're using separate ```MessagingFactory``` instances. Each session's identifier is
 a fresh GUID.    

@@ -149,7 +149,7 @@ Also note that messages do not expire while they are stored in the MSMQ queue. T
 sets the ```TimeToBeReceived``` property of the MSMQ message to *infinite*. The ```BrokeredMessage.TimeToLive``` value 
 becomes effective when the message is submitted into the Service Bus Queue or Topic.  
 
-##Source Code Files
+## Source Code Files
 * *Client.cs*: Implements a Service Bus client that sends and receives messages to Service Bus using the durable sender library.
 * *DurableMessageSender.cs*: Implements the durable message sender API. Implements code that converts Service Bus brokered messages 
   to and from MSMQ messages and sends and receives MSMQ messages.

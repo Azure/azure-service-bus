@@ -1,4 +1,4 @@
-#Priority Subscriptions
+# Priority Subscriptions
 
 This sample illustrates how do use topic subscriptions and filters for splitting up a message streams into multiple distinct streams 
 based on certain conditions. The concrete example use-case shown here is prioritization, where we split the message stream into 
@@ -69,7 +69,7 @@ own subscriptions and all values above 2 go into the third subscription.
     }
  ``` 
 
-##Receiver Strategies
+## Receiver Strategies
 
 There are several strategies for how to leverage this topology in an application. 
 

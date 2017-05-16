@@ -1,4 +1,4 @@
-#Getting Started with Service Bus Topics
+# Getting Started with Service Bus Topics
 
 This sample shows how to interact with the essential API elements for interacting with a Service Bus *Topic*.
 
@@ -40,7 +40,7 @@ of this sample is that we're creating a ``TopicClient`` with a topic instead the
       this.sendClient = TopicClient.CreateFromConnectionString(connectionString, topicName);
 ```
 
-The receive side is also not all that different, but since we#re using a preconfigured *Topic* with three existing subscriptions, we set up and 
+The receive side is also not all that different, but since we're using a preconfigured *Topic* with three existing subscriptions, we set up and 
 initialize three parallel receivers. To receive from a topic subscription, the simplest option is to use a ```SubscriptionClient``` initialized
 with a connection string.  
 
@@ -78,6 +78,6 @@ The ```Run()``` method that is invoked by the common sample entry point first se
 three *Subscriptions* in parallel. The messages received from the *Subscriptions* will differ in color depending on which
 subscription tzhey were received from. 
 
-##Running the sample
+## Running the sample
 
 You can run the application from Visual Studio or on the command line from the sample's root directory by starting <code>bin/debug/TopicsGettingStarted.exe</code>

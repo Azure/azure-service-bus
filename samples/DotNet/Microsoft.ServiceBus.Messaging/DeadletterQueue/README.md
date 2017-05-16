@@ -65,7 +65,7 @@ In addition to these system-provided dead-lettering features, applications can u
 This may include messages that cannot be properly processed due to any sort of system issue, messages that hold malformed payloads, or messages that fail 
 authentication when some message-level security scheme is used.
 
-##The Sample
+## The Sample
 
 The sample illustrates system-initiated dead-lettering after exceeding the default ```QueueDescription.MaxDeliveryCount``` of 10 and
 an application-initiated dead-lettering action.

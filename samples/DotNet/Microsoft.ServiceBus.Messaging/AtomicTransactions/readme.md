@@ -39,7 +39,7 @@ and many papers for exploring theory and history of transaction processing. Thes
 
 Azure Service Bus is a transactional message broker and ensures transactional integrity for all internal operations 
 against its message stores and the respective indices. All transfers of messages inside of Service Bus, such as moving 
-messages to a [Dead-Letter Queue]/../Deadletter) or [automatic forwarding](../AutoForward) of messages between entities are 
+messages to a [Dead-Letter Queue](/../Deadletter) or [automatic forwarding](../AutoForward) of messages between entities are 
 transactional.What that means is that if Service Bus reports a message as accepted it has already been stored and labeled with 
 a sequence number, and from there onwards, any transfers inside of Service Bus are coordinated operations across entities, and will 
 neither lead to loss (source succeeds and target fails) or to duplication (source fails and target succeeds) of the message. 
@@ -59,6 +59,9 @@ The operations that can be performed within a transaction scope are:
     * ```Deadletter```, ```DeadletterAsync```
     * ```Defer```, ```DeferAsync```
     * ```RenewLock```, ```RenewLockAsync```
+* ```MessageSession```:
+    * ```SetState```, ```SetStateAsync```
+    * ```GetState```, ```GetStateAsync```
     
 Quite apparently missing are all receive operations. The assumption made for Service Bus transactions is that the application
 acquires messages, using the ReceiveMode.PeekLock mode, inside some receive loop or with an OnMessage callback, and only then 
@@ -122,9 +125,9 @@ Service Bus to execute the operation to complete (or defer or dead-letter) the i
 capture the resulting output message on the same message log in a single atomic operation.
 
 ```
-        /---\  [M1] == Complete() ===> +-----+                  +-----+
-       |  P  |                         |  T  |                  |  Q  |
-        \---/  [M2] == Send() =======> +-----+ [M2] == Fwd ===> +-----+
+        /---\  [M1] == Receive() <==== +-----+                  +-----+
+       |  P  | [M2] == Send() =======> |  T  | [M2] == Fwd ===> |  Q  |
+        \---/  [M1] == Complete() ===> +-----+                  +-----+
           :                                                        ^
           :.................. effective transfer path .............: 
         

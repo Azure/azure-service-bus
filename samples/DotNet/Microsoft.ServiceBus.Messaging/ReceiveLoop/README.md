@@ -1,4 +1,4 @@
-#Receive Loops
+# Receive Loops
 
 This sample is a variation of the [QueuesGettingStarted](../QueuesGettingStarted) sample. This sample does not use the OnMessage API,
 but rather implements an explicit receive loop.  
@@ -167,7 +167,7 @@ absorb the exception (you might want to log it for monitoring purposes) and keep
     }
 ``` 
 
-###Alternate Loop
+### Alternate Loop
 
 A receive loop with a receive operation that is not time-boxed will look like the snippet below. The assumption here is that an operation external 
 to the loop (on a different thread) will terminate the loop by calling *Close* on the *MessageReceiver* instance *receiver*. Closing the receiver
@@ -201,6 +201,6 @@ terminate the loop.
     }
 ``` 
      
-##Running the sample
+## Running the sample
 
 You can run the application from Visual Studio or on the command line from the sample's root directory by starting <code>bin/debug/sample.exe</code>

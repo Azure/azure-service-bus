@@ -1,7 +1,7 @@
-#Auto Forward
+# Auto Forward
 This sample demonstrates how to automatically forward messages from a queue, subscription, or deadletter queue into another queue or topic. 
 
-##What is Auto Forwarding?
+## What is Auto Forwarding?
 
 The Auto-Forwarding feature enables you to chain the a Topic Subscription or a Queue to destination Queue or Topic that is part of the same Service Bus namespace. 
 When the feature is enabled, Service Bus automatically moves any messages arriving in the source Queue or Subscription into the destination Queue or Topic. 
@@ -18,7 +18,7 @@ destination entity.
 
 Auto-Forwarding is also available for dead-letter queues, by setting the ```QueueDescription.ForwardDeadLetteredMessagesTo``` or ```SubscriptionDescription.ForwardDeadLetteredMessagesTo``` properties. 
 
-##Why would I use it?
+## Why would I use it?
 
 Auto-Forwarding allows for a range of powerful routing patterns inside Service Bus.
 
@@ -215,14 +215,14 @@ Auto-Forwarding is charged exactly as if a user-application were to perform the 
 meaning that the cost on Service Bus Standard is two message operations (receive and send); 
 with Service Bus Premium there is no extra cost.
 
-##The Sample
+## The Sample
 
 The sample generates 3 messages: M1, M2 and M3. M1 is sent to a source topic with one subscription, from which 
 it is forwarded to a destination queue. M2 is sent to the destination queue via a transfer queue. M3 is sent to 
 a source topic with two subscriptions. One subscription forwards M3 to the destination queue. The second subscription 
 deadletters M3. Service Bus forwards this copy of M3 to the destination queue.
 
-##Description
+## Description
 
 ```C#
 QueueDescription sourceQueueDescription = new QueueDescription(SourceQueueName); 

@@ -1,7 +1,7 @@
-#Message Senders and Receivers with Service Bus Topics
+# Message Senders and Receivers with Service Bus Topics
 
 This sample shows how to interact with a Service Bus Topic via the ```MessagingFactory``` and the ```MessageSender``` 
-and ```MessageReceiver``` clients, as an alternative to the ``TopicClient`` and ``SubscriptionClient```class introduced in 
+and ```MessageReceiver``` clients, as an alternative to the ``TopicClient`` and ``SubscriptionClient`` class introduced in 
 the basic [TopicGettingStarted](../TopicsGettingStarted) sample. 
 
 The sample is quasi identical to the [SendersReceiversWithQueues](../SendersReceiversWithQueues) sample since 
@@ -95,6 +95,6 @@ The cancellation token passed to the receiver method is being triggered when the
     }
 ```
 
-##Running the sample
+## Running the sample
 
 You can run the application from Visual Studio or on the command line from the sample's root directory by starting <code>bin/debug/SendersReceiversWithTopics.exe</code>

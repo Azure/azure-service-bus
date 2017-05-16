@@ -1,4 +1,4 @@
-#Topic Subscription Filters
+# Topic Subscription Filters
 
 This sample illustrates creating filtered subscriptions for topics. It shows a simple *true-filter* that lets all messages pass,
 a filter with a composite SQL-like condition, a rule combining a filter with a set of actions, and a correlation filter 
@@ -114,7 +114,7 @@ the message gets selected for the subscription.
         new SqlFilter("color = 'blue' AND quantity = 10"));
 ```
 
-The following subscription is created with a full ```RuleDescription```, that includes a filter checking for ```color = 'red'````
+The following subscription is created with a full ```RuleDescription```, that includes a filter checking for ```color = 'red'```
 and an action that will modify each matched message. Each matched message will have the 'quantity' property numeric value 
 halved, the 'priority' property removed, and the ```CorrelationId``` system property set to "low".
 
@@ -202,7 +202,7 @@ label value "red" that occurs only once ans thus:
 color=red,quantity=10,priority=high,CorrelationId=high
 ``` 
 
-##Running the sample
+## Running the sample
 
 You can run the application from Visual Studio or on the command line from the sample's root 
 directory by starting <code>bin/debug/sample.exe</code>

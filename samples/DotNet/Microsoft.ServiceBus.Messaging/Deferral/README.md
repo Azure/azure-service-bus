@@ -46,7 +46,7 @@ The sample is a variation of the [ReceiveLoop](../ReceiveLoop) sample.
 
 The send-side of the sample takes an ordered list of workflow steps (Shop, Unpack, Prepare, Cook, Eat) and 
 puts them into the queue. The way we're shuffling these into a random order is by adding a random delay of a few 
-milliseconds (``Task.Delay(rnd.Next(30)```) before each send operation. Sending is done when all send tasks 
+milliseconds (```Task.Delay(rnd.Next(30)```) before each send operation. Sending is done when all send tasks 
 are done.   
 
 ```C#

@@ -1,4 +1,4 @@
-#Duplicate Detection
+# Duplicate Detection
 
 This sample illustrates the "duplicate detection" feature of the Service Bus client.
 

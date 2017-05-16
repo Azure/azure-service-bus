@@ -99,7 +99,7 @@ namespace MessagingSamples
                                 {
                                     continue;
                                 }
-                                var propKey = propl.Substring(0, propi - 1).Trim();
+                                var propKey = propl.Substring(0, propi).Trim();
                                 var propVal = propl.Substring(propi + 1).Trim();
                                 if (properties.ContainsKey(propKey))
                                 {

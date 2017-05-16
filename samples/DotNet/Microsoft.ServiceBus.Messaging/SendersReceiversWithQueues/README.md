@@ -1,4 +1,4 @@
-#Message Senders and Receivers with Service Bus Queues
+# Message Senders and Receivers with Service Bus Queues
 
 This sample shows interacting with Service Bus Queues using a set of API gestures that are more abstract but also a bit more
 flexible than the ``QueueClient`` class introduced in the basic [QueuesGettingStarted](../QueuesGettingStarted) sample. 
@@ -315,6 +315,6 @@ user presses any key sometime after sender and receiver have been kicked off.
     } 
 ```
 
-##Running the sample
+## Running the sample
 
 You can run the application from Visual Studio or on the command line from the sample's root directory by starting <code>bin/debug/sample.exe</code>

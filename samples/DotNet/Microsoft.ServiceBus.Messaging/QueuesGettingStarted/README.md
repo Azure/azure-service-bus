@@ -1,4 +1,4 @@
-#Getting Started with Service Bus Queues
+# Getting Started with Service Bus Queues
 
 This sample shows the essential API elements for interacting with messages and a Service Bus Queue.
 
@@ -130,7 +130,7 @@ This is different from the ```ReceiveAndDelete``` alternative where the message 
 Now we start the message receive loop. As explicit receive loops (see the [ReceiveLoop](../ReceiveLoop) sample) can be tricky,
 the vast majority of applications will *and should* instead use the ```OnMessage``` or ```OnMessageAsync``` API. 
 
-> **Unless you have good reason to create your own receive loop, you should use the ```OnMessage```/``ÒnMessageAsync``` API**
+> **Unless you have good reason to create your own receive loop, you should use the ```OnMessage```/```OnMessageAsync``` API**
 
 The ```OnMessage(Async)``` method accepts a callback function for handling a single message, and a set of options:
 
@@ -155,7 +155,7 @@ The asynchronous variant ```OnMessageAsync``` used here accepts an asynchronous 
 > the achievable message flow rate. 
 
 The receive loop will be started as soon as ```OnMessageAsync``` is invoked and will continue in the background when the method 
-has returned. ```OnMessage```/``OnMessageAsync``` can only be called once on any receiver. The receive loop stops when the ````QueueClient```is 
+has returned. ```OnMessage```/```OnMessageAsync``` can only be called once on any receiver. The receive loop stops when the ```QueueClient``` is 
 closed via ```Close()```/```CloseAsync()```. 
 
 > The callback is not invoked on the calling thread. For applications that need synchronization with an UI thread or similar, like 
@@ -262,6 +262,6 @@ sending the messages has not yet completed, we'll wait for the send task to clea
 }
 ```
 
-##Running the sample
+## Running the sample
 
 You can run the application from Visual Studio or on the command line from the sample's root directory by starting ```bin/debug/QueuesGettingStarted.exe```
