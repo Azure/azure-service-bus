@@ -8,7 +8,7 @@ To learn more about Azure Service Bus, please visit our [marketing page](https:/
 
 This repository is intended to be used for the following:
 * Service side issues and feature requests
-* [Samples](./samples/README.md)
+* [Samples](./samples/readme.md)
 * Documentation issues
 
 If you are looking for a specific client library, see the following:
