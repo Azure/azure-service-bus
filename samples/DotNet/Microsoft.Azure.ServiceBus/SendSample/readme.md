@@ -64,7 +64,7 @@ In this tutorial, we will write a console application to send messages to a Serv
             try
             {
                 // Create a new brokered message to send to the queue
-                var message = new Message($"Message {i}");
+                var message = new Message(Encoding.UTF8.GetBytes($"Message {i}"));
 
                 // Write the body of the message to the console
                 Console.WriteLine($"Sending message: {Encoding.UTF8.GetString(message.Body)}");
