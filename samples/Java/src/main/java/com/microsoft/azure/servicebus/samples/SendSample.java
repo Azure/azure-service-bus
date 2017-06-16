@@ -3,6 +3,7 @@ package com.microsoft.azure.servicebus.samples;
 import com.microsoft.azure.servicebus.Message;
 import com.microsoft.azure.servicebus.QueueClient;
 import com.microsoft.azure.servicebus.ReceiveMode;
+import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 import com.microsoft.azure.servicebus.primitives.ServiceBusException;
 
 public class SendSample {
@@ -20,7 +21,7 @@ public class SendSample {
 			throw new Exception("Could not read environment variable: " + ENVIRONMENT_VARIABLE_NAME);
 		}		
 		
-		QueueClient queueClient = new QueueClient(envVar, ReceiveMode.PeekLock);
+		QueueClient queueClient = new QueueClient(new ConnectionStringBuilder(envVar), ReceiveMode.PeekLock);
 		
 		sendMessages(NUMBER_OF_MESSAGES);
 		queueClient.close();

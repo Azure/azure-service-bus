@@ -9,6 +9,7 @@ import com.microsoft.azure.servicebus.IMessageHandler;
 import com.microsoft.azure.servicebus.MessageHandlerOptions;
 import com.microsoft.azure.servicebus.QueueClient;
 import com.microsoft.azure.servicebus.ReceiveMode;
+import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 import com.microsoft.azure.servicebus.primitives.ServiceBusException;
 
 public class ReceiveSample {
@@ -25,7 +26,7 @@ public class ReceiveSample {
 			throw new Exception("Could not read environment variable: " + ENVIRONMENT_VARIABLE_NAME);
 		}
 
-		QueueClient queueClient = new QueueClient(envVar, ReceiveMode.PeekLock);
+		QueueClient queueClient = new QueueClient(new ConnectionStringBuilder(envVar), ReceiveMode.PeekLock);
 		receiveMessages();
 		Thread.sleep(60 * 1000);
 		queueClient.close();
@@ -36,7 +37,7 @@ public class ReceiveSample {
 		queueClient.registerMessageHandler(new IMessageHandler() {
 			
 			public CompletableFuture<Void> onMessageAsync(IMessage message) {
-				System.out.println(new String(message.getContent()));
+				System.out.println(new String(message.getBody()));
 				return CompletableFuture.completedFuture(null);
 			}
 			
