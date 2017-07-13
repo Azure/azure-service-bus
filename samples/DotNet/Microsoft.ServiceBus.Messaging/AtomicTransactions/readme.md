@@ -50,18 +50,18 @@ messages will only be committed to the Queue's log when the transaction successf
 
 The operations that can be performed within a transaction scope are:
 
-* ```QueueClient```, ```MessageSender```, ```TopicClient```: 
-    * ```Send```, ```SendAsync```
-    * ```SendBatch```, ```SendBatchAsync```
-* ```BrokeredMessage```:  
-    * ```Complete```, ```CompleteAsync```
-    * ```Abandon```, ```AbandonAsync```
-    * ```Deadletter```, ```DeadletterAsync```
-    * ```Defer```, ```DeferAsync```
-    * ```RenewLock```, ```RenewLockAsync```
-* ```MessageSession```:
-    * ```SetState```, ```SetStateAsync```
-    * ```GetState```, ```GetStateAsync```
+* `QueueClient`, `MessageSender`, `TopicClient`: 
+    * `Send`, `SendAsync`
+    * `SendBatch`, `SendBatchAsync`
+* `BrokeredMessage`:  
+    * `Complete`, `CompleteAsync`
+    * `Abandon`, `AbandonAsync`
+    * `Deadletter`, `DeadletterAsync`
+    * `Defer`, `DeferAsync`
+    * `RenewLock`, `RenewLockAsync`
+* `MessageSession`:
+    * `SetState`, `SetStateAsync`
+    * `GetState`, `GetStateAsync`
     
 Quite apparently missing are all receive operations. The assumption made for Service Bus transactions is that the application
 acquires messages, using the ReceiveMode.PeekLock mode, inside some receive loop or with an OnMessage callback, and only then 
@@ -98,8 +98,8 @@ To allow transactional handover of data from a queue to a processor and then onw
         \---/         +-----+        +-----+
 ``` 
 
-In a transfer operation, a sender (or transaction processor, ```P```) first sends a message to a "transfer queue" (```T```) and the 
-transfer queue immediately proceeds to move the message to the intended destination queue (```Q```) using the same robust transfer 
+In a transfer operation, a sender (or transaction processor, `P`) first sends a message to a "transfer queue" (`T`) and the 
+transfer queue immediately proceeds to move the message to the intended destination queue (`Q`) using the same robust transfer 
 implementation that the [auto-forward](../AutoForward) capability relies on. The message is never committed to the transfer 
 queue's log in a way that it becomes visible for the transfer queue's consumers.
 
@@ -244,7 +244,7 @@ Service Bus allows for hierarchical structures inside a namespace, we create the
             +- /output (SagaOutputQueueName)
 ```
 
-With that input, the ```SetupSagaTopologyAsync``` method is quite repetitive, so we're no going to reproduce 
+With that input, the `SetupSagaTopologyAsync` method is quite repetitive, so we're no going to reproduce 
 that here in full, but just point out the two interesting details.
 
 The work-step queues are configured with automatic forwarding from their dead-letter queues into their respective 
@@ -270,7 +270,7 @@ also would allow for the input to be differently secured than the private in-sag
 Doing this in the topology setup and having the flow defined in the following step is a bit of a "leaky 
 abstraction", but the declared intent for this sample is not to hide too much detail with pretty framework:   
 
-```
+``` C#
         new QueueDescription(SagaInputQueueName)
         {
             // book car is the first step
@@ -280,9 +280,9 @@ abstraction", but the declared intent for this sample is not to hide too much de
 
 ### Configuring Flow and Running the Saga
 
-The ```RunScenarioAsync``` method is the scenario host. It creates and initializes the receiver on the 
+The `RunScenarioAsync` method is the scenario host. It creates and initializes the receiver on the 
 "output" queue where all results land, then initializes and hosts the Saga (see below), and then proceeds to
-submitting the booking jobs into the Saga.  The ```SendBookingRequests``` method creates some input example 
+submitting the booking jobs into the Saga.  The `SendBookingRequests` method creates some input example 
 data and submits it as messages into the "input" queue. The jobs don't need to always request car and hotel 
 and air together, but can also request any other combination.       
 
@@ -309,7 +309,7 @@ static async Task RunScenarioAsync(string namespaceAddress, string manageKeyName
 }
 ```
 
-The ```RunSaga``` method sets up execution of the Saga workers and compensators via a helper class as follows: 
+The `RunSaga` method sets up execution of the Saga workers and compensators via a helper class as follows: 
 
 ``` C#
 static SagaTaskManager RunSaga(MessagingFactory workersMessageFactory, CancellationTokenSource terminator)
@@ -328,20 +328,20 @@ static SagaTaskManager RunSaga(MessagingFactory workersMessageFactory, Cancellat
 ``` 
 
 Each of the rows in the initialization of the object is equivalent to a call to a method on the 
-helper class that is shown below. The C# compiler turns the rows into calls to the ```Add``` method. 
+helper class that is shown below. The C# compiler turns the rows into calls to the `Add` method. 
 
 The initialization wires up the message handlers and define the message paths for positive and 
 negative outcomes to arrive at the flow graph shown above. 
 
-The helper creates a receiver object for ```taskQueueName```, and sender objects for the 
-```nextStepQueue`` and ```compensatorQueue```. Notice that these senders send **via** the
-```taskQueueName```, as discussed above.   
+The helper creates a receiver object for `taskQueueName`, and sender objects for the 
+`nextStepQueue` and `compensatorQueue`. Notice that these senders send **via** the
+`taskQueueName`, as discussed above.   
 
-It then registers an ````OnMessageAsync``` lambda on the receiver which will dispatch to the supplied 
+It then registers an `OnMessageAsync` lambda on the receiver which will dispatch to the supplied 
 callback method when a message has been obtained. The callback is invoked with the received message, and the 
 sender objects for next step and compensator, from which the invoked method can choose for how it wants to make progress.
 
-The method also registers with the ```CancellationToken``` handled by the containing object to ensure proper shutdown.
+The method also registers with the `CancellationToken` handled by the containing object to ensure proper shutdown.
 
 ``` C#
 public void Add(
@@ -366,14 +366,14 @@ public void Add(
 } 
 ```
 
-Once ```RunSaga``` returns, all receivers are active.      
+Once `RunSaga` returns, all receivers are active.      
  
 ### Business Transactions 
 
 The callback functions that represent the busines transactions are fairly uniform since we don't perform 
 true work in this sample. We will therefore only dissect one of the workers and one of the compensators.
 
-We'll pick ```BookHotel``` and ```CancelHotel``, because they are both in the middle of the flow.
+We'll pick `BookHotel` and `CancelHotel`, because they are both in the middle of the flow.
 
 ```C#
 public static async Task BookHotel(BrokeredMessage message, MessageSender nextStepQueue, MessageSender compensatorQueue)
@@ -385,7 +385,8 @@ public static async Task BookHotel(BrokeredMessage message, MessageSender nextSt
 To start, we'll pick up the "via" property from the incoming job message and add the id of this 
 job so that we can track the job progress.
  
-```C#        var via = (message.Properties.ContainsKey("Via")
+```C#        
+var via = (message.Properties.ContainsKey("Via")
             ? ((string) message.Properties["Via"] + ",")
             : string.Empty) +
                     "bookhotel";
@@ -494,7 +495,7 @@ If we don't know how to decode the message we also push it out to the dead-lette
 
 Finally and **importantly**, we tell the transaction framework that we're done. With the pending 
 transaction scope, none of the interactions with the task queue are yet realized and that will only 
-happen once we call ```Complete`` and the transaction concludes. If we leave the transaction scope 
+happen once we call ```Complete``` and the transaction concludes. If we leave the transaction scope 
 without completing, none of the work on the queue is done. That means that eventually the lock 
 on the input message is going to expire and the operation will be retried. 
 
