@@ -385,7 +385,8 @@ public static async Task BookHotel(BrokeredMessage message, MessageSender nextSt
 To start, we'll pick up the "via" property from the incoming job message and add the id of this 
 job so that we can track the job progress.
  
-```C#        var via = (message.Properties.ContainsKey("Via")
+```C#        
+var via = (message.Properties.ContainsKey("Via")
             ? ((string) message.Properties["Via"] + ",")
             : string.Empty) +
                     "bookhotel";
