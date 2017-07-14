@@ -22,7 +22,7 @@ $install = & "$nugetExe" install WindowsAzure.ServiceBus -version 3.0 -OutputDir
 
 $sbNuget = (gci "$scriptDir\..\..\..\packages\WindowsAzure.ServiceBus.*")[0].FullName
 
-$sbDll = Join-Path $sbNuget "lib\net45-full\Microsoft.ServiceBus.dll"
+$sbDll = Join-Path $sbNuget "lib\net45\Microsoft.ServiceBus.dll"
 
 if(-not (Test-Path $sbDll))
 {
