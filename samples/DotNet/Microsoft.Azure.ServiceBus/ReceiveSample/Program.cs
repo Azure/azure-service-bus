@@ -48,7 +48,16 @@ namespace ReceiveSample
                         // This can be done only if the queueClient is opened in ReceiveMode.PeekLock mode.
                         await queueClient.CompleteAsync(message.SystemProperties.LockToken);
                     },
-                    new MessageHandlerOptions() {MaxConcurrentCalls = 1, AutoComplete = false});
+                    new MessageHandlerOptions(exceptionReceivedEventArgs =>
+                    {
+                        Console.WriteLine($"Message handler encountered an exception {exceptionReceivedEventArgs.Exception}.");
+                        var context = exceptionReceivedEventArgs.ExceptionReceivedContext;
+                        Console.WriteLine("Exception context for troubleshooting:");
+                        Console.WriteLine($"- Endpoint: {context.Endpoint}");
+                        Console.WriteLine($"- Entity Path: {context.EntityPath}");
+                        Console.WriteLine($"- Executing Action: {context.Action}");
+                        return Task.CompletedTask;
+                    }) {MaxConcurrentCalls = 1, AutoComplete = false});
             }
             catch (Exception exception)
             {

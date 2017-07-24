@@ -69,7 +69,11 @@ In this tutorial, we will write a console application to receive messages from a
                 // Complete the message so that it is not received again.
                 // This can be done only if the queueClient is opened in ReceiveMode.PeekLock mode.
                 await queueClient.CompleteAsync(message.SystemProperties.LockToken);
-            });
+            }, 
+            new MessageHandlerOptions(exceptionReceivedEventArgs =>
+            {
+                return Task.CompletedTask;
+            }));
     }
     catch (Exception exception)
     {
@@ -102,3 +106,5 @@ In this tutorial, we will write a console application to receive messages from a
 1. Run the program, and check the Azure portal. Click the name of your queue in the namespace **Overview** blade. Notice that the **Active message count** value should now be 0.
    
 Congratulations! You have now received messages from a Service Bus queue, using .NET Core.
+
+**Note**: preview versions of the Azure Service Bus client do not provide message wire compatibility. Messages sent with an older version of the client mmight not be processable by the newer versions.
