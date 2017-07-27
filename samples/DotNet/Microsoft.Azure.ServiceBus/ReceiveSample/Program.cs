@@ -23,6 +23,7 @@ namespace ReceiveSample
         {
             queueClient = new QueueClient(ServiceBusConnectionString, QueueName, ReceiveMode.PeekLock);
 
+
             Console.WriteLine("Press ctrl-c to stop receiving messages.");
 
             ReceiveMessages();

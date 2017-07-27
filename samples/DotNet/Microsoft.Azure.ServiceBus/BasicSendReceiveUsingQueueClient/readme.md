@@ -1,0 +1,152 @@
+# Get started sending to Service Bus queues
+
+In order to run the sample in this directory, replace the following bracketed values in the `Program.cs` file.
+
+```csharp
+private const string ServiceBusConnectionString = "{Service Bus connection string}";
+private const string QueueName = "{Queue path/name}";
+```
+
+Once you replace the above values run the following from a command prompt:
+   
+```
+dotnet restore
+dotnet build
+dotnet run
+```
+
+For further information on how to create this sample on your own, follow the rest of the tutorial.
+
+## What will be accomplished
+In this tutorial, we will write a console application to send messages to a Service Bus queue.
+
+## Prerequisites
+1. [.NET Core](https://www.microsoft.com/net/core)
+2. An Azure subscription.
+3. [A Service Bus namespace](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-create-namespace-portal) 
+4. [A Service Bus queue](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dotnet-get-started-with-queues#2-create-a-queue-using-the-azure-portal)
+
+### Create a console application
+
+- Create a new .NET Core application. Check out [this link](https://docs.microsoft.com/en-us/dotnet/articles/core/getting-started) with help to create a new application on your operating system.
+
+### Add the Service Bus client reference
+
+1. Add the following to your project.json, making sure that the solution references the `Microsoft.Azure.ServiceBus` project.
+
+    ```json
+    "Microsoft.Azure.ServiceBus": "0.0.7-preview"
+    ```
+
+### Write some code to send and receive messages from the queue
+1. Add the following using statement to the top of the Program.cs file.
+   
+    ```csharp
+    using Microsoft.Azure.ServiceBus;
+    ```
+
+1. Add the following private variables to the `Program` class, and replace the placeholder values:
+    
+    ```csharp
+    static IQueueClient queueClient;
+    const string ServiceBusConnectionString = "{Service Bus connection string}";
+    const string QueueName = "{Queue path/name}";
+    ```
+
+1. Create a new Task called `ProcessMessagesAsync` that knows how to handle received messages with the following code:
+
+	```csharp
+	static async Task ProcessMessagesAsync(Message message, CancellationToken token)
+    {
+		// Process the message
+        Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
+		
+		// Complete the message so that it is not received again.
+        // This can be done only if the queueClient is opened in ReceiveMode.PeekLock mode.
+        await queueClient.CompleteAsync(message.SystemProperties.LockToken);
+    }
+	```
+
+1. Create a new Task called `ExceptionReceivedHandler` to look at the exceptions received on the MessagePump. This will be useful for debugging purposes.
+
+	```csharp
+	static Task ExceptionReceivedHandler(ExceptionReceivedEventArgs exceptionReceivedEventArgs)
+    {
+		Console.WriteLine($"Message handler encountered an exception {exceptionReceivedEventArgs.Exception}.");
+        return Task.CompletedTask;
+    }
+	```
+
+1. Create a new method called 'RegisterOnMessageHandlerAndReceiveMessages' to register the `ProcessMessagesAsync` and the 
+`ExceptionReceivedHandler` with the necessary `MessageHandlerOptions` parameters to start receiving messages
+
+	```csharp
+	static void RegisterOnMessageHandlerAndReceiveMessages()
+    {
+		// Configure the MessageHandler Options in terms of exception handling, number of concurrent messages to deliver etc.
+        MessageHandlerOptions messageHandlerOptions = new MessageHandlerOptions(ExceptionReceivedHandler)
+        {
+			MaxConcurrentCalls = 1,
+            AutoComplete = false
+        };
+
+        // Register the function that will process messages
+        queueClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
+    }
+	```
+
+1. Create a new method called `SendMessagesToQueue` with the following code:
+
+    ```csharp
+    // Sends messages to the queue.
+    static async Task SendMessagesAsync(int numberOfMessagesToSend)
+    {
+		for (var i = 0; i < numberOfMessagesToSend; i++)
+		{
+			try
+			{
+				// Create a new message to send to the queue
+				var message = new Message(Encoding.UTF8.GetBytes($"Message {i}"));
+
+				// Write the body of the message to the console
+				Console.WriteLine($"Sending message: {Encoding.UTF8.GetString(message.Body)}");
+
+				// Send the message to the queue
+				await queueClient.SendAsync(message);
+			}
+			catch (Exception exception)
+			{
+				Console.WriteLine($"{DateTime.Now} :: Exception: {exception.Message}");             
+            }
+        }
+	}
+    ```
+
+1. Create a new method called `MainAsync` with the following code:
+   
+    ```csharp
+    static async Task MainAsync(string[] args)
+    {
+        queueClient = new QueueClient(ServiceBusConnectionString, QueueName);
+
+		// Register QueueClient's MessageHandler and receive messages in a loop
+        RegisterOnMessageHandlerAndReceiveMessages();
+
+		// Send Messages
+        await SendMessagesToQueue(10);        
+
+        Console.WriteLine("Press any key to exit after receiving all the messages.");
+        Console.ReadLine();
+
+		// Close the client after the ReceiveMessages method has exited.
+        await queueClient.CloseAsync();
+    }
+    ```
+
+1. Add the following code to the `Main` method:
+    
+    ```csharp
+    MainAsync(args).GetAwaiter().GetResult();
+    ```
+
+Congratulations! You have now sent and received messages to a Service Bus queue, using .NET Core.
