@@ -24,15 +24,19 @@ namespace BasicSendReceiveUsingQueueClient
 
         static async Task MainAsync()
         {
+            const int numberOfMessages = 10;
             queueClient = new QueueClient(ServiceBusConnectionString, QueueName);
+
+            Console.WriteLine("======================================================");
+            Console.WriteLine("Press any key to exit after receiving all the messages.");
+            Console.WriteLine("======================================================");
 
             // Register QueueClient's MessageHandler and receive messages in a loop
             RegisterOnMessageHandlerAndReceiveMessages();
 
             // Send Messages
-            await SendMessagesAsync(numberOfMessagesToSend: 10);
-
-            Console.WriteLine("Press any key to exit after receiving all the messages.");
+            await SendMessagesAsync(numberOfMessages);
+                        
             Console.ReadKey();
 
             await queueClient.CloseAsync();
@@ -57,7 +61,7 @@ namespace BasicSendReceiveUsingQueueClient
             Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
 
             // Complete the message so that it is not received again.
-            // This can be done only if the queueClient is opened in ReceiveMode.PeekLock mode.
+            // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode.
             await queueClient.CompleteAsync(message.SystemProperties.LockToken);
 
             // Note: Use the cancellationToken passed as necessary to determine if the queueClient has already been closed.
@@ -79,9 +83,9 @@ namespace BasicSendReceiveUsingQueueClient
 
         static async Task SendMessagesAsync(int numberOfMessagesToSend)
         {
-            for (var i = 0; i < numberOfMessagesToSend; i++)
+            try
             {
-                try
+                for (var i = 0; i < numberOfMessagesToSend; i++)
                 {
                     // Create a new message to send to the queue
                     var message = new Message(Encoding.UTF8.GetBytes($"Message {i}"));
@@ -92,10 +96,10 @@ namespace BasicSendReceiveUsingQueueClient
                     // Send the message to the queue
                     await queueClient.SendAsync(message);
                 }
-                catch (Exception exception)
-                {
-                    Console.WriteLine($"{DateTime.Now} :: Exception: {exception.Message}");
-                }
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine($"{DateTime.Now} :: Exception: {exception.Message}");
             }
         }
     }

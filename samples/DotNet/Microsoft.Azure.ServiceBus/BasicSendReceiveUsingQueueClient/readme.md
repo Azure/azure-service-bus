@@ -1,4 +1,4 @@
-# Get started sending to Service Bus queues
+# Get started sending to and receiving from Service Bus queues using QueueClient
 
 In order to run the sample in this directory, replace the following bracketed values in the `Program.cs` file.
 
@@ -18,7 +18,12 @@ dotnet run
 For further information on how to create this sample on your own, follow the rest of the tutorial.
 
 ## What will be accomplished
-In this tutorial, we will write a console application to send messages to a Service Bus queue.
+In this tutorial, we will write a console application to send and receive messages to a Service Bus queue using a QueueClient.
+QueueClient offers a simple API surface to send message(or messages in a batch) and offers a simple MessagePump model to receive messages.
+Once a message process handler is registered as shown below, the User code does not have to write explicit code to receive messages and 
+if configured using `MessageHandlerOptions`, does not have to write explicit code to renew message locks or complete messages or improve 
+the degree of concurrency of message processing. Hence the queueClient can be used in scenarios where the User wants to get started 
+quickly or the scenarios where they need basic send/receive and wants to achieve that with as little code writing as possible.
 
 ## Prerequisites
 1. [.NET Core](https://www.microsoft.com/net/core)
