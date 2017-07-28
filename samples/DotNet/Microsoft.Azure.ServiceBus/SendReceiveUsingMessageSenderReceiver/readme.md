@@ -1,4 +1,4 @@
-# Get started sending to Service Bus queues
+# Get started sending and receiving messages from Service Bus queues using MessageSender and MessageReceiver
 
 In order to run the sample in this directory, replace the following bracketed values in the `Program.cs` file.
 

@@ -1,4 +1,4 @@
-# Get started sending to and receiving from Service Bus queues using QueueClient
+# Get started sending and receiving messages from Service Bus queues using QueueClient
 
 In order to run the sample in this directory, replace the following bracketed values in the `Program.cs` file.
 
@@ -53,9 +53,9 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
 1. Add the following private variables to the `Program` class, and replace the placeholder values:
     
     ```csharp
-    static IQueueClient queueClient;
     const string ServiceBusConnectionString = "{Service Bus connection string}";
     const string QueueName = "{Queue path/name}";
+    static IQueueClient queueClient;
     ```
 
 1. Create a new Task called `ProcessMessagesAsync` that knows how to handle received messages with the following code:
@@ -143,7 +143,6 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
         Console.WriteLine("Press any key to exit after receiving all the messages.");
         Console.ReadLine();
 
-		// Close the client after the ReceiveMessages method has exited.
         await queueClient.CloseAsync();
     }
     ```
@@ -154,4 +153,4 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
     MainAsync(args).GetAwaiter().GetResult();
     ```
 
-Congratulations! You have now sent and received messages to a Service Bus queue, using .NET Core.
+Congratulations! You have now sent and received messages to a Service Bus queue, using QueueClient.
