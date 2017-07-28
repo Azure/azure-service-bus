@@ -15,6 +15,12 @@ dotnet build
 dotnet run
 ```
 
+## The Sample Program
+To keep things reasonably simple, the sample program keeps send and receive code within a single hosting application.
+Typically in real world applications these roles are often spread across applications, services, or at least across 
+independently deployed and run tiers of applications or services. For clarity, the send and receive activities are kept as 
+separate methods as if they were different apps.
+
 For further information on how to create this sample on your own, follow the rest of the tutorial.
 
 ## What will be accomplished
