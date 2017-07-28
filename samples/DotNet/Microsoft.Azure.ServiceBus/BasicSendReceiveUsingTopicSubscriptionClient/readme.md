@@ -1,10 +1,11 @@
-# Get started sending and receiving messages from ServiceBus queues using QueueClient
+# Get started sending messages to a topic using topicClient and receiving those messages from Subscription using SubscriptionClient
 
 In order to run the sample in this directory, replace the following bracketed values in the `Program.cs` file.
 
 ```csharp
-const string ServiceBusConnectionString = "{ServiceBus connection string}";
-const string QueueName = "{Queue path/name}";
+const string ServiceBusConnectionString = "{Service Bus connection string}";
+const string TopicName = "{Topic Name}";
+const string SubscriptionName = "{Subscription Name}";
 ```
 
 Once you replace the above values run the following from a command prompt:
@@ -24,18 +25,20 @@ separate methods as if they were different apps.
 For further information on how to create this sample on your own, follow the rest of the tutorial.
 
 ## What will be accomplished
-In this tutorial, we will write a console application to send and receive messages to a ServiceBus queue using a QueueClient.
-QueueClient offers a simple API surface to send message(or messages in a batch) and offers a simple MessagePump model to receive messages.
-Once a message process handler is registered as shown below, the User code does not have to write explicit code to receive messages and 
-if configured using `MessageHandlerOptions`, does not have to write explicit code to renew message locks or complete messages or improve 
-the degree of concurrency of message processing. Hence the queueClient can be used in scenarios where the User wants to get started 
-quickly or the scenarios where they need basic send/receive and wants to achieve that with as little code writing as possible.
+In this tutorial, we will write a console application to send messages to the topic using topicClient and receive those messages using 
+SubscriptionClient. TopicClient offers a simple API surface to send message(or messages in a batch). SubscriptionClient offers a simple 
+MessagePump model to receive messages. Once a message process handler is registered as shown below, the User code does not have to write 
+explicit code to receive messages and if configured using `MessageHandlerOptions`, does not have to write explicit code to renew message 
+locks or complete messages or improve the degree of concurrency of message processing. Hence the Subscriptionclient can be used in scenarios 
+where the User wants to get started quickly or the scenarios where they need basic send/receive and wants to achieve that with as 
+little code writing as possible.
 
 ## Prerequisites
 1. [.NET Core](https://www.microsoft.com/net/core)
 2. An Azure subscription.
 3. [A ServiceBus namespace](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-create-namespace-portal) 
-4. [A ServiceBus queue](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dotnet-get-started-with-queues#2-create-a-queue-using-the-azure-portal)
+4. [A ServiceBus Topic](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dotnet-how-to-use-topics-subscriptions#2-create-a-topic-using-the-azure-portal)
+5. [A ServiceBus Subscription](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dotnet-how-to-use-topics-subscriptions)
 
 ### Create a console application
 
@@ -49,7 +52,7 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
     "Microsoft.Azure.ServiceBus": "0.0.7-preview"
     ```
 
-### Write some code to send and receive messages from the queue
+### Write some code to send messages to the topic and receive messages from the subscription
 1. Add the following using statement to the top of the Program.cs file.
    
     ```csharp
@@ -60,8 +63,10 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
     
     ```csharp
     const string ServiceBusConnectionString = "{Service Bus connection string}";
-    const string QueueName = "{Queue path/name}";
-    static IQueueClient queueClient;
+    const string TopicName = "{Topic Name}";
+    const string SubscriptionName = "{Subscription Name}";
+    static ITopicClient topicClient;
+    static ISubscriptionClient subscriptionClient;
     ```
 
 1. Create a new Task called `ProcessMessagesAsync` that knows how to handle received messages with the following code:
@@ -73,8 +78,8 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
         Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
 		
 		// Complete the message so that it is not received again.
-        // This can be done only if the queueClient is opened in ReceiveMode.PeekLock mode.
-        await queueClient.CompleteAsync(message.SystemProperties.LockToken);
+        // This can be done only if the subscriptionClient is opened in ReceiveMode.PeekLock mode.
+        await subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
     }
 	```
 
@@ -102,28 +107,27 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
         };
 
         // Register the function that will process messages
-        queueClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
+        subscriptionClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
     }
 	```
 
 1. Create a new method called `SendMessagesAsync` with the following code:
 
     ```csharp
-    // Sends messages to the queue.
     static async Task SendMessagesAsync(int numberOfMessagesToSend)
     {
 		for (var i = 0; i < numberOfMessagesToSend; i++)
 		{
 			try
 			{
-				// Create a new message to send to the queue
+				// Create a new message to send to the topic
 				var message = new Message(Encoding.UTF8.GetBytes($"Message {i}"));
 
 				// Write the body of the message to the console
 				Console.WriteLine($"Sending message: {Encoding.UTF8.GetString(message.Body)}");
 
-				// Send the message to the queue
-				await queueClient.SendAsync(message);
+				// Send the message to the topic
+				await topicClient.SendAsync(message);
 			}
 			catch (Exception exception)
 			{
@@ -138,18 +142,24 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
     ```csharp
     static async Task MainAsync(string[] args)
     {
-        queueClient = new QueueClient(ServiceBusConnectionString, QueueName);
+		const int numberOfMessages = 10;
+        topicClient = new TopicClient(ServiceBusConnectionString, TopicName);
+        subscriptionClient = new SubscriptionClient(ServiceBusConnectionString, TopicName, SubscriptionName);
 
-		// Register QueueClient's MessageHandler and receive messages in a loop
+		Console.WriteLine("======================================================");
+        Console.WriteLine("Press any key to exit after receiving all the messages.");
+        Console.WriteLine("======================================================");
+
+		// Register Subscription's MessageHandler and receive messages in a loop
         RegisterOnMessageHandlerAndReceiveMessages();
 
 		// Send Messages
-        await SendMessagesToQueue(10);        
+        await SendMessagesAsync(numberOfMessages);      
 
-        Console.WriteLine("Press any key to exit after receiving all the messages.");
         Console.ReadLine();
 
-        await queueClient.CloseAsync();
+        await subscriptionClient.CloseAsync();
+        await topicClient.CloseAsync();
     }
     ```
 
@@ -159,4 +169,4 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
     MainAsync(args).GetAwaiter().GetResult();
     ```
 
-Congratulations! You have now sent and received messages to a ServiceBus queue, using QueueClient.
+Congratulations! You have now sent messages to a ServiceBus Topic and received messages from a ServiceBus Subscription.

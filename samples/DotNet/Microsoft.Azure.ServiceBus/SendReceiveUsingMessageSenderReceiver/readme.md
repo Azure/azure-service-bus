@@ -24,7 +24,7 @@ separate methods as if they were different apps.
 For further information on how to create this sample on your own, follow the rest of the tutorial.
 
 ## What will be accomplished
-In this tutorial, we will write a console application to send and receive messages to a Service Bus queue using MessageSender and MessageReceiver.
+In this tutorial, we will write a console application to send and receive messages to a ServiceBus queue using MessageSender and MessageReceiver.
 MessageSender and MessageReceiver APIs offer a more richer API surface in terms of being able to Defer Messages, Receive Deferred Messages, 
 Peek Messages etc. Thus it allows the User a more granular control on processing of messages but that also means the User has to write more
 code to renew message locks, complete messages and define how to achieve a basic degree of concurrency while processing messages.
@@ -32,14 +32,14 @@ code to renew message locks, complete messages and define how to achieve a basic
 ## Prerequisites
 1. [.NET Core](https://www.microsoft.com/net/core)
 2. An Azure subscription.
-3. [A Service Bus namespace](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-create-namespace-portal) 
-4. [A Service Bus queue](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dotnet-get-started-with-queues#2-create-a-queue-using-the-azure-portal)
+3. [A ServiceBus namespace](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-create-namespace-portal) 
+4. [A ServiceBus queue](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dotnet-get-started-with-queues#2-create-a-queue-using-the-azure-portal)
 
 ### Create a console application
 
 - Create a new .NET Core application. Check out [this link](https://docs.microsoft.com/en-us/dotnet/articles/core/getting-started) with help to create a new application on your operating system.
 
-### Add the Service Bus client reference
+### Add the ServiceBus client reference
 
 1. Add the following to your project.json, making sure that the solution references the `Microsoft.Azure.ServiceBus` project.
 
@@ -138,4 +138,4 @@ code to renew message locks, complete messages and define how to achieve a basic
     MainAsync(args).GetAwaiter().GetResult();
     ```
 
-Congratulations! You have now sent and received messages to a Service Bus queue using MessageSender and MessageReceiver.
+Congratulations! You have now sent and received messages to a ServiceBus queue using MessageSender and MessageReceiver.

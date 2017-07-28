@@ -24,7 +24,7 @@ separate methods as if they were different apps.
 For further information on how to create this sample on your own, follow the rest of the tutorial.
 
 ## What will be accomplished
-In this tutorial, we will write a console application to send and receive sessionful messages to a Service Bus queue using a QueueClient.
+In this tutorial, we will write a console application to send and receive sessionful messages to a ServiceBus queue using a QueueClient.
 Sending session based messages to a queue using QueueClient is same as sending other messages but the messages are stamped with an additional 
 `SessionId` property. QueueClient offers a simple SessionPump model to receive messages related to a session.
 Once a session handler is registered as shown below, the User code does not have to write explicit code to receive sessions and 
@@ -35,14 +35,14 @@ quickly or the scenarios where they need basic session based send/receive and wa
 ## Prerequisites
 1. [.NET Core](https://www.microsoft.com/net/core)
 2. An Azure subscription.
-3. [A Service Bus namespace](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-create-namespace-portal) 
-4. [A Service Bus queue](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dotnet-get-started-with-queues#2-create-a-queue-using-the-azure-portal)
+3. [A ServiceBus namespace](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-create-namespace-portal) 
+4. [A ServiceBus queue](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dotnet-get-started-with-queues#2-create-a-queue-using-the-azure-portal)
 
 ### Create a console application
 
 - Create a new .NET Core application. Check out [this link](https://docs.microsoft.com/en-us/dotnet/articles/core/getting-started) with help to create a new application on your operating system.
 
-### Add the Service Bus client reference
+### Add the ServiceBus client reference
 
 1. Add the following to your project.json, making sure that the solution references the `Microsoft.Azure.ServiceBus` project.
 
@@ -178,4 +178,4 @@ quickly or the scenarios where they need basic session based send/receive and wa
     MainAsync(args).GetAwaiter().GetResult();
     ```
 
-Congratulations! You have now sent and received session based messages to a Service Bus queue, using QueueClient.
+Congratulations! You have now sent and received session based messages to a ServiceBus queue, using QueueClient.
