@@ -1,4 +1,4 @@
-# Get started sending and receiving session based messages from Service Bus queues using QueueClient
+# Get started sending and receiving session based messages from Service Bus queues using SessionClient
 
 In order to run the sample in this directory, replace the following bracketed values in the `Program.cs` file.
 
@@ -18,13 +18,12 @@ dotnet run
 For further information on how to create this sample on your own, follow the rest of the tutorial.
 
 ## What will be accomplished
-In this tutorial, we will write a console application to send and receive sessionful messages to a Service Bus queue using a QueueClient.
-Sending session based messages to a queue using QueueClient is same as sending other messages but the messages are stamped with an additional 
-`SessionId` property. QueueClient offers a simple SessionPump model to receive messages related to a session.
-Once a session handler is registered as shown below, the User code does not have to write explicit code to receive sessions and 
-if configured using `SessionHandlerOptions`, does not have to write explicit code to renew session locks or complete messages or improve 
-the degree of concurrency of session processing. Hence the queueClient can be used in scenarios where the User wants to get started 
-quickly or the scenarios where they need basic session based send/receive and wants to achieve that with as little code writing as possible.
+In this tutorial, we will write a console application to send and receive sessionful messages to a Service Bus queue using a SessionClient.
+Sending session based messages to a queue using MessageSender is same as sending other messages but the messages are stamped with an additional 
+`SessionId` property. SessionClient offers a more granular control to the user for receiving Session based messages. The User can explicitly
+choose to accept sessions with a particular `SessionId`, defer messages received from a session and accept deffered messages on that session.
+But this also means the User has to write more code to accept MessageSessions, renew session locks, complete messages and 
+define how to achieve a basic degree of concurrency while processing sessions.
 
 ## Prerequisites
 1. [.NET Core](https://www.microsoft.com/net/core)
@@ -56,53 +55,35 @@ quickly or the scenarios where they need basic session based send/receive and wa
     ```csharp
     const string ServiceBusConnectionString = "{Service Bus connection string}";
     const string QueueName = "{Queue Name of a Queue that supports sessions}";
-    static IQueueClient queueClient;
+    static IMessageSender messageSender;
+    static ISessionClient sessionClient;
     ```
 
-1. Create a new Task called `ProcessSessionMessagesAsync` that knows how to handle received messages from a session with the following code:
+1. Create a new Task called `ReceiveSessionMessagesAsync` that knows how to receive messages from a session using SessionClient with the following code:
 
 	```csharp
-	static async Task ProcessSessionMessagesAsync(IMessageSession session, Message message, CancellationToken token)
+	static async Task ReceiveSessionMessagesAsync(int numberOfSessions, int messagesPerSession)
     {
-		Console.WriteLine($"Received Session: {session.SessionId} message: SequenceNumber: {message.SystemProperties.SequenceNumber}");
-
-        // Complete the message so that it is not received again.
-        // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode (which is default).
-        await session.CompleteAsync(message.SystemProperties.LockToken);
-
-        // Note: Use the cancellationToken passed as necessary to determine if the queueClient has already been closed.
-        // If queueClient has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls 
-        // to avoid unnecessary exceptions.
-    }
-	```
-
-1. Create a new Task called `ExceptionReceivedHandler` to look at the exceptions received on the MessagePump. This will be useful for debugging purposes.
-
-	```csharp
-	static Task ExceptionReceivedHandler(ExceptionReceivedEventArgs exceptionReceivedEventArgs)
-    {
-		Console.WriteLine($"Message handler encountered an exception {exceptionReceivedEventArgs.Exception}.");
-        return Task.CompletedTask;
-    }
-	```
-
-1. Create a new method called 'RegisterOnSessionHandlerAndReceiveSessionMessages' to register the `ProcessSessionMessagesAsync` and the 
-`ExceptionReceivedHandler` with the necessary `SessionHandlerOptions` parameters to start receiving messages from sessions
-
-	```csharp
-    static void RegisterOnSessionHandlerAndReceiveSessionMessages()
-    {
-		// Configure the SessionHandler Options in terms of exception handling, number of concurrent sessions to deliver etc.
-        SessionHandlerOptions sessionHandlerOptions =
-			new SessionHandlerOptions(ExceptionReceivedHandler)
+		while(numberOfSessions-- > 0)
+		{
+			int messagesReceivedPerSession = 0;
+            IMessageSession session = await sessionClient.AcceptMessageSessionAsync();
+            if(session != null)
             {
-				MaxConcurrentSessions = 2,
-                MessageWaitTimeout = TimeSpan.FromSeconds(1),
-                AutoComplete = false
-            };
+				while(messagesReceivedPerSession++ < messagesPerSession)
+                {
+					Message message = await session.ReceiveAsync();
+					Console.WriteLine($"Received Session: {session.SessionId} message: SequenceNumber: {message.SystemProperties.SequenceNumber}");
 
-        // Register the function that will process session messages
-        queueClient.RegisterSessionHandler(ProcessSessionMessagesAsync, sessionHandlerOptions);
+                    // Complete the message so that it is not received again.
+                    // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode (which is default).
+                    await session.CompleteAsync(message.SystemProperties.LockToken);
+				}
+
+                // Close the Session after receiving all messages from the session
+                await session.CloseAsync();
+            }
+        }
     }
 	```
 
@@ -130,6 +111,9 @@ quickly or the scenarios where they need basic session based send/receive and wa
                 // Assign a SessionId for the message
                 message.SessionId = sessionId;
                 messagesToSend.Add(message);
+
+				// Write the sessionId, body of the message to the console
+                Console.WriteLine($"Sending SessionId: {message.SessionId}, message: {Encoding.UTF8.GetString(message.Body)}");
             }
 
             // Send a batch of messages corresponding to this sessionId to the queue
@@ -148,21 +132,23 @@ quickly or the scenarios where they need basic session based send/receive and wa
 		const int numberOfSessions = 5;
         const int numberOfMessagesPerSession = 3;
 
-        queueClient = new QueueClient(ServiceBusConnectionString, QueueName);
+        messageSender = new MessageSender(ServiceBusConnectionString, QueueName);
+        sessionClient = new SessionClient(ServiceBusConnectionString, QueueName);
 
 		Console.WriteLine("======================================================");
         Console.WriteLine("Press any key to exit after receiving all the messages.");
         Console.WriteLine("======================================================");
 
-		// Register Session Handler and Receive Session Messages
-        RegisterOnSessionHandlerAndReceiveSessionMessages();
-
 		// Send messages with sessionId set
         await SendSessionMessagesAsync(numberOfSessions, numberOfMessagesPerSession);      
 
-        Console.ReadLine();
+		// Receive all Session based messages using SessionClient
+        await ReceiveSessionMessagesAsync(numberOfSessions, numberOfMessagesPerSession);
 
-        await queueClient.CloseAsync();
+        Console.ReadKey();
+
+		await messageSender.CloseAsync();
+        await sessionClient.CloseAsync();
     }
     ```
 
@@ -172,4 +158,4 @@ quickly or the scenarios where they need basic session based send/receive and wa
     MainAsync(args).GetAwaiter().GetResult();
     ```
 
-Congratulations! You have now sent and received session based messages to a Service Bus queue, using QueueClient.
+Congratulations! You have now sent and received session based messages to a Service Bus queue, using SessionClient.

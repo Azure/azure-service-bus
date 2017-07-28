@@ -12,9 +12,9 @@ namespace SendReceiveUsingMessageSenderReceiver
     class Program
     {
         const string ServiceBusConnectionString = "{Service Bus connection string}";
-        const string QueueName = "{Queue Name}";
-        static MessageSender messageSender;
-        static MessageReceiver messageReceiver;
+        const string QueueName = "{Queue Name of a Queue that supports sessions}";
+        static IMessageSender messageSender;
+        static IMessageReceiver messageReceiver;
 
         static void Main(string[] args)
         {
@@ -26,16 +26,16 @@ namespace SendReceiveUsingMessageSenderReceiver
             const int numberOfMessages = 10;
             messageSender = new MessageSender(ServiceBusConnectionString, QueueName);
             messageReceiver = new MessageReceiver(ServiceBusConnectionString, QueueName, ReceiveMode.PeekLock);
-
-            Console.WriteLine("======================================================");
-            Console.WriteLine("Press any key to exit after receiving all the messages.");
-            Console.WriteLine("======================================================");      
-            
+                        
             // Send Messages
             await SendMessagesAsync(numberOfMessages);
 
             // Receive Messages
             await ReceiveMessagesAsync(numberOfMessages);
+
+            Console.WriteLine("=========================================================");
+            Console.WriteLine("Completed Receiving all messages... Press any key to exit");
+            Console.WriteLine("=========================================================");
 
             Console.ReadKey();
 

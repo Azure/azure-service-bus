@@ -105,6 +105,9 @@ namespace BasicSessionSendReceiveUsingQueueClient
                     // Assign a SessionId for the message
                     message.SessionId = sessionId;
                     messagesToSend.Add(message);
+
+                    // Write the sessionId, body of the message to the console
+                    Console.WriteLine($"Sending SessionId: {message.SessionId}, message: {Encoding.UTF8.GetString(message.Body)}");
                 }
 
                 // Send a batch of messages corresponding to this sessionId to the queue

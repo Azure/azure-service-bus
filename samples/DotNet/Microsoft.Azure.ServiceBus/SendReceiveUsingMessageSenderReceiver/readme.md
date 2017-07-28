@@ -3,8 +3,8 @@
 In order to run the sample in this directory, replace the following bracketed values in the `Program.cs` file.
 
 ```csharp
-private const string ServiceBusConnectionString = "{Service Bus connection string}";
-private const string QueueName = "{Queue path/name}";
+const string ServiceBusConnectionString = "{Service Bus connection string}";
+const string QueueName = "{Queue path/name}";
 ```
 
 Once you replace the above values run the following from a command prompt:
@@ -48,13 +48,13 @@ code to renew message locks, complete messages and define how to achieve a basic
     using Microsoft.Azure.ServiceBus;
     ```
 
-1. Add the following private variables to the `Program` class, and replace the placeholder values:
+1. Add the following variables to the `Program` class, and replace the placeholder values:
     
     ```csharp
-    static MessageSender messageSender;
-    static MessageReceiver messageReceiver;
+    static IMessageSender messageSender;
+    static IMessageReceiver messageReceiver;
     const string ServiceBusConnectionString = "{Service Bus connection string}";
-    const string QueueName = "{Queue path/name}";
+    const string QueueName = "{Queue Name}";
     ```
 
 1. Create a new Task called `ReceiveMessagesAsync` that knows how to handle received messages with the following code:
@@ -111,14 +111,14 @@ code to renew message locks, complete messages and define how to achieve a basic
         messageSender = new MessageSender(ServiceBusConnectionString, QueueName);
         messageReceiver = new MessageReceiver(ServiceBusConnectionString, QueueName, ReceiveMode.PeekLock);
 
-		Console.WriteLine("Press any key to exit after receiving all the messages.");
-        Console.ReadLine();
-
 		// Send Messages
-        await SendMessagesToQueue(10);
+        await SendMessagesToQueue(numberOfMessages);
 
 		// Receive Messages
-        await ReceiveMessagesAsync(numberOfMessages);        
+        await ReceiveMessagesAsync(numberOfMessages);
+
+		Console.WriteLine("Completed Receiving all messages... Press any key to exit");
+		Console.ReadLine();
 
 		// Close the messageSender and messageReceiver after processing all needed messages.
         await messageSender.CloseAsync();

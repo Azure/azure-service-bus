@@ -3,8 +3,8 @@
 In order to run the sample in this directory, replace the following bracketed values in the `Program.cs` file.
 
 ```csharp
-private const string ServiceBusConnectionString = "{Service Bus connection string}";
-private const string QueueName = "{Queue path/name}";
+const string ServiceBusConnectionString = "{Service Bus connection string}";
+const string QueueName = "{Queue path/name}";
 ```
 
 Once you replace the above values run the following from a command prompt:
@@ -50,7 +50,7 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
     using Microsoft.Azure.ServiceBus;
     ```
 
-1. Add the following private variables to the `Program` class, and replace the placeholder values:
+1. Add the following variables to the `Program` class, and replace the placeholder values:
     
     ```csharp
     const string ServiceBusConnectionString = "{Service Bus connection string}";
