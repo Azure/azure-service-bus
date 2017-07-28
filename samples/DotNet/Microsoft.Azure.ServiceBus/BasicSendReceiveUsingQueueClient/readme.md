@@ -147,7 +147,7 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
         await SendMessagesToQueue(10);        
 
         Console.WriteLine("Press any key to exit after receiving all the messages.");
-        Console.ReadLine();
+        Console.ReadKey();
 
         await queueClient.CloseAsync();
     }

@@ -124,7 +124,7 @@ code to renew message locks, complete messages and define how to achieve a basic
         await ReceiveMessagesAsync(numberOfMessages);
 
 		Console.WriteLine("Completed Receiving all messages... Press any key to exit");
-		Console.ReadLine();
+		Console.ReadKey();
 
 		// Close the messageSender and messageReceiver after processing all needed messages.
         await messageSender.CloseAsync();

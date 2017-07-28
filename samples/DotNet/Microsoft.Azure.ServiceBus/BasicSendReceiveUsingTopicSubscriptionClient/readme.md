@@ -156,7 +156,7 @@ little code writing as possible.
 		// Send Messages
         await SendMessagesAsync(numberOfMessages);      
 
-        Console.ReadLine();
+        Console.ReadKey();
 
         await subscriptionClient.CloseAsync();
         await topicClient.CloseAsync();

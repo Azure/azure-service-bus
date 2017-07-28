@@ -166,7 +166,7 @@ quickly or the scenarios where they need basic session based send/receive and wa
 		// Send messages with sessionId set
         await SendSessionMessagesAsync(numberOfSessions, numberOfMessagesPerSession);      
 
-        Console.ReadLine();
+        Console.ReadKey();
 
         await queueClient.CloseAsync();
     }
