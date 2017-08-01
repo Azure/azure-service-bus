@@ -10,10 +10,10 @@
 	 	<dependency>
 	  		<groupId>com.microsoft.azure</groupId>
 	  		<artifactId>azure-servicebus</artifactId>
-	  		<version>1.0.0-PREVIEW</version>
+	  		<version>1.0.0-PREVIEW3</version>
 	 	</dependency>
 	</dependencies>
 
 	<groupId>com.microsoft.azure</groupId>
-	<version>1.0.0-PREVIEW</version>
+	<version>1.0.0-PREVIEW3</version>
 </project>
