@@ -1,12 +1,11 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 package com.microsoft.azure.servicebus.samples;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-/**
- * Created by binzywu on 8/1/2017.
- */
 public class Log {
     public static boolean turnOffDateLogging = false;
 

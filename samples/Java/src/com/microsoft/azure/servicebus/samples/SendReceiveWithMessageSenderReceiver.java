@@ -1,3 +1,5 @@
+// Copyright (c) Microsoft. All rights reserved.
+// Licensed under the MIT license. See LICENSE file in the project root for full license information.
 package com.microsoft.azure.servicebus.samples;
 
 import com.microsoft.azure.servicebus.*;
@@ -9,8 +11,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
 public class SendReceiveWithMessageSenderReceiver {
-    private static final String connectionString = "Endpoint=sb://INT7-BN3-008-stresssuite25.servicebus.int7.windows-int.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=N46oKT+awT8vGu9gYFkAqeffA3hiVyVhMY78HPwv+/o=";
-    private static final String queueName = "queue1";
+    private static final String connectionString = "{connectiong string}";
+    private static final String queueName = "{queue name}";
     private static IMessageReceiver messageReceiver;
     private static IMessageSender messageSender;
     private static int totalSend = 100;
