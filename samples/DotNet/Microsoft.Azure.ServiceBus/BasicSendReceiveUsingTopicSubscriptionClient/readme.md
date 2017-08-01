@@ -3,6 +3,8 @@
 In order to run the sample in this directory, replace the following bracketed values in the `Program.cs` file.
 
 ```csharp
+// Connection String for the namespace can be obtained from the Azure portal under the 
+// `Shared Access policies` section.
 const string ServiceBusConnectionString = "{Service Bus connection string}";
 const string TopicName = "{Topic Name}";
 const string SubscriptionName = "{Subscription Name}";
@@ -25,13 +27,17 @@ separate methods as if they were different apps.
 For further information on how to create this sample on your own, follow the rest of the tutorial.
 
 ## What will be accomplished
+Topics are similar to Queues for the send side of the application. However unlike Queues, Topic can have zero or more subscriptions,
+from which messages can be retrieved and each of subscription act like independent queues. Whether a message is selected into the
+subscription is determined by the Filter condition for the subscription.
+
 In this tutorial, we will write a console application to send messages to the topic using topicClient and receive those messages using 
 SubscriptionClient. TopicClient offers a simple API surface to send message(or messages in a batch). SubscriptionClient offers a simple 
-MessagePump model to receive messages. Once a message process handler is registered as shown below, the User code does not have to write 
-explicit code to receive messages and if configured using `MessageHandlerOptions`, does not have to write explicit code to renew message 
-locks or complete messages or improve the degree of concurrency of message processing. Hence the Subscriptionclient can be used in scenarios 
-where the User wants to get started quickly or the scenarios where they need basic send/receive and wants to achieve that with as 
-little code writing as possible.
+MessagePump model to receive messages. TopicClient cannot be used to receive messages and SubscriptionClient cannot be used to send messages.
+Once a message process handler is registered as shown below, the User code does not have to write explicit code to receive messages and if
+configured using `MessageHandlerOptions`, does not have to write explicit code to renew message locks or complete messages or improve the 
+degree of concurrency of message processing. Hence the Subscriptionclient can be used in scenarios where the User wants to get started 
+quickly or the scenarios where they need basic send/receive and wants to achieve that with as little code writing as possible.
 
 ## Prerequisites
 1. [.NET Core](https://www.microsoft.com/net/core)
@@ -78,7 +84,7 @@ little code writing as possible.
         Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
 		
 		// Complete the message so that it is not received again.
-        // This can be done only if the subscriptionClient is opened in ReceiveMode.PeekLock mode.
+        // This can be done only if the subscriptionClient is opened in ReceiveMode.PeekLock mode (which is default).
         await subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
     }
 	```
@@ -86,6 +92,7 @@ little code writing as possible.
 1. Create a new Task called `ExceptionReceivedHandler` to look at the exceptions received on the MessagePump. This will be useful for debugging purposes.
 
 	```csharp
+	// Use this Handler to look at the exceptions received on the MessagePump
 	static Task ExceptionReceivedHandler(ExceptionReceivedEventArgs exceptionReceivedEventArgs)
     {
 		Console.WriteLine($"Message handler encountered an exception {exceptionReceivedEventArgs.Exception}.");
@@ -100,9 +107,14 @@ little code writing as possible.
 	static void RegisterOnMessageHandlerAndReceiveMessages()
     {
 		// Configure the MessageHandler Options in terms of exception handling, number of concurrent messages to deliver etc.
-        MessageHandlerOptions messageHandlerOptions = new MessageHandlerOptions(ExceptionReceivedHandler)
+        var messageHandlerOptions = new MessageHandlerOptions(ExceptionReceivedHandler)
         {
+			// Maximum number of Concurrent calls to the callback `ProcessMessagesAsync`, set to 1 for simplicity.
+            // Set it according to how many messages the application wants to process in parallel.
 			MaxConcurrentCalls = 1,
+
+			// Indicates whether MessagePump should automatically complete the messages after returning from User Callback.
+            // False below indicates the Complete will be handled by the User Callback as in `ProcessMessagesAsync` below.
             AutoComplete = false
         };
 
@@ -121,10 +133,11 @@ little code writing as possible.
 			try
 			{
 				// Create a new message to send to the topic
-				var message = new Message(Encoding.UTF8.GetBytes($"Message {i}"));
+				string messageBody = $"Message {i}";
+				var message = new Message(Encoding.UTF8.GetBytes(messageBody));
 
 				// Write the body of the message to the console
-				Console.WriteLine($"Sending message: {Encoding.UTF8.GetString(message.Body)}");
+				Console.WriteLine($"Sending message: {messageBody}");
 
 				// Send the message to the topic
 				await topicClient.SendAsync(message);

@@ -3,8 +3,10 @@
 In order to run the sample in this directory, replace the following bracketed values in the `Program.cs` file.
 
 ```csharp
+// Connection String for the namespace can be obtained from the Azure portal under the 
+// `Shared Access policies` section.
 const string ServiceBusConnectionString = "{Service Bus connection string}";
-const string QueueName = "{Queue path/name}";
+const string QueueName = "{Queue Name}";
 ```
 
 Once you replace the above values run the following from a command prompt:
@@ -26,8 +28,8 @@ For further information on how to create this sample on your own, follow the res
 ## What will be accomplished
 In this tutorial, we will write a console application to send and receive messages to a ServiceBus queue using MessageSender and MessageReceiver.
 MessageSender and MessageReceiver APIs offer a more richer API surface in terms of being able to Defer Messages, Receive Deferred Messages, 
-Peek Messages etc. Thus it allows the User a more granular control on processing of messages but that also means the User has to write more
-code to renew message locks, complete messages and define how to achieve a basic degree of concurrency while processing messages.
+Peek Messages etc. Thus it allows the User a more granular control on processing of messages than `QueueClient` but that also means the User has 
+to write more code to renew message locks, complete messages and define how to achieve a basic degree of concurrency while processing messages.
 
 ## Prerequisites
 1. [.NET Core](https://www.microsoft.com/net/core)
@@ -57,10 +59,10 @@ code to renew message locks, complete messages and define how to achieve a basic
 1. Add the following variables to the `Program` class, and replace the placeholder values:
     
     ```csharp
-    static IMessageSender messageSender;
-    static IMessageReceiver messageReceiver;
     const string ServiceBusConnectionString = "{Service Bus connection string}";
     const string QueueName = "{Queue Name}";
+	static IMessageSender messageSender;
+    static IMessageReceiver messageReceiver;
     ```
 
 1. Create a new Task called `ReceiveMessagesAsync` that knows how to handle received messages with the following code:
@@ -77,7 +79,7 @@ code to renew message locks, complete messages and define how to achieve a basic
             Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
 
             // Complete the message so that it is not received again.
-            // This can be done only if the MessageReceiver is created in ReceiveMode.PeekLock mode.
+            // This can be done only if the MessageReceiver is created in ReceiveMode.PeekLock mode (which is default).
             await messageReceiver.CompleteAsync(message.SystemProperties.LockToken);
         }
     }
@@ -93,10 +95,11 @@ code to renew message locks, complete messages and define how to achieve a basic
 			for (var i = 0; i < numberOfMessagesToSend; i++)
 			{
 				// Create a new message to send to the queue
-				var message = new Message(Encoding.UTF8.GetBytes($"Message {i}"));
+				string messageBody = $"Message {i}";
+				var message = new Message(Encoding.UTF8.GetBytes(messageBody));
 
 				// Write the body of the message to the console
-				Console.WriteLine($"Sending message: {Encoding.UTF8.GetString(message.Body)}");
+				Console.WriteLine($"Sending message: {messageBody}");
 
 				// Send the message to the queue
 				await messageSender.SendAsync(message);

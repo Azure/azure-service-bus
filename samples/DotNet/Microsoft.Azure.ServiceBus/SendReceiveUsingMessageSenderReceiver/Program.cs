@@ -11,8 +11,10 @@ namespace SendReceiveUsingMessageSenderReceiver
 
     class Program
     {
-        const string ServiceBusConnectionString = "{Service Bus connection string}";
-        const string QueueName = "{Queue Name of a Queue that supports sessions}";
+        // Connection String for the namespace can be obtained from the Azure portal under the 
+        // 'Shared Access policies' section.
+        const string ServiceBusConnectionString = "{ServiceBus connection string}";
+        const string QueueName = "{Queue Name}";
         static IMessageSender messageSender;
         static IMessageReceiver messageReceiver;
 
@@ -54,7 +56,7 @@ namespace SendReceiveUsingMessageSenderReceiver
                 Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
 
                 // Complete the message so that it is not received again.
-                // This can be done only if the MessageReceiver is created in ReceiveMode.PeekLock mode.
+                // This can be done only if the MessageReceiver is created in ReceiveMode.PeekLock mode (which is default).
                 await messageReceiver.CompleteAsync(message.SystemProperties.LockToken);
             }
         }
@@ -66,10 +68,11 @@ namespace SendReceiveUsingMessageSenderReceiver
                 for (var i = 0; i < numberOfMessagesToSend; i++)
                 {
                     // Create a new message to send to the queue
-                    var message = new Message(Encoding.UTF8.GetBytes($"Message {i}"));
+                    string messageBody = $"Message {i}";
+                    var message = new Message(Encoding.UTF8.GetBytes(messageBody));
 
                     // Write the body of the message to the console
-                    Console.WriteLine($"Sending message: {Encoding.UTF8.GetString(message.Body)}");
+                    Console.WriteLine($"Sending message: {messageBody}");
 
                     // Send the message to the queue
                     await messageSender.SendAsync(message);

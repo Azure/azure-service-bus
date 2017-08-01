@@ -12,7 +12,9 @@ namespace SessionSendReceiveUsingSessionClient
 
     class Program
     {
-        const string ServiceBusConnectionString = "{Service Bus connection string}";
+        // Connection String for the namespace can be obtained from the Azure portal under the 
+        // 'Shared Access policies' section.
+        const string ServiceBusConnectionString = "{ServiceBus connection string}";
         const string QueueName = "{Queue Name of a Queue that supports sessions}";
         static IMessageSender messageSender;
         static ISessionClient sessionClient;
@@ -51,14 +53,19 @@ namespace SessionSendReceiveUsingSessionClient
             while(numberOfSessions-- > 0)
             {
                 int messagesReceivedPerSession = 0;
+
                 IMessageSession session = await sessionClient.AcceptMessageSessionAsync();
                 if(session != null)
                 {
-                    while(messagesReceivedPerSession++ < messagesPerSession)
+                    // Messages within a session will always arrive in order.
+                    Console.WriteLine($"Received Session: {session.SessionId}");
+                    Console.WriteLine($"Receiving all messages for this Session");
+
+                    while (messagesReceivedPerSession++ < messagesPerSession)
                     {
                         Message message = await session.ReceiveAsync();
 
-                        Console.WriteLine($"Received Session: {session.SessionId} message: SequenceNumber: {message.SystemProperties.SequenceNumber}");
+                        Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
 
                         // Complete the message so that it is not received again.
                         // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode (which is default).
@@ -87,14 +94,14 @@ namespace SessionSendReceiveUsingSessionClient
                 for (int j = 0; j < messagesPerSession; j++)
                 {
                     // Create a new message to send to the queue
-                    var message = new Message(Encoding.UTF8.GetBytes("test" + j));
-                    message.Label = "test" + j;
+                    string messageBody = "test" + j;
+                    var message = new Message(Encoding.UTF8.GetBytes(messageBody));
                     // Assign a SessionId for the message
                     message.SessionId = sessionId;
                     messagesToSend.Add(message);
 
                     // Write the sessionId, body of the message to the console
-                    Console.WriteLine($"Sending SessionId: {message.SessionId}, message: {Encoding.UTF8.GetString(message.Body)}");
+                    Console.WriteLine($"Sending SessionId: {message.SessionId}, message: {messageBody}");
                 }
 
                 // Send a batch of messages corresponding to this sessionId to the queue

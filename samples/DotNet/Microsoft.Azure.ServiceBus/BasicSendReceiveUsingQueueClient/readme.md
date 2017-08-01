@@ -3,8 +3,10 @@
 In order to run the sample in this directory, replace the following bracketed values in the `Program.cs` file.
 
 ```csharp
+// Connection String for the namespace can be obtained from the Azure portal under the 
+// `Shared Access policies` section.
 const string ServiceBusConnectionString = "{ServiceBus connection string}";
-const string QueueName = "{Queue path/name}";
+const string QueueName = "{Queue Name}";
 ```
 
 Once you replace the above values run the following from a command prompt:
@@ -60,7 +62,7 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
     
     ```csharp
     const string ServiceBusConnectionString = "{Service Bus connection string}";
-    const string QueueName = "{Queue path/name}";
+    const string QueueName = "{Queue Name}";
     static IQueueClient queueClient;
     ```
 
@@ -73,7 +75,7 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
         Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
 		
 		// Complete the message so that it is not received again.
-        // This can be done only if the queueClient is opened in ReceiveMode.PeekLock mode.
+        // This can be done only if the queueClient is opened in ReceiveMode.PeekLock mode (which is default).
         await queueClient.CompleteAsync(message.SystemProperties.LockToken);
     }
 	```
@@ -81,6 +83,7 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
 1. Create a new Task called `ExceptionReceivedHandler` to look at the exceptions received on the MessagePump. This will be useful for debugging purposes.
 
 	```csharp
+	// Use this Handler to look at the exceptions received on the MessagePump
 	static Task ExceptionReceivedHandler(ExceptionReceivedEventArgs exceptionReceivedEventArgs)
     {
 		Console.WriteLine($"Message handler encountered an exception {exceptionReceivedEventArgs.Exception}.");
@@ -95,9 +98,14 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
 	static void RegisterOnMessageHandlerAndReceiveMessages()
     {
 		// Configure the MessageHandler Options in terms of exception handling, number of concurrent messages to deliver etc.
-        MessageHandlerOptions messageHandlerOptions = new MessageHandlerOptions(ExceptionReceivedHandler)
+        var messageHandlerOptions = new MessageHandlerOptions(ExceptionReceivedHandler)
         {
+			// Maximum number of Concurrent calls to the callback `ProcessMessagesAsync`, set to 1 for simplicity.
+            // Set it according to how many messages the application wants to process in parallel.
 			MaxConcurrentCalls = 1,
+
+			// Indicates whether MessagePump should automatically complete the messages after returning from User Callback.
+            // False value below indicates the Complete will be handled by the User Callback as seen in `ProcessMessagesAsync`.
             AutoComplete = false
         };
 
@@ -117,10 +125,11 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
 			try
 			{
 				// Create a new message to send to the queue
-				var message = new Message(Encoding.UTF8.GetBytes($"Message {i}"));
+				string messageBody = $"Message {i}";
+				var message = new Message(Encoding.UTF8.GetBytes(messageBody));
 
 				// Write the body of the message to the console
-				Console.WriteLine($"Sending message: {Encoding.UTF8.GetString(message.Body)}");
+				Console.WriteLine($"Sending message: {messageBody}");
 
 				// Send the message to the queue
 				await queueClient.SendAsync(message);

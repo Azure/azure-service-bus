@@ -12,6 +12,8 @@ namespace BasicSendReceiveUsingQueueClient
 
     class Program
     {
+        // Connection String for the namespace can be obtained from the Azure portal under the 
+        // 'Shared Access policies' section.
         const string ServiceBusConnectionString = "{ServiceBus connection string}";
         const string QueueName = "{Queue Name}";
         static IQueueClient queueClient;
@@ -44,9 +46,14 @@ namespace BasicSendReceiveUsingQueueClient
         static void RegisterOnMessageHandlerAndReceiveMessages()
         {
             // Configure the MessageHandler Options in terms of exception handling, number of concurrent messages to deliver etc.
-            MessageHandlerOptions messageHandlerOptions = new MessageHandlerOptions(ExceptionReceivedHandler)
+            var messageHandlerOptions = new MessageHandlerOptions(ExceptionReceivedHandler)
             {
+                // Maximum number of Concurrent calls to the callback `ProcessMessagesAsync`, set to 1 for simplicity.
+                // Set it according to how many messages the application wants to process in parallel.
                 MaxConcurrentCalls = 1,
+
+                // Indicates whether MessagePump should automatically complete the messages after returning from User Callback.
+                // False below indicates the Complete will be handled by the User Callback as in `ProcessMessagesAsync` below.
                 AutoComplete = false
             };
 
@@ -87,10 +94,11 @@ namespace BasicSendReceiveUsingQueueClient
                 for (var i = 0; i < numberOfMessagesToSend; i++)
                 {
                     // Create a new message to send to the queue
-                    var message = new Message(Encoding.UTF8.GetBytes($"Message {i}"));
+                    string messageBody = $"Message {i}";
+                    var message = new Message(Encoding.UTF8.GetBytes(messageBody));
 
                     // Write the body of the message to the console
-                    Console.WriteLine($"Sending message: {Encoding.UTF8.GetString(message.Body)}");
+                    Console.WriteLine($"Sending message: {messageBody}");
 
                     // Send the message to the queue
                     await queueClient.SendAsync(message);

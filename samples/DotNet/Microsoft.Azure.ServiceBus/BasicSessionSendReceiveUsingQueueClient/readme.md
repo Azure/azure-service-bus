@@ -3,6 +3,8 @@
 In order to run the sample in this directory, replace the following bracketed values in the `Program.cs` file.
 
 ```csharp
+// Connection String for the namespace can be obtained from the Azure portal under the 
+// `Shared Access policies` section.
 const string ServiceBusConnectionString = "{Service Bus connection string}";
 const string QueueName = "{Queue Name of a Queue that supports sessions}";
 ```
@@ -25,12 +27,13 @@ For further information on how to create this sample on your own, follow the res
 
 ## What will be accomplished
 In this tutorial, we will write a console application to send and receive sessionful messages to a ServiceBus queue using a QueueClient.
-Sending session based messages to a queue using QueueClient is same as sending other messages but the messages are stamped with an additional 
-`SessionId` property. QueueClient offers a simple SessionPump model to receive messages related to a session.
-Once a session handler is registered as shown below, the User code does not have to write explicit code to receive sessions and 
-if configured using `SessionHandlerOptions`, does not have to write explicit code to renew session locks or complete messages or improve 
-the degree of concurrency of session processing. Hence the queueClient can be used in scenarios where the User wants to get started 
-quickly or the scenarios where they need basic session based send/receive and wants to achieve that with as little code writing as possible.
+Sessions are used in scenarios where User requires unbounded sequences of related messages. Messages within a session are always delivered
+in a First In First Out Order. Sending session based messages to a queue using QueueClient is same as sending other messages but the 
+messages are stamped with an additional `SessionId` property. QueueClient offers a simple SessionPump model to receive messages related 
+to a session. Once a session handler is registered as shown below, the User code does not have to write explicit code to receive sessions 
+and if configured using `SessionHandlerOptions`, does not have to write explicit code to renew session locks or complete messages or improve 
+the degree of concurrency of session processing. Hence the queueClient can be used in scenarios where the User wants to get started quickly
+or the scenarios where they need basic session based send/receive and wants to achieve that with as little code writing as possible.
 
 ## Prerequisites
 1. [.NET Core](https://www.microsoft.com/net/core)
@@ -70,7 +73,7 @@ quickly or the scenarios where they need basic session based send/receive and wa
 	```csharp
 	static async Task ProcessSessionMessagesAsync(IMessageSession session, Message message, CancellationToken token)
     {
-		Console.WriteLine($"Received Session: {session.SessionId} message: SequenceNumber: {message.SystemProperties.SequenceNumber}");
+		Console.WriteLine($"Received Session: {session.SessionId} message: SequenceNumber: {message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
 
         // Complete the message so that it is not received again.
         // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode (which is default).
@@ -85,6 +88,7 @@ quickly or the scenarios where they need basic session based send/receive and wa
 1. Create a new Task called `ExceptionReceivedHandler` to look at the exceptions received on the MessagePump. This will be useful for debugging purposes.
 
 	```csharp
+	// Use this Handler to look at the exceptions received on the SessionPump
 	static Task ExceptionReceivedHandler(ExceptionReceivedEventArgs exceptionReceivedEventArgs)
     {
 		Console.WriteLine($"Message handler encountered an exception {exceptionReceivedEventArgs.Exception}.");
@@ -99,11 +103,23 @@ quickly or the scenarios where they need basic session based send/receive and wa
     static void RegisterOnSessionHandlerAndReceiveSessionMessages()
     {
 		// Configure the SessionHandler Options in terms of exception handling, number of concurrent sessions to deliver etc.
-        SessionHandlerOptions sessionHandlerOptions =
+        var sessionHandlerOptions =
 			new SessionHandlerOptions(ExceptionReceivedHandler)
             {
+				// Maximum number of Concurrent calls to the callback `ProcessSessionMessagesAsync`
+                // Value 2 below indicates the callback can be called with 2 messages in parallel.
+                // Set it according to how many messages the application wants to process in parallel.
 				MaxConcurrentSessions = 2,
+
+				// Indicates the maximum time the Session Pump should wait for receiving messages for sessions.
+                // If no message is received within the specified time, the pump will close that session and try to get messages
+                // from a different session. Default is to wait for 1 minute to fetch messages for a session. Set to a 1 second
+                // value here to allow the sample execution to finish fast but ideally leave this as 1 minute unless there 
+                // is a specific reason to timeout earlier.
                 MessageWaitTimeout = TimeSpan.FromSeconds(1),
+
+				// Indicates whether SessionPump should automatically complete the messages after returning from User Callback.
+                // False below indicates the Complete will be handled by the User Callback as in `ProcessSessionMessagesAsync`.
                 AutoComplete = false
             };
 
@@ -131,11 +147,14 @@ quickly or the scenarios where they need basic session based send/receive and wa
             for (int j = 0; j < messagesPerSession; j++)
             {
 				// Create a new message to send to the queue
-                var message = new Message(Encoding.UTF8.GetBytes("test" + j));
-                message.Label = "test" + j;
+				string messageBody = "test" + j;
+                var message = new Message(Encoding.UTF8.GetBytes(messageBody));
                 // Assign a SessionId for the message
                 message.SessionId = sessionId;
                 messagesToSend.Add(message);
+
+				// Write the sessionId, body of the message to the console
+                Console.WriteLine($"Sending SessionId: {message.SessionId}, message: {messageBody}");
             }
 
             // Send a batch of messages corresponding to this sessionId to the queue
