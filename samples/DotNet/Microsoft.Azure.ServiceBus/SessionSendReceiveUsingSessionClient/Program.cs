@@ -18,6 +18,7 @@ namespace SessionSendReceiveUsingSessionClient
         const string QueueName = "{Queue Name of a Queue that supports sessions}";
         static IMessageSender messageSender;
         static ISessionClient sessionClient;
+        const string SessionPrefix = "session-prefix";
 
         static void Main(string[] args)
         {
@@ -50,16 +51,23 @@ namespace SessionSendReceiveUsingSessionClient
 
         static async Task ReceiveSessionMessagesAsync(int numberOfSessions, int messagesPerSession)
         {
-            while(numberOfSessions-- > 0)
+            Console.WriteLine("===================================================================");
+            Console.WriteLine("Accepting sessions in the reverse order of sends for demo purposes");
+            Console.WriteLine("===================================================================");
+
+            for (int i = 0; i < numberOfSessions; i++)
             {
                 int messagesReceivedPerSession = 0;
 
-                IMessageSession session = await sessionClient.AcceptMessageSessionAsync();
+                // AcceptMessageSessionAsync(i.ToString()) as below with session id as parameter will try to get a session with that sessionId.
+                // AcceptMessageSessionAsync() without any messages will try to get any available session with messages associated with that session.
+                IMessageSession session = await sessionClient.AcceptMessageSessionAsync(SessionPrefix + i.ToString());
+
                 if(session != null)
                 {
                     // Messages within a session will always arrive in order.
-                    Console.WriteLine($"Received Session: {session.SessionId}");
-                    Console.WriteLine($"Receiving all messages for this Session");
+                    Console.WriteLine("=====================================");
+                    Console.WriteLine($"Received Session: {session.SessionId}");                    
 
                     while (messagesReceivedPerSession++ < messagesPerSession)
                     {
@@ -72,6 +80,9 @@ namespace SessionSendReceiveUsingSessionClient
                         await session.CompleteAsync(message.SystemProperties.LockToken);
                     }
 
+                    Console.WriteLine($"Received all messages for Session: {session.SessionId}");
+                    Console.WriteLine("=====================================");
+
                     // Close the Session after receiving all messages from the session
                     await session.CloseAsync();
                 }
@@ -79,15 +90,13 @@ namespace SessionSendReceiveUsingSessionClient
         }
 
         static async Task SendSessionMessagesAsync(int numberOfSessions, int messagesPerSession)
-        {
-            const string SessionPrefix = "session";
-
+        {      
             if (numberOfSessions == 0 || messagesPerSession == 0)
             {
                 await Task.FromResult(false);
             }
 
-            for (int i = 0; i < numberOfSessions; i++)
+            for (int i = numberOfSessions - 1; i >= 0; i--)
             {
                 var messagesToSend = new List<Message>();
                 string sessionId = SessionPrefix + i;
@@ -108,7 +117,9 @@ namespace SessionSendReceiveUsingSessionClient
                 await messageSender.SendAsync(messagesToSend);
             }
 
+            Console.WriteLine("=====================================");
             Console.WriteLine($"Sent {messagesPerSession} messages each for {numberOfSessions} sessions.");
+            Console.WriteLine("=====================================");
         }
     }
 }
