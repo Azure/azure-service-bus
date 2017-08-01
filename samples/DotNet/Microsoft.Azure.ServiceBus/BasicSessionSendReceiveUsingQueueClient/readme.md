@@ -107,8 +107,9 @@ or the scenarios where they need basic session based send/receive and wants to a
 			new SessionHandlerOptions(ExceptionReceivedHandler)
             {
 				// Maximum number of Concurrent calls to the callback `ProcessSessionMessagesAsync`
-                // Value 2 below indicates the callback can be called with 2 messages in parallel.
-                // Set it according to how many messages the application wants to process in parallel.
+                // Value 2 below indicates the callback can be called with a message for 2 unique
+                // session Id's in parallel. Set it according to how many messages the application 
+                // wants to process in parallel.
 				MaxConcurrentSessions = 2,
 
 				// Indicates the maximum time the Session Pump should wait for receiving messages for sessions.
