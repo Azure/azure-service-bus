@@ -27,6 +27,8 @@ public class BasicSendReceiveWithQueueClient {
         queueClient = new QueueClient(new ConnectionStringBuilder(connectionString, queueName), ReceiveMode.PeekLock);
 
         // send and receive
+        // with MessageHandlerOptions, these parameters can be specified
+        // 1. max
         queueClient.registerMessageHandler(new MessageHandler(queueClient), new MessageHandlerOptions(1, false, Duration.ofMinutes(1)));
         for (int i = 0; i < totalSend; i++) {
             int j = i;
