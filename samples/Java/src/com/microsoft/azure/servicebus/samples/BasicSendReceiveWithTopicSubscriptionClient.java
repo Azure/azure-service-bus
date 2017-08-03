@@ -8,6 +8,7 @@ import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class BasicSendReceiveWithTopicSubscriptionClient {
     // Connection String for the namespace can be obtained from the Azure portal under the
@@ -18,7 +19,7 @@ public class BasicSendReceiveWithTopicSubscriptionClient {
     private static ITopicClient topicClient;
     private static ISubscriptionClient subscriptionClient;
     private static int totalSend = 100;
-    private static int totalReceived = 0;
+    private static AtomicInteger totalReceived = new AtomicInteger(0);
 
     public static void main(String[] args) throws Exception {
 
@@ -28,7 +29,7 @@ public class BasicSendReceiveWithTopicSubscriptionClient {
         Log.log("Create topic client.");
         topicClient = new TopicClient(new ConnectionStringBuilder(connectionString, topicName));
         Log.log("Create subscription client.");
-        subscriptionClient = new SubscriptionClient(new ConnectionStringBuilder(connectionString, topicName + "/subscriptions/" + subscriptionName), ReceiveMode.PeekLock);
+        subscriptionClient = new SubscriptionClient(new ConnectionStringBuilder(connectionString, topicName + "/subscriptions/" + subscriptionName), ReceiveMode.PEEKLOCK);
 
         // send and receive
         subscriptionClient.registerMessageHandler(new MessageHandler(subscriptionClient), new MessageHandlerOptions(1, false, Duration.ofMinutes(1)));
@@ -38,7 +39,7 @@ public class BasicSendReceiveWithTopicSubscriptionClient {
             topicClient.sendAsync(new Message("" + i)).thenRunAsync(() -> { Log.log("Sent message #%d.", j);});
         }
 
-        while(totalReceived != totalSend) {
+        while(totalReceived.get() != totalSend) {
             Thread.sleep(1000);
         }
 
@@ -61,7 +62,7 @@ public class BasicSendReceiveWithTopicSubscriptionClient {
             Log.log("Received message with sq#: %d and lock token: %s.", iMessage.getSequenceNumber(), iMessage.getLockToken());
             return this.subscriptionClient.completeAsync(iMessage.getLockToken()).thenRunAsync(() -> {
                 Log.log("Completed message sq#: %d and locktoken: %s", iMessage.getSequenceNumber(), iMessage.getLockToken());
-                totalReceived++;
+                totalReceived.incrementAndGet();
             });
         }
 

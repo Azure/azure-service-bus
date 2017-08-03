@@ -8,6 +8,7 @@ import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 
 import java.time.Duration;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class BasicSendReceiveWithQueueClient {
     // Connection String for the namespace can be obtained from the Azure portal under the
@@ -16,7 +17,7 @@ public class BasicSendReceiveWithQueueClient {
     private static final String queueName = "{queue name}";
     private static IQueueClient queueClient;
     private static int totalSend = 100;
-    private static int totalReceived = 0;
+    private static AtomicInteger totalReceived = new AtomicInteger(0);
 
     public static void main(String[] args) throws Exception {
 
@@ -24,7 +25,7 @@ public class BasicSendReceiveWithQueueClient {
 
         // create client
         Log.log("Create queue client.");
-        queueClient = new QueueClient(new ConnectionStringBuilder(connectionString, queueName), ReceiveMode.PeekLock);
+        queueClient = new QueueClient(new ConnectionStringBuilder(connectionString, queueName), ReceiveMode.PEEKLOCK);
 
         // send and receive
         // with MessageHandlerOptions, these parameters can be specified
@@ -36,7 +37,7 @@ public class BasicSendReceiveWithQueueClient {
             queueClient.sendAsync(new Message("" + i)).thenRunAsync(() -> { Log.log("Sent message #%d.", j);});
         }
 
-        while(totalReceived != totalSend) {
+        while(totalReceived.get() != totalSend) {
             Thread.sleep(1000);
         }
 
@@ -57,7 +58,7 @@ public class BasicSendReceiveWithQueueClient {
             Log.log("Received message with sq#: %d and lock token: %s.", iMessage.getSequenceNumber(), iMessage.getLockToken());
             return this.client.completeAsync(iMessage.getLockToken()).thenRunAsync(() -> {
                 Log.log("Completed message sq#: %d and locktoken: %s", iMessage.getSequenceNumber(), iMessage.getLockToken());
-                totalReceived++;
+                totalReceived.incrementAndGet();
             });
         }
 
