@@ -1,0 +1,6 @@
+[submodule "dotnet"]
+	path = dotnet
+	url = https://github.com/Azure/azure-service-bus-dotnet.git
+[submodule "java"]
+	path = java
+	url = https://github.com/Azure/azure-service-bus-java.git
