@@ -4,7 +4,6 @@
 namespace BasicSessionSendReceiveUsingQueueClient
 {
     using Microsoft.Azure.ServiceBus;
-    using Microsoft.Azure.ServiceBus.Primitives;
     using System;
     using System.Collections.Generic;
     using System.Text;
