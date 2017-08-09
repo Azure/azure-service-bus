@@ -32,3 +32,6 @@ There are currently three samples with Service Bus Java Client Library
 
 #### Send and receive messages with Queue using MessageSender and MessageReceiver
 [This sample](https://github.com/Azure/azure-service-bus/tree/master/samples/Java/src/com/microsoft/azure/servicebus/samples/SendReceiveWithMessageSenderReceiver.java) demonstrates how to use MessageSender and MessageReceiver to send and receive messages from a Service Bus Queue. With sender and receiveer, the client could have full control of how the messages are sent and processed.
+
+#### Send messages with Qpid JMS and Receive with Service Bus Java Client
+[This sample](https://github.com/Azure/azure-service-bus/blob/master/samples/Java/src/com/microsoft/azure/servicebus/samples/JmsInterop.java) demonstrates how to send messages via Qpid JMS to Azure Serivce Bus and receive messages with Service Bus Java client. Please note: only BytesMessage is supported currently.
