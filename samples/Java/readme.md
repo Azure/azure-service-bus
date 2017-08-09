@@ -22,7 +22,6 @@ In order to run the sample in this directory, replace the following bracketed va
 5. Or [A ServiceBus topic](https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-dotnet-how-to-use-topics-subscriptions#1-create-a-namespace-using-the-azure-portal)
 
 ## Samples
-There are currently three samples with Service Bus Java Client Library
 
 #### Send and receive messages with Queue using QueueClient
 [This sample](https://github.com/Azure/azure-service-bus/tree/master/samples/Java/src/com/microsoft/azure/servicebus/samples/BasicSendReceiveWithQueueClient.java) demonstrates how to use QueueClient to connect to a queue and then send and receive messages with this QueueClient. It uses [`MessageHandler`](https://docs.microsoft.com/en-us/java/api/com.microsoft.azure.servicebus._queue_client.registermessagehandler) (aka MessagePump) model which simplifies the processing model for messages.
