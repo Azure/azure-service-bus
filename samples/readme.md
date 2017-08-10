@@ -3,7 +3,7 @@
 ## .NET
 
 ### Microsoft.Azure.ServiceBus
-Any samples within the `Azure.Microsoft.ServiceBus` folder target the newer .NET Standard library. Each of the sample page carries a description of the scenario covered in the sample
+Any samples within the `Microsoft.Azure.ServiceBus` folder target the newer .NET Standard library. Each of the sample page carries a description of the scenario covered in the sample
 under the `What will be accomplished` section.
 
 ### Microsoft.ServiceBus.Messaging
