@@ -4,7 +4,6 @@
 namespace BasicSendReceiveUsingQueueClient
 {
     using Microsoft.Azure.ServiceBus;
-    using Microsoft.Azure.ServiceBus.Primitives;
     using System;
     using System.Text;
     using System.Threading;
