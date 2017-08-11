@@ -48,7 +48,7 @@ define how to achieve a basic degree of concurrency while processing sessions.
 1. Add the following to your project.json, making sure that the solution references the `Microsoft.Azure.ServiceBus` project.
 
     ```json
-    "Microsoft.Azure.ServiceBus": "1.0.0-RC1"
+    "Microsoft.Azure.ServiceBus": "1.0.0"
     ```
 
 ### Write some code to send and receive messages from the queue
