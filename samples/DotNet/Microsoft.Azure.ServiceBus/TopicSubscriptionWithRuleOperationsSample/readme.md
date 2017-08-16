@@ -66,7 +66,7 @@ detailed explanation of filters.
 1. Add the following to your project.json, making sure that the solution references the `Microsoft.Azure.ServiceBus` project.
 
     ```json
-    "Microsoft.Azure.ServiceBus": "1.0.0-RC1"
+    "Microsoft.Azure.ServiceBus": "1.0.1"
     ```
 
 ### Write some code to send messages to the topic, manage rules and receive messages from the subscription
@@ -74,6 +74,7 @@ detailed explanation of filters.
    
     ```csharp
     using Microsoft.Azure.ServiceBus;
+	using Microsoft.Azure.ServiceBus.Core;
     ```
 
 1. Add the following variables to the `Program` class, and replace the placeholder values:

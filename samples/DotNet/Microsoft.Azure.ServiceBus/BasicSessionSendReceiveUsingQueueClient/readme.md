@@ -50,7 +50,7 @@ or the scenarios where they need basic session based send/receive and wants to a
 1. Add the following to your project.json, making sure that the solution references the `Microsoft.Azure.ServiceBus` project.
 
     ```json
-    "Microsoft.Azure.ServiceBus": "1.0.0"
+    "Microsoft.Azure.ServiceBus": "1.0.1"
     ```
 
 ### Write some code to send and receive messages from the queue

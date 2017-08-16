@@ -46,7 +46,7 @@ to write more code to renew message locks, complete messages and define how to a
 1. Add the following to your project.json, making sure that the solution references the `Microsoft.Azure.ServiceBus` project.
 
     ```json
-    "Microsoft.Azure.ServiceBus": "1.0.0"
+    "Microsoft.Azure.ServiceBus": "1.0.1"
     ```
 
 ### Write some code to send and receive messages from the queue
@@ -54,6 +54,7 @@ to write more code to renew message locks, complete messages and define how to a
    
     ```csharp
     using Microsoft.Azure.ServiceBus;
+	using Microsoft.Azure.ServiceBus.Core;
     ```
 
 1. Add the following variables to the `Program` class, and replace the placeholder values:
