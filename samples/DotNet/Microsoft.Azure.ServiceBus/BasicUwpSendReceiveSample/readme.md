@@ -42,7 +42,7 @@ In this tutorial, we will write a console application to send and receive messag
 1. Add the following to your csproj, to make sure that the solution references the `Microsoft.Azure.ServiceBus` project.
 
     ```json
-    "Microsoft.Azure.ServiceBus": "1.0.1"
+    "Microsoft.Azure.ServiceBus": "1.*"
     ```
 
 ### Add the following under the `Grid` Xml Tag in `MainPage.Xaml` page. These define the UI elements of Sample app:
