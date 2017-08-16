@@ -1,0 +1,18 @@
+﻿<Page
+    x:Class="BasicUwpSendReceiveSample.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:BasicUwpSendReceiveSample"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Button x:Name="sendMessageButton" Content="Send Messages" HorizontalAlignment="Left" Margin="406,208,0,0" VerticalAlignment="Top" Click="sendMessageButton_Click"/>
+        <Button x:Name="receiveMessageButton" Content="ReceiveMessages" HorizontalAlignment="Left" Margin="655,208,0,0" VerticalAlignment="Top" Click="receiveMessageButton_Click"/>
+        <TextBox x:Name="headingTextBox" HorizontalAlignment="Left" Margin="503,10,0,0" TextWrapping="Wrap" Text="UWP Send Receive Sample" VerticalAlignment="Top"/>
+        <Button x:Name="exitButton" Content="Press this Button To Exit" HorizontalAlignment="Left" Margin="523,364,0,0" VerticalAlignment="Top" Click="exitButton_Click"/>
+        <TextBox x:Name="resultTextBox" HorizontalAlignment="Left" Margin="406,467,0,0" TextWrapping="Wrap" AcceptsReturn="True" MaxHeight="172" Width="500" ScrollViewer.VerticalScrollBarVisibility="Auto" IsReadOnly="True" Header="Output" VerticalAlignment="Top"/>
+
+    </Grid>
+</Page>
