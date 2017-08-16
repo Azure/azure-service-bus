@@ -55,7 +55,7 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
 1. Add the following to your project.json, making sure that the solution references the `Microsoft.Azure.ServiceBus` project.
 
     ```json
-    "Microsoft.Azure.ServiceBus": "0.0.7-preview"
+    "Microsoft.Azure.ServiceBus": "1.0.1"
     ```
 
 ### Write some code to send messages to the topic and receive messages from the subscription
