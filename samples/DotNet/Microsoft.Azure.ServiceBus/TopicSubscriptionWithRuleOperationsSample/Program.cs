@@ -177,6 +177,7 @@ namespace TopicSubscriptionWithRuleOperationsSample
 
             Console.WriteLine($"{DateTime.Now} :: Received '{receivedMessageCount}' Messages From Subscription: {subscriptionName}");
             Console.WriteLine($"==========================================================================");
+            await subscriptionReceiver.CloseAsync();
         }
     }
 }
