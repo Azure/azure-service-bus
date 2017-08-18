@@ -7,10 +7,9 @@
       <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="1.8" jdkType="JavaSDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: com.microsoft.azure:azure-servicebus:1.0.0-RC-1" level="project" />
-    <orderEntry type="library" name="Maven: org.apache.qpid:proton-j:0.13.1" level="project" />
+    <orderEntry type="library" name="Maven: com.microsoft.azure:azure-servicebus:1.0.0" level="project" />
     <orderEntry type="library" name="Maven: org.bouncycastle:bcpkix-jdk15on:1.49" level="project" />
     <orderEntry type="library" name="Maven: org.bouncycastle:bcprov-jdk15on:1.49" level="project" />
     <orderEntry type="library" name="Maven: org.slf4j:slf4j-api:1.8.0-alpha2" level="project" />
@@ -24,5 +23,8 @@
     <orderEntry type="library" name="Maven: io.netty:netty-resolver:4.1.9.Final" level="project" />
     <orderEntry type="library" name="Maven: io.netty:netty-transport-native-epoll:linux-x86_64:4.1.9.Final" level="project" />
     <orderEntry type="library" name="Maven: io.netty:netty-codec-http:4.1.9.Final" level="project" />
+    <orderEntry type="library" name="Maven: log4j:log4j:1.2.17" level="project" />
+    <orderEntry type="library" name="Maven: org.slf4j:slf4j-log4j12:1.8.0-alpha2" level="project" />
+    <orderEntry type="library" name="Maven: org.apache.qpid:proton-j:0.19.0" level="project" />
   </component>
 </module>
