@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Java Console App",
+            "type": "java",
+            "request": "launch",
+            "stopOnEntry": true,
+            "cwd": "${workspaceRoot}",
+            "startupClass": "com.microsoft.azure.servicebus.samples.jmstopicquickstart.JmsTopicQuickstart",
+            "externalConsole": true,
+            "jdkPath": "${env:JAVA_HOME}/bin",
+            "sourcePath": ["${workspaceRoot}/src/main/java"],   // Indicates where your source (.java) files are
+            "classpath": ["${workspaceRoot}/target/classes"],    // Indicates the location of your .class files
+            "preLaunchTask": "verify",
+            "options": ["-jar","${workspaceRoot}/target/azure-servicebus-samples-jmstopicquickstart-1.0.0-jar-with-dependencies.jar"],                             // Additional options to pass to the java executable
+            "args": []                                // Command line arguments to pass to the startup class
+        }
+    ]
+}
