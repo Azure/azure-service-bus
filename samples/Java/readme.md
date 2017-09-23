@@ -1,17 +1,17 @@
 # Java Samples for Azure Service Bus
 
 This is the official set of Java samples for Azure Service Bus. The samples demonstrate basics 
-such as sending and receiving operations in the "quick starts" and more advanced scenarios in 
+such as sending and receiving operations in the "quick starts", and more advanced scenarios in 
 the feature-oriented samples. All samples are simple command line applications with minimal extra 
 ceremony. 
 
-The Java samples are split into two distict sets. One set is built with the native Azure Service Bus 
-API (azure-servicebus), the other set is built with the Apache Qpid JMS (Java Message Service) AMQP client.
+The Java samples are split into two distinct sets. One set is built with the native Azure Service Bus 
+SDK (azure-servicebus), the other set is built with the Apache Qpid JMS (Java Message Service) AMQP client.
 
 ## Azure Service Bus API 
 
-The native Azure Service Bus API is fully supported and provides unfiltered and easy access to all 
-Service Bus features. 
+The native Azure Service Bus SDK is fully supported by Microsoft (says: you can file service requests through 
+the Azure portal to get immediate help) and it provides unfiltered and easy access to all Service Bus features. 
 
 Samples:
 * [QueueClientQuickstart](./azure-servicebus/QueueClientQuickstart) - Get started using Service Bus Queues
@@ -21,8 +21,8 @@ Samples:
 
 ## Apache Qpid JMS
 
-The Qpid JMS client is a third party open source component managed by the Apache Qpid project that 
-is compatible with Service Bus via the AMQP 1.0 proptocol support and can be used as an 
+The Qpid JMS client is a third party open source component managed by the Apache Qpid project. It 
+is compatible with Service Bus via its AMQP 1.0 proptocol support and can be used as an 
 "lowest common denominator" alternative when the JMS API has been chosen for an existing application
 that is being moved onto Azure Service Bus. Mind that JMS 2.0 gestures that change the namespace topology, 
 like creating durable subscriptions or temporary queues, are not supported with Azure Service Bus via 
@@ -36,9 +36,9 @@ Samples:
 
 First, clone this git repository locally. 
 
-The samples require [creating an Azure subscription](https://azure.microsoft.com/free/) if you don't have one,  
+The samples require [creating an Azure subscription](https://azure.microsoft.com/free/) if you don't have one. You also need  
 a [Service Bus namespace](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-fundamentals-hybrid-solutions), 
-and they assume a simple basic topology of a few exemplary queues, topics, and subscriptions. To set those up, 
+and a simple basic topology of a few exemplary queues, topics, and subscriptions. To set those up, 
 with an Azure Service Bus "Standard" namespace, just click the button below and follow the further instructions 
 on the Azure Portal:
 
@@ -52,8 +52,7 @@ for Service Bus Standard includes a generous allocation of message operations, a
 large [Service Bus Premium namespace](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-premium-messaging) 
 with 4 Messaging Units for several days.
 
-If you're allergic to graphical user interfaces, you can also deploy the resource manager template 
-from the command line:
+You can also deploy the resource manager template from the command line:
 
 ## Setup using the Azure CLI
 
