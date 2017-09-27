@@ -1,0 +1,5 @@
+{
+    "sourcePath": ["src"],
+    "classPathFile": "classpath.txt",
+    "outputDirectory": "target/classes"
+}

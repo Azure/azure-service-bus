@@ -1,0 +1,125 @@
+{
+  "$schema":
+    "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "serviceBusNamespaceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Service Bus Namespace Name"
+      }
+    }
+  },
+  "variables": {
+    "apiVersion": "2017-04-01",
+    "queueName": "myqueue",
+    "topicName": "mytopic",
+    "rulesTopicName": "myrulestopic"
+  },
+  "resources": [
+      {
+      "apiVersion": "[variables('apiVersion')]",
+      "name": "[parameters('serviceBusNamespaceName')]",
+      "type": "Microsoft.ServiceBus/namespaces",
+      "location": "[resourceGroup().location]",
+      "properties": {},
+      "resources": [
+        {
+          "type": "AuthorizationRules",
+          "name": "SendListen",
+          "apiVersion": "[variables('apiVersion')]",
+          "scale": null,
+          "properties": {
+            "rights": ["Listen", "Send"]
+          },
+          "dependsOn": [
+            "[parameters('serviceBusNamespaceName')]"
+          ]
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "[variables('queueName')]",
+          "type": "queues",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]"
+          ],
+          "properties": {},
+          "resources": []
+        },       
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "[variables('topicName')]",
+          "type": "topics",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]"
+          ],
+          "properties": {},
+          "resources": [
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "mysub",
+              "type": "subscriptions",
+              "dependsOn": ["[variables('topicName')]"],
+              "properties": {},
+              "resources": []
+            }
+          ]
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "[variables('rulesTopicName')]",
+          "type": "topics",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]"
+          ],
+          "properties": {},
+          "resources": [
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "allMessages",
+              "type": "subscriptions",
+              "dependsOn": ["[variables('rulesTopicName')]"],
+              "properties": {},
+              "resources": []
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "sqlFilterOnly",
+              "type": "subscriptions",
+              "dependsOn": ["[variables('rulesTopicName')]"],
+              "properties": {},
+              "resources": []
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "sqlFilterWithAction",
+              "type": "subscriptions",
+              "dependsOn": ["[variables('rulesTopicName')]"],
+              "properties": {},
+              "resources": []
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "correlationFilter",
+              "type": "subscriptions",
+              "dependsOn": ["[variables('rulesTopicName')]"],
+              "properties": {},
+              "resources": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "serviceBusNamespaceName" : {
+      "type" : "string",
+      "value" : "[parameters('serviceBusNamespaceName')]"
+    },
+    "sendListenConnectionString": {
+      "type": "string",
+      "value":
+        "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'SendListen'),variables('apiVersion')).primaryConnectionString]"
+    }
+  }
+}
