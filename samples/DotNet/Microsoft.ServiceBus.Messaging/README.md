@@ -1,47 +1,58 @@
-# Azure Service Bus samples
+# Azure Service Bus .NET Framework samples
 
 This repository contains the official set of samples for the Azure Service Bus service (Standard and Premium), illustrating all core 
-features of Service Bus Queues and Service Bus Topics.  This samples all use the `WindowsAzure.ServiceBus` NuGet package.
+features of Service Bus Queues and Service Bus Topics.  This samples all use the `WindowsAzure.ServiceBus` NuGet package for
+the full .NET Framework.
 
-## Requirements and Setup
+# Setup 
 
-These samples run against the cloud service and require that you have an active Azure subscription available 
-for use. If you do not have a subscription, [sign up for a free trial](https://azure.microsoft.com/pricing/free-trial/), 
-which will give you **ample** credit to experiment with Service Bus Messaging. 
-  
-The samples assume that you are running on a supported Windows version and have a .NET Framework 4.5+ build environment available. 
-[Visual Studio 2015](https://www.visualstudio.com/) is recommended to explore the samples; the free community edition will work just fine.    
+First, clone this git repository locally. 
 
-To run the samples, you must perform a few setup steps, including creating and configuring a Service Bus namespace. 
-For the required [setup.ps1](setup.ps1) and [cleanup.ps1](cleanup.ps1) scripts, **you must have Azure Powershell installed** 
-([if you don't here's how](https://azure.microsoft.com/en-us/documentation/articles/powershell-install-configure/)) and properly
-configured and run these scripts from the Azure Powershell environment.
+The samples require [creating an Azure subscription](https://azure.microsoft.com/free/) if you don't have one. You also need  
+a [Service Bus namespace](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-fundamentals-hybrid-solutions), 
+and a simple basic topology of a few exemplary queues, topics, and subscriptions. To set those up, 
+with an Azure Service Bus "Standard" namespace, just click the button below and follow the further instructions 
+on the Azure Portal:
 
-Mind that this set of samples does presently use the "Azure Service Management" interface, so you need to initialize your environment access with 
-[Add-AzureAccount](https://msdn.microsoft.com/de-de/library/azure/dn790372.aspx) from the Azure Powershell command line. 
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fclemensv%2Fazure-service-bus%2Fmaster%2Fsamples%2FDotNet%2FMicrosoft.ServiceBus.Messaging%2Fscripts%2Fazuredeploy.json" target="_blank">
+    <img src="http://azuredeploy.net/deploybutton.png"/>
+</a>
 
-``` PS
-PS C:\> Add-AzureAccount
-``` 
+The free Azure subscription offer includes a service credit that will take you very far with all your 
+experiments. The prorated [monthly base fee](https://azure.microsoft.com/pricing/details/service-bus/) 
+for Service Bus Standard includes a generous allocation of message operations, and you can even run a 
+large [Service Bus Premium namespace](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-premium-messaging) 
+with 4 Messaging Units for several days.
 
-This will prompt you to log in with the account associated with your Azure subscription(s). The cached access token will eventually expire; when 
-that happens you will be asked to run Add-AzureAccount again.  
+You can also deploy the resource manager template from the command line:
 
-### Setup      
-The [setup.ps1](setup.ps1) script will either use the account and subscription you have previously configured for your Azure Powershell environment
-or prompt you to log in and, if you have multiple subscriptions associated with your account, select a subscription. 
+## Setup using PowerShell
 
-The script will then create a new Azure Service Bus namespace for running the samples and configure it with shared access signature (SAS) rules
-granting send, listen, and management access to the new namespace. The configuration settings are stored in the file "azure-msg-config.properties", 
-which is placed into the user profile directory on your machine. All samples use the same [entry-point boilerplate code](common/Main.cs) that 
-retrieves the settings from this file and then launches the sample code. The upside of this approach is that you will never have live credentials 
-left in configuration files or in code that you might accidentally check in when you fork this repository and experiment with it.   
+The PowerShell setup is functionally equivalent. You first [create a resource group](https://docs.microsoft.com/azure/azure-resource-manager/powershell-azure-resource-manager) and then [deploy the resource manager template](https://docs.microsoft.com/azure/azure-resource-manager/resource-group-template-deploy):
 
-### Cleanup
+```powershell
+New-AzureRmResourceGroup -Name {rg-name} -Location "Central US"
+New-AzureRmResourceGroupDeployment \
+      -Name {deployment-name} \
+      -ResourceGroupName {rg-name}
+      -TemplateFile scripts/azuredeploy.json \
+      -serviceBusNamespaceName {service-bus-namespace-name} 
+```
 
-The [cleanup.ps1](cleanup.ps1) script removes the created Service Bus namespace and deletes the "azure-msg-config.properties" file from 
-your user profile directory.
- 
+## Exploring and running the samples
+
+To make running the samples straightforward, there is a Powershell ([Azure PS](https://docs.microsoft.com/azure/azure-resource-manager/powershell-azure-resource-manager)) script 
+in *scripts* that will obtain the namespace connection string from your current Azure subscription, assume the entity names configured in the deployed templates, 
+and export those into a configuration file in your user directory, eliminating the need to pass arguments on the command line.
+
+The Powershell script is *scripts/setupenv.ps1*. It needs to be called with the name of the Resource Group and the Service Bus namespace name as ordinal arguments. 
+
+Run the Powershell script from the scripts directory with
+
+```bash
+./setupenv.ps1 {rg-name} {service-bus-namespace-name} 
+```
+
 ## Common Considerations
 
 Most samples use shared [entry-point boilerplate code](common/Main.cs) that loads the configuration and then launches the sample's 
