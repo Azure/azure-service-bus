@@ -22,6 +22,7 @@ namespace MessagingSamples
     using System.IO;
     using System.Threading.Tasks;
     using Microsoft.ServiceBus;
+    using System.Linq;
 
     // IF YOU ARE JUST GETTING STARTED, 
     // THESE ARE NOT THE DROIDS YOU ARE LOOKING FOR
@@ -33,8 +34,8 @@ namespace MessagingSamples
     // and then allows override of the settings from environment variables.
     class AppEntryPoint
     {
-        const string RootSampleSendKeyName = "rootsamplesend";
-        const string RootSampleManageKeyName = "rootsamplemanage";
+        const string SampleSendKeyName = "samplesend";
+        const string SampleManageKeyName = "samplemanage";
         const string BasicQueueName = "BasicQueue";
         const string PartitionedQueueName = "PartitionedQueue";
         const string DupdetectQueueName = "DupdetectQueue";
@@ -46,7 +47,7 @@ namespace MessagingSamples
         const string ManageKeyName = "samplemanage";
         static readonly string servicebusNamespace = "SERVICEBUS_NAMESPACE";
         static readonly string servicebusEntityPath = "SERVICEBUS_ENTITY_PATH";
-        static readonly string servicebusFqdnSuffix = "SERVICEBUS_FQDN_SUFFIX";
+        static readonly string servicebusFqdnEndpoint = "SERVICEBUS_FQDN_ENDPOINT";
         static readonly string servicebusSendKey = "SERVICEBUS_SEND_KEY";
         static readonly string servicebusListenKey = "SERVICEBUS_LISTEN_KEY";
         static readonly string servicebusManageKey = "SERVICEBUS_MANAGE_KEY";
@@ -67,7 +68,7 @@ namespace MessagingSamples
             {
                 {servicebusNamespace, null},
                 {servicebusEntityPath, null},
-                {servicebusFqdnSuffix, null},
+                {servicebusFqdnEndpoint, null},
                 {servicebusSendKey, null},
                 {servicebusListenKey, null},
                 {servicebusManageKey, null}
@@ -112,17 +113,18 @@ namespace MessagingSamples
             }
 
             // get overrides from the environment
-            foreach (var prop in properties)
+            foreach (var prop in properties.Keys.ToArray())
             {
-                var env = Environment.GetEnvironmentVariable(prop.Key);
+                var env = Environment.GetEnvironmentVariable(prop);
                 if (env != null)
                 {
-                    properties[prop.Key] = env;
+                    properties[prop] = env;
                 }
             }
 
-            var hostName = properties[servicebusNamespace] + "." + properties[servicebusFqdnSuffix];
-            var rootUri = new UriBuilder(Uri.UriSchemeHttp, hostName, -1, "/").ToString();
+            var endpoint = new Uri(properties[servicebusFqdnEndpoint]);
+            var hostName = endpoint.Host;
+            var rootUri = new UriBuilder(hostName).ToString();
             var sbUri = new UriBuilder("sb", hostName, -1, "/").ToString();
 
             var program = Activator.CreateInstance(typeof(Program));
@@ -131,7 +133,7 @@ namespace MessagingSamples
             {
                 var token =
                     TokenProvider.CreateSharedAccessSignatureTokenProvider(
-                        RootSampleManageKeyName,
+                        SampleManageKeyName,
                         properties[servicebusManageKey])
                         .GetWebTokenAsync(rootUri, string.Empty, true, TimeSpan.FromHours(1)).GetAwaiter().GetResult();
                 ((IDynamicSample)program).Run(sbUri, token).GetAwaiter().GetResult();
@@ -140,11 +142,11 @@ namespace MessagingSamples
             {
                 ((IDynamicSampleWithKeys)program).Run(
                     sbUri,
-                    RootSampleManageKeyName,
+                    SampleManageKeyName,
                     properties[servicebusManageKey],
-                    RootSampleSendKeyName,
+                    SampleSendKeyName,
                     properties[servicebusSendKey],
-                    RootSampleSendKeyName,
+                    SampleSendKeyName,
                     properties[servicebusListenKey]).GetAwaiter().GetResult();
             }
             else if (program is IBasicQueueSendReceiveSample)
@@ -361,7 +363,7 @@ namespace MessagingSamples
                 var connectionString =
                     ServiceBusConnectionStringBuilder.CreateUsingSharedAccessKey(
                         new Uri(rootUri),
-                        RootSampleManageKeyName,
+                        SampleManageKeyName,
                         properties[servicebusManageKey]);
 
                 ((IBasicTopicConnectionStringSample)program).Run(BasicTopicName, connectionString).GetAwaiter().GetResult();
@@ -372,7 +374,7 @@ namespace MessagingSamples
                 var connectionString =
                     ServiceBusConnectionStringBuilder.CreateUsingSharedAccessKey(
                         new Uri(rootUri),
-                        RootSampleManageKeyName,
+                        SampleManageKeyName,
                         properties[servicebusManageKey]);
 
                 ((IConnectionStringSample)program).Run(connectionString).GetAwaiter().GetResult();
@@ -382,7 +384,7 @@ namespace MessagingSamples
                 var connectionString =
                     ServiceBusConnectionStringBuilder.CreateUsingSharedAccessKey(
                         new Uri(rootUri),
-                        RootSampleManageKeyName,
+                        SampleManageKeyName,
                         properties[servicebusManageKey]);
 
                 ((IBasicQueueConnectionStringSample)program).Run(BasicQueueName, connectionString).GetAwaiter().GetResult();

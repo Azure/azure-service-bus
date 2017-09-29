@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.26730.12
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "QueuesGettingStarted", "QueuesGettingStarted", "{AD9316D9-4A79-460F-BD28-EA5631CDA045}"
 	ProjectSection(SolutionItems) = preProject
@@ -192,6 +192,14 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Autoforward", "Autoforward"
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoForward", "AutoForward\AutoForward.csproj", "{C9B6BEF6-7566-4A52-A79A-DC22F758A657}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3D14E83D-61CA-4328-9334-5A51EFCA5F7D}"
+	ProjectSection(SolutionItems) = preProject
+		scripts\azuredeploy.json = scripts\azuredeploy.json
+		README.md = README.md
+		scripts\sampleenv.ps1 = scripts\sampleenv.ps1
+		scripts\sampleenv.sh = scripts\sampleenv.sh
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -577,5 +585,8 @@ Global
 		{7DE43754-26D3-4FB3-B699-47E51BE6D33B} = {257BFB98-6725-4A20-88B5-39EE0688FADE}
 		{613E7D9B-A1F8-423D-AAB1-B2F3526122D3} = {0473E8D7-F4E9-44E8-A400-CDFFFF3738C1}
 		{C9B6BEF6-7566-4A52-A79A-DC22F758A657} = {613E7D9B-A1F8-423D-AAB1-B2F3526122D3}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {AAAEE60A-5604-415A-960A-AC84B4D84927}
 	EndGlobalSection
 EndGlobal
