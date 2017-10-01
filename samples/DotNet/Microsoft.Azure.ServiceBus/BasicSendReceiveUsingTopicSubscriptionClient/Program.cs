@@ -4,6 +4,7 @@
 namespace BasicSendReceiveUsingTopicSubscriptionClient
 {
     using Microsoft.Azure.ServiceBus;
+    using Microsoft.Azure.ServiceBus.Core;
     using System;
     using System.Text;
     using System.Threading;
@@ -18,6 +19,7 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
         const string SubscriptionName = "{Subscription Name}";
         static ITopicClient topicClient;
         static ISubscriptionClient subscriptionClient;
+        static IMessageReceiver deadLetterReceiver;
 
         static void Main(string[] args)
         {
@@ -29,6 +31,7 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
             const int numberOfMessages = 10;
             topicClient = new TopicClient(ServiceBusConnectionString, TopicName);
             subscriptionClient = new SubscriptionClient(ServiceBusConnectionString, TopicName, SubscriptionName);
+            deadLetterReceiver = new MessageReceiver(ServiceBusConnectionString, EntityNameHelper.FormatDeadLetterPath(subscriptionClient.Path), ReceiveMode.PeekLock);
 
             Console.WriteLine("======================================================");
             Console.WriteLine("Press any key to exit after receiving all the messages.");
@@ -36,6 +39,8 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
 
             // Register Subscription's MessageHandler and receive messages in a loop
             RegisterOnMessageHandlerAndReceiveMessages();
+            // Register QueueClient's DLQ MessageHandler 
+            RegisterDeadLetterQueueMessageHandler();
 
             // Send Messages
             await SendMessagesAsync(numberOfMessages);
@@ -64,6 +69,23 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
             subscriptionClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
         }
 
+        static void RegisterDeadLetterQueueMessageHandler()
+        {
+            // Configure the MessageHandler Options in terms of exception handling, number of concurrent messages to deliver etc.
+            var messageHandlerOptions = new MessageHandlerOptions(ExceptionReceivedHandler)
+            {
+                // Maximum number of Concurrent calls to the callback `ProcessMessagesAsync`, set to 1 for simplicity.
+                // Set it according to how many messages the application wants to process in parallel.
+                MaxConcurrentCalls = 1,
+
+                // Indicates whether MessagePump should automatically complete the messages after returning from User Callback.
+                // False below indicates the Complete will be handled by the User Callback as in `ProcessMessagesAsync` below.
+                AutoComplete = false
+            };
+
+            // Register the function that will process messages
+            deadLetterReceiver.RegisterMessageHandler(ProcessDLQMessagesAsync, messageHandlerOptions);
+        }
         static async Task ProcessMessagesAsync(Message message, CancellationToken token)
         {
             // Process the message
@@ -75,6 +97,21 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
 
             // Note: Use the cancellationToken passed as necessary to determine if the subscriptionClient has already been closed.
             // If subscriptionClient has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls 
+            // to avoid unnecessary exceptions.
+        }
+
+
+        static async Task ProcessDLQMessagesAsync(Message message, CancellationToken token)
+        {
+            // Process the message
+            Console.WriteLine($"Received DLQ message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
+
+            // Complete the message so that it is not received again.
+            // This can be done only if the deadLetterReceiver is created in ReceiveMode.PeekLock mode (which is default).
+            await deadLetterReceiver.CompleteAsync(message.SystemProperties.LockToken);
+
+            // Note: Use the cancellationToken passed as necessary to determine if the deadLetterReceiver has already been closed.
+            // If deadLetterReceiver has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls 
             // to avoid unnecessary exceptions.
         }
 
