@@ -63,6 +63,11 @@ namespace BasicDeadLetterQueueReceiver
             // This could include retries or logging for further troubleshooting
             Console.WriteLine($"Received DLQ message: SequenceNumber:{message.SystemProperties} Body:{Encoding.UTF8.GetString(message.Body)}");
 
+            if (message.UserProperties.ContainsKey("DeadLetterReason"))
+                Console.WriteLine("\t DeadLetterReason: {0}", message.UserProperties["DeadLetterReason"]);
+            if (message.UserProperties.ContainsKey("DeadLetterErrorDescription"))
+                Console.WriteLine("\t DeadLetterErrorDescription: {0}", message.UserProperties["DeadLetterErrorDescription"]);
+
             // Complete the message so that it is not received again.
             // This can be done only if the deadLetterReceiver is created in ReceiveMode.PeekLock mode (which is default).
             await deadLetterReceiver.CompleteAsync(message.SystemProperties.LockToken);
