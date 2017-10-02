@@ -2,7 +2,7 @@
 
 This sample demonstrates how to use Azure Service Bus Topics with the Azure Service Bus SDK for Java.
 
-You will learn how to set up a TopicClient and send messages, and hwo to set up a SubscriptionClient and 
+You will learn how to set up a TopicClient and send messages, and how to set up a SubscriptionClient and 
 receive those messages into a callback handler. The [MessageReceiverQuickstart](../MessageReceiverQuickStart) 
 sample demonstrates how to receive messages by explicitly pulling from a queue, and equivalently applies to a 
 SubscriptionClient. 

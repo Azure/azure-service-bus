@@ -21,7 +21,7 @@ public class TopicClientQuickstart {
 
     private static ITopicClient topicClient;
     private static ISubscriptionClient subscriptionClient;
-    private static int totalSend = 100;
+    private static int totalSend = 10;
     private static AtomicInteger totalReceived = new AtomicInteger(0);
 
     // log4j logger 
