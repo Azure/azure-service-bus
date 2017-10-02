@@ -23,7 +23,7 @@ public class QueueClientQuickstart {
     // queue client instance
     private static IQueueClient queueClient;
     // message send/receive counters
-    private static int totalToSend = 100;
+    private static int totalToSend = 10;
     private static AtomicInteger totalReceived = new AtomicInteger(0);
     // log4j logger 
     private static Logger logger = Logger.getRootLogger();
@@ -39,6 +39,8 @@ public class QueueClientQuickstart {
         logger.info("Starting BasicSendReceiveWithQueueClient sample");
 
         // Create a QueueClient instance using the connection string builder
+        // We set the receive mode to "PeekLock", meaning the message is delivered
+        // under a lock and must be acknowledged ("completed") to be removed from the queue
         logger.info("Create queue client.");
         queueClient = new QueueClient(new ConnectionStringBuilder(connectionString, queueName), ReceiveMode.PEEKLOCK);
 
@@ -65,8 +67,8 @@ public class QueueClientQuickstart {
                 logger.error(exceptionPhase + "-" + throwable.getMessage());
             }
         },
-                // 1 concurrent call, messages are auto-completed, auto-renew duration
-                new MessageHandlerOptions(1, true, Duration.ofMinutes(1)));
+        // 1 concurrent call, messages are auto-completed, auto-renew duration
+        new MessageHandlerOptions(1, true, Duration.ofMinutes(1)));
 
         // wait on the main thread until all sent messages have been received
         while (totalReceived.get() < totalToSend) {
