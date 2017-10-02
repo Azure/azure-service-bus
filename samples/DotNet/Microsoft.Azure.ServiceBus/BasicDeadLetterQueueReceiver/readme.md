@@ -1,4 +1,4 @@
-# Get started sending and receiving messages from ServiceBus queues using QueueClient using a MessageReceiver
+# Get started receiving dead letter messages from ServiceBus queues or topic subscriptions using a MessageReceiver
 
 In order to run the sample in this directory, replace the following bracketed values in the `Program.cs` file.
 
