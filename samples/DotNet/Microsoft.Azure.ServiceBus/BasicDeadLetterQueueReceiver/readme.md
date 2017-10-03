@@ -26,7 +26,8 @@ as they arrive. Another approach is to check dead letter messages on predefined 
 For further information on how to create this sample on your own, follow the rest of the tutorial.
 
 ## What will be accomplished
-In this tutorial, we will write a console application to receive dead lettered messages for a ServiceBus queue/subscription using a MessageReceiver.
+In this tutorial, we will write a console application to receive dead lettered messages for a ServiceBus queue/subscription using a MessageReceiver. 
+The EntityNameHelper.FormatDeadLetterPath method is used for getting the DLQ path for a given queue name/subscription path, for which a message receiver can then be configured. 
 
 ## Prerequisites
 1. [.NET Core](https://www.microsoft.com/net/core)
@@ -115,6 +116,7 @@ In this tutorial, we will write a console application to receive dead lettered m
     ```csharp
     static async Task MainAsync()
     {
+        //This sample uses the EntityNameHelper.FormatDeadLetterPath method for getting the DLQ path for a given queue name/subscription path. A mesage receiver can then be configured using this DLQ path.
         deadLetterReceiver = new MessageReceiver(ServiceBusConnectionString, EntityNameHelper.FormatDeadLetterPath(EntityPath), ReceiveMode.PeekLock);
 
         Console.WriteLine("==========================================================================");

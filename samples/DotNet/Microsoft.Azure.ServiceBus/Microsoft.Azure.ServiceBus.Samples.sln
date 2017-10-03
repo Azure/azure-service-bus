@@ -15,7 +15,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BasicSendReceiveUsingTopicS
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TopicSubscriptionWithRuleOperationsSample", "TopicSubscriptionWithRuleOperationsSample\TopicSubscriptionWithRuleOperationsSample.csproj", "{BCFACFBC-0DFE-4444-8682-AEFA98D1E398}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BasicDeadLetterQueueReceiver", "BasicDeadLetterQueueReceiver\BasicDeadLetterQueueReceiver.csproj", "{8F683FBE-4502-4D62-BBD5-733414142C4B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeadLetterQueueMessageReceiver", "BasicDeadLetterQueueReceiver\DeadLetterQueueMessageReceiver.csproj", "{8F683FBE-4502-4D62-BBD5-733414142C4B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

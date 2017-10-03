@@ -43,6 +43,7 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
             Console.ReadKey();
 
             await subscriptionClient.CloseAsync();
+            await topicClient.CloseAsync();
         }
 
         static void RegisterOnMessageHandlerAndReceiveMessages()
@@ -62,7 +63,7 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
             // Register the function that will process messages
             subscriptionClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
         }
-        
+
         static async Task ProcessMessagesAsync(Message message, CancellationToken token)
         {
             // Process the message
@@ -76,7 +77,7 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
             // If subscriptionClient has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls 
             // to avoid unnecessary exceptions.
         }
-        
+
         // Use this Handler to look at the exceptions received on the MessagePump
         static Task ExceptionReceivedHandler(ExceptionReceivedEventArgs exceptionReceivedEventArgs)
         {

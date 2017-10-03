@@ -1,7 +1,7 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace BasicDeadLetterQueueReceiver
+namespace DeadLetterQueueMessageReceiver
 {
     using Microsoft.Azure.ServiceBus;
     using Microsoft.Azure.ServiceBus.Core;
@@ -25,6 +25,7 @@ namespace BasicDeadLetterQueueReceiver
 
         static async Task MainAsync()
         {
+            //This sample uses the EntityNameHelper.FormatDeadLetterPath method for getting the DLQ path for a given queue name/subscription path. A mesage receiver can then be configured using this DLQ path.
             deadLetterReceiver = new MessageReceiver(ServiceBusConnectionString, EntityNameHelper.FormatDeadLetterPath(EntityPath), ReceiveMode.PeekLock);
 
             Console.WriteLine("==========================================================================");
