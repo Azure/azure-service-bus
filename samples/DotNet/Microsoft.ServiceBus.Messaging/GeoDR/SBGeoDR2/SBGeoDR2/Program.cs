@@ -25,7 +25,7 @@ namespace SBGeoDR2
         // Respectively follow this: https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-create-service-principal-portal
         // To get the below three values. Make sure to add the application as owner in your resource group via "Access control (IAM)".
 
-        public static string tenantId = "your tenant/directory id";     // Directory ID in portal
+        public static string tenantId = "your tenant / directory id";     // Directory ID in portal
         public static string clientId = "your client / application id";    //Application ID in portal
         public static string clientSecrets = "your clientSecrets / key"; // Key in portal
 
