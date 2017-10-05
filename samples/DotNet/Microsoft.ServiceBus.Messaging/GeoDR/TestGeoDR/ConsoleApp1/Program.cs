@@ -37,7 +37,7 @@ namespace ConsoleApp1
             TokenCredentials creds = new TokenCredentials(token);
             ServiceBusManagementClient client = new ServiceBusManagementClient(creds) { SubscriptionId = subscriptionId };
 
-            // 4. get alias connstring and Create Service and Consumer Groups
+            // Get alias connstring and Create Service and Consumer Groups
             var accessKeys = client.Namespaces.ListKeys(resourceGroupName, geoDRPrimaryNS, "RootManageSharedAccessKey");
             var aliasPrimaryConnectionString = accessKeys.AliasPrimaryConnectionString;
             var aliasSecondaryConnectionString = accessKeys.AliasSecondaryConnectionString;
