@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.ServiceBus.Messaging;
 using Microsoft.Azure.Management.ServiceBus;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
@@ -7,13 +8,13 @@ using Microsoft.Rest;
 
 namespace ConsoleApp1
 {
-    class Program
+    static class Program
     {
-        public static string subscriptionId = "your subscription id"; // Pick existing subscription
-        public static string resourceGroupName = "your resource group name"; // Pick existing resource group       
+        static string subscriptionId = "your subscription id"; // Pick existing subscription
+        static string resourceGroupName = "your resource group name"; // Pick existing resource group       
 
-        public static string activeDirectoryAuthority = "https://login.microsoftonline.com";
-        public static string resourceManagerUrl = "https://management.azure.com/";
+        static string activeDirectoryAuthority = "https://login.microsoftonline.com";
+        static string resourceManagerUrl = "https://management.azure.com/";
 
         // Use the following link to learn how to setup an client app in access Active Directory
         // and grant that app rights to your azure subscription
@@ -21,9 +22,9 @@ namespace ConsoleApp1
         // Respectively follow this: https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-create-service-principal-portal
         // To get the below three values. Make sure to add the application as owner in your resource group via "Access control (IAM)".
 
-        public static string tenantId = "your tenant / directory id";     // Directory ID in portal
-        public static string clientId = "your client / application id";    //Application ID in portal
-        public static string clientSecrets = "your clientSecrets / key"; // Key in portal
+        static string tenantId = "your tenant / directory id";     // Directory ID in portal
+        static string clientId = "your client / application id";    //Application ID in portal
+        static string clientSecret = "your clientSecret / key"; // Key in portal
 
 
         static string geoDRPrimaryNS = "your primary ns";
@@ -32,7 +33,13 @@ namespace ConsoleApp1
 
         static void Main(string[] args)
         {
-            string token = GetAuthorizationHeader();
+            MainAsync().GetAwaiter().GetResult();
+        }
+
+        static async Task MainAsync()
+        {
+            string token = await GetAuthorizationHeaderAsync()
+                .ConfigureAwait(false);
 
             TokenCredentials creds = new TokenCredentials(token);
             ServiceBusManagementClient client = new ServiceBusManagementClient(creds) { SubscriptionId = subscriptionId };
@@ -55,39 +62,30 @@ namespace ConsoleApp1
             var clientSR = TopicClient.CreateFromConnectionString(connectionString, topicName);
             var message = new BrokeredMessage("This is a test message!");
 
-            Console.WriteLine(String.Format("Message id: {0}", message.MessageId));
+            Console.WriteLine($"Message id: {message.MessageId}");
 
-            clientSR.Send(message);
+            await clientSR.SendAsync(message)
+                .ConfigureAwait(false);
 
             Console.WriteLine("Message successfully sent! Press ENTER to exit program");
             Console.ReadLine();
         }
 
-        private static string GetAuthorizationHeader()
+        private static async Task<string> GetAuthorizationHeaderAsync()
         {
-            AuthenticationResult result = null;
+            var context = new AuthenticationContext($"{activeDirectoryAuthority}/{tenantId}");
 
-            var context = new AuthenticationContext(string.Format("{0}/{1}", activeDirectoryAuthority, tenantId));
-
-            var thread = new Thread(() =>
-            {
-                result = context.AcquireTokenAsync(
-                    resourceManagerUrl,
-                    new ClientCredential(clientId, clientSecrets)).Result;
-            });
-
-            thread.SetApartmentState(ApartmentState.STA);
-            thread.Name = "AquireTokenThread";
-            thread.Start();
-            thread.Join();
+            AuthenticationResult result = await context.AcquireTokenAsync(
+                resourceManagerUrl,
+                new ClientCredential(clientId, clientSecret))
+                .ConfigureAwait(false);
 
             if (result == null)
             {
                 throw new InvalidOperationException("Failed to obtain the JWT token");
             }
 
-            string token = result.AccessToken;
-            return token;
+            return result.AccessToken;
         }
     }
 }
