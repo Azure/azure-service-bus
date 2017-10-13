@@ -2,7 +2,7 @@
 
 This sample demonstrates how to use Azure Service Bus Queues with the Azure Service Bus SDK for Java.
 
-You will learn how to set up a MessageSender and MesageReceiver, send messages, and receive those messages by explicitly pulling 
+You will learn how to set up a MessageSender and MessageReceiver, send messages, and receive those messages by explicitly pulling 
 from the queue with an asynchronous receive gesture. The callback model shown in the [QueueClientQuickstart](../QueueClientQuickstart) 
 sample is, however, the recommended method because the receive loop implemented by the SDK library 
 transparently handles common issues like occasional network issues or transient errors, and also allows 
