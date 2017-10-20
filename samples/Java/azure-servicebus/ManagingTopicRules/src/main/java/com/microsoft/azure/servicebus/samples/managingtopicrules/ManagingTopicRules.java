@@ -62,7 +62,7 @@ public class ManagingTopicRules {
                 ReceiveMode.PEEKLOCK);
 
         // Drop existing rules and add a TrueFilter
-        for (RuleDescription rd : allMessagessubscriptionClientgetRules()) {
+        for (RuleDescription rd : allMessagessubscriptionClient.getRules()) {
             allMessagessubscriptionClientgetRules.removeRule(rd.getName());
         }
 
