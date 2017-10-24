@@ -1,0 +1,376 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "serviceBusNamespaceName": {
+      "type": "string",
+      "metadata": {
+        "description": "Service Bus Namespace Name"
+      }
+    }
+  },
+  "variables": {
+    "apiVersion": "2017-04-01"
+  },
+  "resources": [
+    {
+      "apiVersion": "[variables('apiVersion')]",
+      "name": "[parameters('serviceBusNamespaceName')]",
+      "type": "Microsoft.ServiceBus/namespaces",
+      "location": "[resourceGroup().location]",
+      "properties": {},
+      "resources": [
+        {
+          "type": "AuthorizationRules",
+          "name": "samplesend",
+          "apiVersion": "[variables('apiVersion')]",
+          "scale": null,
+          "properties": {
+            "rights": [ "Send" ]
+          },
+          "dependsOn": [
+            "[parameters('serviceBusNamespaceName')]"
+          ]
+        },
+        {
+          "type": "AuthorizationRules",
+          "name": "samplelisten",
+          "apiVersion": "[variables('apiVersion')]",
+          "scale": null,
+          "properties": {
+            "rights": [ "Listen" ]
+          },
+          "dependsOn": [
+            "[parameters('serviceBusNamespaceName')]"
+          ]
+        },
+        {
+          "type": "AuthorizationRules",
+          "name": "samplesendlisten",
+          "apiVersion": "[variables('apiVersion')]",
+          "scale": null,
+          "properties": {
+            "rights": [ "Listen", "Send" ]
+          },
+          "dependsOn": [
+            "[parameters('serviceBusNamespaceName')]"
+          ]
+        },
+        {
+          "type": "AuthorizationRules",
+          "name": "samplemanage",
+          "apiVersion": "[variables('apiVersion')]",
+          "scale": null,
+          "properties": {
+            "rights": [ "Listen", "Send", "Manage" ]
+          },
+          "dependsOn": [
+            "[parameters('serviceBusNamespaceName')]"
+          ]
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "BasicQueue",
+          "type": "queues",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "samplesend",
+            "samplelisten",
+            "samplesendlisten",
+            "samplemanage"
+          ],
+          "properties": {},
+          "resources": []
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "BasicQueue2",
+          "type": "queues",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "samplesend",
+            "samplelisten",
+            "samplesendlisten",
+            "samplemanage"
+          ],
+          "properties": {},
+          "resources": []
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "SessionQueue",
+          "type": "queues",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "samplesend",
+            "samplelisten",
+            "samplesendlisten",
+            "samplemanage"
+          ],
+          "properties": {
+            "requiresSession": true,
+            "supportOrdering": true
+          },
+          "resources": []
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "DupdetectQueue",
+          "type": "queues",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "samplesend",
+            "samplelisten",
+            "samplesendlisten",
+            "samplemanage"
+          ],
+          "properties": {
+            "requiresDuplicateDetection": true
+          },
+          "resources": []
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "PartitionedQueue",
+          "type": "queues",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "samplesend",
+            "samplelisten",
+            "samplesendlisten",
+            "samplemanage"
+          ],
+          "properties": {
+            "enablePartitioning": true
+          },
+          "resources": []
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "BasicTopic",
+          "type": "topics",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "samplesend",
+            "samplelisten",
+            "samplesendlisten",
+            "samplemanage"
+          ],
+          "properties": {},
+          "resources": [
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription1",
+              "type": "subscriptions",
+              "dependsOn": [ "BasicTopic" ],
+              "properties": {},
+              "resources": []
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription2",
+              "type": "subscriptions",
+              "dependsOn": [ "BasicTopic" ],
+              "properties": {},
+              "resources": []
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription3",
+              "type": "subscriptions",
+              "dependsOn": [ "BasicTopic" ],
+              "properties": {},
+              "resources": []
+            }
+          ]
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "BasicTopic2",
+          "type": "topics",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "samplesend",
+            "samplelisten",
+            "samplesendlisten",
+            "samplemanage"
+          ],
+          "properties": {},
+          "resources": [
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription1",
+              "type": "subscriptions",
+              "dependsOn": [ "BasicTopic2" ],
+              "properties": {},
+              "resources": []
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription2",
+              "type": "subscriptions",
+              "dependsOn": [ "BasicTopic2" ],
+              "properties": {},
+              "resources": []
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription3",
+              "type": "subscriptions",
+              "dependsOn": [ "BasicTopic2" ],
+              "properties": {},
+              "resources": []
+            }
+          ]
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "DupdetectTopic",
+          "type": "topics",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "samplesend",
+            "samplelisten",
+            "samplesendlisten",
+            "samplemanage"
+          ],
+          "properties": {
+            "requiresDuplicateDetection": true
+          },
+          "resources": [
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription1",
+              "type": "subscriptions",
+              "dependsOn": [ "DupdetectTopic" ],
+              "properties": {},
+              "resources": []
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription2",
+              "type": "subscriptions",
+              "dependsOn": [ "DupdetectTopic" ],
+              "properties": {},
+              "resources": []
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription3",
+              "type": "subscriptions",
+              "dependsOn": [ "DupdetectTopic" ],
+              "properties": {},
+              "resources": []
+            }
+          ]
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "PrePublishFilterTopic",
+          "type": "topics",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "samplesend",
+            "samplelisten",
+            "samplesendlisten",
+            "samplemanage"
+          ],
+          "properties": {
+            "enableFilteringMessagesBeforePublishing": true
+          },
+          "resources": [
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription1",
+              "type": "subscriptions",
+              "dependsOn": [ "PrePublishFilterTopic" ],
+              "properties": {},
+              "resources": []
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription2",
+              "type": "subscriptions",
+              "dependsOn": [ "PrePublishFilterTopic" ],
+              "properties": {},
+              "resources": []
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription3",
+              "type": "subscriptions",
+              "dependsOn": [ "PrePublishFilterTopic" ],
+              "properties": {},
+              "resources": []
+            }
+          ]
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "PartitionedTopic",
+          "type": "topics",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "samplesend",
+            "samplelisten",
+            "samplesendlisten",
+            "samplemanage"
+          ],
+          "properties": {
+            "supportOrdering": false,
+            "enablePartitioning": true
+          },
+          "resources": [
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription1",
+              "type": "subscriptions",
+              "dependsOn": [ "PartitionedTopic" ],
+              "properties": {},
+              "resources": []
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription2",
+              "type": "subscriptions",
+              "dependsOn": [ "PartitionedTopic" ],
+              "properties": {},
+              "resources": []
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Subscription3",
+              "type": "subscriptions",
+              "dependsOn": [ "PartitionedTopic" ],
+              "properties": {},
+              "resources": []
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "outputs": {
+    "serviceBusNamespaceName": {
+      "type": "string",
+      "value": "[parameters('serviceBusNamespaceName')]"
+    },
+    "sendConnectionString": {
+      "type": "string",
+      "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'samplesend'),variables('apiVersion')).primaryConnectionString]"
+    },
+    "listenConnectionString": {
+      "type": "string",
+      "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'samplelisten'),variables('apiVersion')).primaryConnectionString]"
+    },
+    "sendListenConnectionString": {
+      "type": "string",
+      "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'samplesendlisten'),variables('apiVersion')).primaryConnectionString]"
+    },
+    "manageConnectionString": {
+      "type": "string",
+      "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'samplemanage'),variables('apiVersion')).primaryConnectionString]"
+
+    }
+  }
+}
