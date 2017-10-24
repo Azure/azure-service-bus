@@ -79,7 +79,7 @@ namespace MessagingSamples
         void MsmqOnPeekComplete(IAsyncResult result)
         {
             // Complete the MSMQ peek operation. If a timeout occured, peek again.
-            Message msmqMessage = null;
+            System.Messaging.Message msmqMessage = null;
             try
             {
                 msmqMessage = this.msmqQueue.EndPeek(result);
@@ -143,11 +143,11 @@ namespace MessagingSamples
         }
 
         // Send message to Service Bus.
-        SendResult SendMessageToServiceBus(Message Message)
+        SendResult SendMessageToServiceBus(Microsoft.Azure.ServiceBus.Message Message)
         {
             try
             {
-                this.queueClient.Send(Message); // Use synchonous send to preserve message ordering.
+                this.queueClient.SendAsync(Message).GetAwaiter().GetResult(); // Use synchonous send to preserve message ordering.
 
                 return SendResult.Success;
             }

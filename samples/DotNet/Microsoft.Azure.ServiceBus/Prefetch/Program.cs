@@ -24,8 +24,7 @@ namespace MessagingSamples
     using System.Threading.Tasks;
     using Microsoft.Azure.ServiceBus;
     using Microsoft.Azure.ServiceBus.Core;
-    using Microsoft.Azure.ServiceBus.Core.Amqp;
-
+    
     /// <summary>
     ///     This sample demonstrates how to use the messages prefetch feature upon receive
     ///     The sample creates a Queue, sends messages to it and receives all messages

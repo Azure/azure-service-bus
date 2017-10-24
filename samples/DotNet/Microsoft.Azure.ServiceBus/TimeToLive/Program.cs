@@ -26,38 +26,20 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
-    public class Program : IBasicQueueSendReceiveSample
+    public class Program : IConnectionStringSample
     {
-        public async Task Run(string connectionString, string queueName, string sendToken)
+        public async Task Run(string connectionString)
         {
             Console.WriteLine("Press any key to exit the scenario");
 
             var cts = new CancellationTokenSource();
 
-            var senderFactory = MessagingFactory.Create(
-                connectionString,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)
-                });
-            senderFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
-
-            var receiverFactory = MessagingFactory.Create(
-              connectionString,
-              new MessagingFactorySettings
-              {
-                  TransportType = TransportType.Amqp,
-                  TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken)
-              });
-            receiverFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
-
-            var sender = new MessageSender(connectionString,queueName);
+            var sender = new MessageSender(connectionString, Sample.BasicQueueName);
 
 
             var sendTask = this.SendMessagesAsync(sender);
-            var receiveTask = this.ReceiveMessagesAsync(receiverFactory, queueName, cts.Token);
-            var fixupTask = this.PickUpAndFixDeadletters(receiverFactory, queueName, sender, cts.Token);
+            var receiveTask = this.ReceiveMessagesAsync(connectionString, Sample.BasicQueueName, cts.Token);
+            var fixupTask = this.PickUpAndFixDeadletters(connectionString, Sample.BasicQueueName, sender, cts.Token);
 
             Console.ReadKey();
             cts.Cancel();
@@ -100,26 +82,26 @@ namespace MessagingSamples
                     Console.ResetColor();
                 }
             }
-            
+
             await Task.Delay(15); // let all messages expire
         }
 
-        async Task ReceiveMessagesAsync(MessagingFactory receiverFactory, string queueName, CancellationToken cancellationToken)
+        async Task ReceiveMessagesAsync(string connectionString, string queueName, CancellationToken cancellationToken)
         {
             var doneReceiving = new TaskCompletionSource<bool>();
-            var receiver = new MessageReceiver(connectionString,queueName, ReceiveMode.PeekLock);
+            var receiver = new MessageReceiver(connectionString, queueName, ReceiveMode.PeekLock);
 
             // close the receiver and factory when the CancellationToken fires 
             cancellationToken.Register(
                 async () =>
                 {
                     await receiver.CloseAsync();
-                   doneReceiving.SetResult(true);
+                    doneReceiving.SetResult(true);
                 });
 
             // register the RegisterMessageHandler callback
             receiver.RegisterMessageHandler(
-                async (message, cancellationToken) =>
+                async (message, cancellationToken1) =>
                 {
                     if (message.Label != null &&
                         message.ContentType != null &&
@@ -146,35 +128,35 @@ namespace MessagingSamples
                                 scientist.name);
                             Console.ResetColor();
                         }
-                        await receiveClient.CompleteAsync(message.SystemProperties.LockToken);
+                        await receiver.CompleteAsync(message.SystemProperties.LockToken);
                     }
                     else
                     {
-                        await receiver.DeadLetterAsync(message.SystemProperties.LockToken, "ProcessingError", "Don't know what to do with this message");
+                        await receiver.DeadLetterAsync(message.SystemProperties.LockToken);//, "ProcessingError", "Don't know what to do with this message");
                     }
                 },
-                new MessageHandlerOptions( (e)=>LogMessageHandlerException(e) ) { AutoComplete = false, MaxConcurrentCalls = 1 });
+                new MessageHandlerOptions((e) => LogMessageHandlerException(e)) { AutoComplete = false, MaxConcurrentCalls = 1 });
 
             await doneReceiving.Task;
         }
 
-        async Task PickUpAndFixDeadletters(MessagingFactory receiverFactory, string queueName, MessageSender resubmitSender, CancellationToken cancellationToken)
+        async Task PickUpAndFixDeadletters(string connectionString, string queueName, MessageSender resubmitSender, CancellationToken cancellationToken)
         {
             var doneReceiving = new TaskCompletionSource<bool>();
-           
-            var dlqReceiver = new MessageReceiver(connectionString,QueueClient.FormatDeadLetterPath(queueName), ReceiveMode.PeekLock);
+
+            var dlqReceiver = new MessageReceiver(connectionString, EntityNameHelper.FormatDeadLetterPath(queueName), ReceiveMode.PeekLock);
 
             // close the receiver and factory when the CancellationToken fires 
             cancellationToken.Register(
                 async () =>
                 {
                     await dlqReceiver.CloseAsync();
-                     doneReceiving.SetResult(true);
+                    doneReceiving.SetResult(true);
                 });
 
             // register the RegisterMessageHandler callback
             dlqReceiver.RegisterMessageHandler(
-                async (message, cancellationToken) =>
+                async (message, cancellationToken1) =>
                 {
                     var resubmitMessage = message.Clone();
                     if (resubmitMessage.Label != null && resubmitMessage.Label.Equals("Physicist"))
@@ -192,12 +174,16 @@ namespace MessagingSamples
                         resubmitMessage.Label = "Scientist";
                         await resubmitSender.SendAsync(resubmitMessage);
                     }
-                    await receiveClient.CompleteAsync(message.SystemProperties.LockToken);
+                    await dlqReceiver.CompleteAsync(message.SystemProperties.LockToken);
                 },
-                new MessageHandlerOptions( (e)=>LogMessageHandlerException(e) ) { AutoComplete = true, MaxConcurrentCalls = 1 });
+                new MessageHandlerOptions((e) => LogMessageHandlerException(e)) { AutoComplete = true, MaxConcurrentCalls = 1 });
 
             await doneReceiving.Task;
         }
-
+        private Task LogMessageHandlerException(ExceptionReceivedEventArgs e)
+        {
+            Console.WriteLine("Exception: \"{0}\" {0}", e.Exception.Message, e.ExceptionReceivedContext.EntityPath);
+            return Task.CompletedTask;
+        }
     }
 }

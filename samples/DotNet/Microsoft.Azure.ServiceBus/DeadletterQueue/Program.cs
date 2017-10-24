@@ -172,7 +172,7 @@ namespace MessagingSamples
                     }
                     else
                     {
-                        await receiver.DeadLetterAsync(message.SystemProperties.LockToken);//, "ProcessingError", "Don't know what to do with this message");
+                        await receiver.DeadLetterAsync(message.SystemProperties.LockToken);//"ProcessingError", "Don't know what to do with this message");
                     }
                 },
                 new MessageHandlerOptions((e) => LogMessageHandlerException(e)) { AutoComplete = false, MaxConcurrentCalls = 1 });

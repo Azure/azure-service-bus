@@ -26,35 +26,26 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
-    public class Program : IPartitionedQueueSendReceiveSample
+    public class Program : IConnectionStringSample
     {
-        public async Task Run(string connectionString, string queueName, string sendToken)
+        public async Task Run(string connectionString)
         {
             Console.WriteLine("Press any key to exit the scenario");
 
             var cts = new CancellationTokenSource();
 
-           await this.SendMessagesAsync(connectionString, queueName, sendToken);
-           var receiveTask = this.ReceiveMessagesAsync(connectionString, queueName, receiveToken, cts.Token);
-           
+            await this.SendMessagesAsync(connectionString, Sample.PartitionedQueueName);
+            var receiveTask = this.ReceiveMessagesAsync(connectionString, Sample.PartitionedQueueName, cts.Token);
+
             Console.ReadKey();
             cts.Cancel();
 
             await receiveTask;
         }
 
-        async Task SendMessagesAsync(string connectionString, string queueName, string sendToken)
+        async Task SendMessagesAsync(string connectionString, string queueName)
         {
-            var senderFactory = MessagingFactory.Create(
-                connectionString,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)
-                });
-            senderFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
-
-            var sender = new MessageSender(connectionString,queueName);
+            var sender = new MessageSender(connectionString, queueName);
 
 
             dynamic data = new[]
@@ -72,53 +63,43 @@ namespace MessagingSamples
             };
 
             for (int j = 0; j < 5; j++)
-            for (int i = 0; i < data.Length; i++)
-            {
-                var message = new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data[i])))
+                for (int i = 0; i < data.Length; i++)
                 {
-                    ContentType = "application/json",
-                    Label = "Scientist",
-                    MessageId = (i+j*data.Length).ToString(),
-                    TimeToLive = TimeSpan.FromMinutes(2), 
-                    PartitionKey = data[i].name.Substring(0,1)
-                };
+                    var message = new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data[i])))
+                    {
+                        ContentType = "application/json",
+                        Label = "Scientist",
+                        MessageId = (i + j * data.Length).ToString(),
+                        TimeToLive = TimeSpan.FromMinutes(2),
+                        PartitionKey = data[i].name.Substring(0, 1)
+                    };
 
-                await sender.SendAsync(message);
-                lock (Console.Out)
-                {
-                    Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine("Message sent: Id = {0}", message.MessageId);
-                    Console.ResetColor();
+                    await sender.SendAsync(message);
+                    lock (Console.Out)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Yellow;
+                        Console.WriteLine("Message sent: Id = {0}", message.MessageId);
+                        Console.ResetColor();
+                    }
                 }
-            }
         }
 
         async Task ReceiveMessagesAsync(string connectionString, string queueName, CancellationToken cancellationToken)
         {
             var doneReceiving = new TaskCompletionSource<bool>();
-            var receiverFactory = MessagingFactory.Create(
-                connectionString,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken)
-                });
-            receiverFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
-
-            var receiver = new MessageReceiver(connectionString,queueName, ReceiveMode.PeekLock);
+           var receiver = new MessageReceiver(connectionString, queueName, ReceiveMode.PeekLock);
 
             // close the receiver and factory when the CancellationToken fires 
             cancellationToken.Register(
                 async () =>
                 {
                     await receiver.CloseAsync();
-                    await receiverFactory.CloseAsync();
                     doneReceiving.SetResult(true);
                 });
 
             // register the RegisterMessageHandler callback
             receiver.RegisterMessageHandler(
-                async (message, cancellationToken) =>
+                async (message, cancellationToken1) =>
                 {
                     if (message.Label != null &&
                         message.ContentType != null &&
@@ -144,17 +125,22 @@ namespace MessagingSamples
                                 scientist.name);
                             Console.ResetColor();
                         }
-                        await receiveClient.CompleteAsync(message.SystemProperties.LockToken);
+                        await receiver.CompleteAsync(message.SystemProperties.LockToken);
                     }
                     else
                     {
-                        await receiver.DeadLetterAsync(message.SystemProperties.LockToken, "ProcessingError", "Don't know what to do with this message");
+                        await receiver.DeadLetterAsync(message.SystemProperties.LockToken); //, "ProcessingError", "Don't know what to do with this message");
                     }
                 },
-                new MessageHandlerOptions( (e)=>LogMessageHandlerException(e) ) {AutoComplete = false, MaxConcurrentCalls = 1});
+                new MessageHandlerOptions((e) => LogMessageHandlerException(e)) { AutoComplete = false, MaxConcurrentCalls = 1 });
 
             await doneReceiving.Task;
         }
 
+        private Task LogMessageHandlerException(ExceptionReceivedEventArgs e)
+        {
+            Console.WriteLine("Exception: \"{0}\" {0}", e.Exception.Message, e.ExceptionReceivedContext.EntityPath);
+            return Task.CompletedTask;
+        }
     }
 }

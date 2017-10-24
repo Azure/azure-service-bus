@@ -24,8 +24,11 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus;
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
+    using Microsoft.Azure.Management.ResourceManager.Fluent;
+    using Microsoft.Azure.Management.ServiceBus;
+    using Microsoft.Azure.Management.ServiceBus.Models;
 
-    class Program : IDynamicSample
+    class Program : IConnectionStringSample
     {
         const string TopicName = "TopicFilterSampleTopic";
         const string SubscriptionAllMessages = "AllOrders";
@@ -33,72 +36,88 @@ namespace MessagingSamples
         const string SubscriptionColorRed = "ColorRed";
         const string SubscriptionHighPriorityOrders = "HighPriorityOrders";
 
-        public async Task Run(string connectionString, string manageToken)
+        public async Task Run(string connectionString)
         {
             // This sample demonstrates how to use advanced filters with ServiceBus topics and subscriptions.
             // The sample creates a topic and 3 subscriptions with different filter definitions.
             // Each receiver will receive matching messages depending on the filter associated with a subscription.
 
-            // NOTE:
-            // This is primarily an example illustrating the management features related to setting up 
-            // Service Bus subscriptions. It is DISCOURAGED for applications to routinely set up and 
-            // tear down topics and subscriptions as a part of regular message processing. Managing 
-            // topics and subscriptions is a system configuration operation. 
-
-            // Create messaging factory and ServiceBus namespace client.
-            var sharedAccessSignatureTokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(manageToken);
-            var namespaceManager = new NamespaceManager(connectionString, sharedAccessSignatureTokenProvider);
+            var managementCredentials = SdkContext.AzureCredentialsFactory.FromFile(Environment.GetEnvironmentVariable("AZURE_AUTH_LOCATION"));
+            var managementClient = new ServiceBusManagementClient(managementCredentials);
+            var namespaceName = "";
+            var resourceGroupName = "";
 
             Console.WriteLine("\nCreating a topic and 3 subscriptions.");
+            await managementClient.Topics.CreateOrUpdateAsync(resourceGroupName, namespaceName, TopicName,
+                    new SBTopic { /* defaults are fine */ });
 
-            // Create a topic and several subscriptions; clean house ahead of time
-            if (await namespaceManager.TopicExistsAsync(TopicName))
-            {
-                await namespaceManager.DeleteTopicAsync(TopicName);
-            }
-
-            var topicDescription = await namespaceManager.CreateTopicAsync(TopicName);
             Console.WriteLine("Topic created.");
 
-            // Create a subscription for all messages sent to topic.
-            await namespaceManager.CreateSubscriptionAsync(topicDescription.Path, SubscriptionAllMessages, new TrueFilter());
-            Console.WriteLine("Subscription {0} added with filter definition set to TrueFilter.", SubscriptionAllMessages);
-            
+            await Task.WhenAll(
+               // this sub receives messages for Priority = 1
+               managementClient.Subscriptions.CreateOrUpdateAsync(
+                   resourceGroupName, namespaceName, TopicName, SubscriptionAllMessages,
+                   new SBSubscription { /* defaults are fine */ }).
+                   ContinueWith(t =>
+                      managementClient.Rules.CreateOrUpdateAsync(resourceGroupName, namespaceName, TopicName, t.Result.Name, "$default",
+                          new Rule
+                          {
+                              SqlFilter = new Microsoft.Azure.Management.ServiceBus.Models.SqlFilter
+                              {
+                                  SqlExpression = "true"
+                              }
+                          })),
+               managementClient.Subscriptions.CreateOrUpdateAsync(
+                   resourceGroupName, namespaceName, TopicName, SubscriptionColorBlueSize10Orders,
+                   new SBSubscription { /* defaults are fine */ }).
+                   ContinueWith(t =>
+                      managementClient.Rules.CreateOrUpdateAsync(resourceGroupName, namespaceName, TopicName, t.Result.Name, "$default",
+                          new Rule
+                          {
+                              SqlFilter = new Microsoft.Azure.Management.ServiceBus.Models.SqlFilter
+                              {
+                                  SqlExpression = "color = 'blue' AND quantity = 10"
+                              }
+                          })),
+               managementClient.Subscriptions.CreateOrUpdateAsync(
+                   resourceGroupName, namespaceName, TopicName, SubscriptionColorRed,
+                   new SBSubscription { /* defaults are fine */ }).
+                   ContinueWith(t =>
+                      managementClient.Rules.CreateOrUpdateAsync(resourceGroupName, namespaceName, TopicName, t.Result.Name, "$default",
+                          new Rule
+                          {
+                              SqlFilter = new Microsoft.Azure.Management.ServiceBus.Models.SqlFilter
+                              {
+                                  SqlExpression = "color = 'red'"
+                              },
+                              Action = new Microsoft.Azure.Management.ServiceBus.Models.Action
+                              {
+                                  SqlExpression = "SET quantity = quantity / 2; " +
+                                                "REMOVE priority;" +
+                                                "SET sys.CorrelationId = 'low';"
+                              }
+                          })),
+                managementClient.Subscriptions.CreateOrUpdateAsync(
+                   resourceGroupName, namespaceName, TopicName, SubscriptionHighPriorityOrders,
+                   new SBSubscription { /* defaults are fine */ }).
+                   ContinueWith(t =>
+                      managementClient.Rules.CreateOrUpdateAsync(resourceGroupName, namespaceName, TopicName, t.Result.Name, "$default",
+                          new Rule
+                          {
+                              FilterType = FilterType.CorrelationFilter,
+                              CorrelationFilter = new Microsoft.Azure.Management.ServiceBus.Models.CorrelationFilter
+                              {
+                                  Label = "red",
+                                  CorrelationId = "high"
+                              }
+                          }))
 
-            // Create a subscription that'll receive all orders which have color "blue" and quantity 10.
+             );
 
-            await namespaceManager.CreateSubscriptionAsync(
-                topicDescription.Path,
-                SubscriptionColorBlueSize10Orders,
-                new SqlFilter("color = 'blue' AND quantity = 10"));
-            Console.WriteLine(
-                "Subscription {0} added with filter definition \"color = 'blue' AND quantity = 10\".",
-                 SubscriptionColorBlueSize10Orders);
-
-            // Create a subscription that'll receive all orders which have color "red"
-            await namespaceManager.CreateSubscriptionAsync(
-                topicDescription.Path,
-                SubscriptionColorRed,
-                new RuleDescription
-                {
-                    Name = "RedRule",
-                    Filter = new SqlFilter("color = 'red'"),
-                    Action = new SqlRuleAction(
-                        "SET quantity = quantity / 2;" +
-                        "REMOVE priority;" +
-                        "SET sys.CorrelationId = 'low';")
-                });
-            Console.WriteLine("Subscription {0} added with filter definition \"color = 'red'\" and action definition.", SubscriptionColorRed);
-     
-            // Create a subscription that'll receive all high priority orders.
-            namespaceManager.CreateSubscription(topicDescription.Path, SubscriptionHighPriorityOrders, 
-                new CorrelationFilter { Label = "red", CorrelationId = "high"});
-            Console.WriteLine("Subscription {0} added with correlation filter definition \"high\".", SubscriptionHighPriorityOrders);
-     
             Console.WriteLine("Create completed.");
 
 
-            await this.SendAndReceiveTestsAsync(connectionString, sharedAccessSignatureTokenProvider);
+            await this.SendAndReceiveTestsAsync(connectionString);
 
 
             Console.WriteLine("Press [Enter] to quit...");
@@ -108,7 +127,7 @@ namespace MessagingSamples
 
             try
             {
-                namespaceManager.DeleteTopic(TopicName);
+                await managementClient.Topics.DeleteAsync(resourceGroupName, namespaceName, TopicName);
             }
             catch (MessagingEntityNotFoundException)
             {
@@ -118,27 +137,23 @@ namespace MessagingSamples
             Console.WriteLine("Delete completed.");
         }
 
-        async Task SendAndReceiveTestsAsync(string connectionString, TokenProvider sharedAccessSignatureTokenProvider)
+        async Task SendAndReceiveTestsAsync(string connectionString)
         {
-            var messagingFactory = MessagingFactory.Create(connectionString, sharedAccessSignatureTokenProvider);
-
             // Send sample messages.
-            await this.SendMessagesToTopicAsync(messagingFactory);
+            await this.SendMessagesToTopicAsync(connectionString);
 
             // Receive messages from subscriptions.
-            await this.ReceiveAllMessageFromSubscription(messagingFactory, SubscriptionAllMessages);
-            await this.ReceiveAllMessageFromSubscription(messagingFactory, SubscriptionColorBlueSize10Orders);
-            await this.ReceiveAllMessageFromSubscription(messagingFactory, SubscriptionColorRed);
-            await this.ReceiveAllMessageFromSubscription(messagingFactory, SubscriptionHighPriorityOrders);
-
-            messagingFactory.Close();
+            await this.ReceiveAllMessageFromSubscription(connectionString, SubscriptionAllMessages);
+            await this.ReceiveAllMessageFromSubscription(connectionString, SubscriptionColorBlueSize10Orders);
+            await this.ReceiveAllMessageFromSubscription(connectionString, SubscriptionColorRed);
+            await this.ReceiveAllMessageFromSubscription(connectionString, SubscriptionHighPriorityOrders);
         }
 
 
-        async Task SendMessagesToTopicAsync(MessagingFactory messagingFactory)
+        async Task SendMessagesToTopicAsync(string connectionString)
         {
             // Create client for the topic.
-            var topicClient = messagingFactory.CreateTopicClient(TopicName);
+            var topicClient = new TopicClient(connectionString, TopicName);
 
             // Create a message sender from the topic client.
 
@@ -170,7 +185,7 @@ namespace MessagingSamples
             {
                 CorrelationId = order.Priority,
                 Label = order.Color,
-                Properties =
+                UserProperties =
                 {
                     { "color", order.Color },
                     { "quantity", order.Quantity },
@@ -182,13 +197,12 @@ namespace MessagingSamples
             Console.WriteLine("Sent order with Color={0}, Quantity={1}, Priority={2}", order.Color, order.Quantity, order.Priority);
         }
 
-        async Task ReceiveAllMessageFromSubscription(MessagingFactory messagingFactory, string subsName)
+        async Task ReceiveAllMessageFromSubscription(string connectionString, string subsName)
         {
             var receivedMessages = 0;
 
             // Create subscription client.
-            var subscriptionClient =
-                messagingFactory.CreateSubscriptionClient(TopicName, subsName, ReceiveMode.ReceiveAndDelete);
+            var subscriptionClient = new Microsoft.Azure.ServiceBus.Core.MessageReceiver(connectionString, EntityNameHelper.FormatSubscriptionPath(TopicName, subsName), ReceiveMode.ReceiveAndDelete);
 
             // Create a receiver from the subscription client and receive all messages.
             Console.WriteLine("\nReceiving messages from subscription {0}.", subsName);
@@ -198,13 +212,11 @@ namespace MessagingSamples
                 var receivedMessage = await subscriptionClient.ReceiveAsync(TimeSpan.Zero);
                 if (receivedMessage != null)
                 {
-                    foreach (var prop in receivedMessage.Properties)
+                    foreach (var prop in receivedMessage.UserProperties)
                     {
                         Console.Write("{0}={1},", prop.Key, prop.Value);
                     }
                     Console.WriteLine("CorrelationId={0}", receivedMessage.CorrelationId);
-
-                    receivedMessage.Dispose();
                     receivedMessages++;
                 }
                 else
@@ -213,7 +225,7 @@ namespace MessagingSamples
                     break;
                 }
             }
-            Console.WriteLine("Received {0} messages from subscription {1}.", receivedMessages, subscriptionClient.Name);
+            Console.WriteLine("Received {0} messages from subscription {1}.", receivedMessages, subsName);
         }
     }
 }

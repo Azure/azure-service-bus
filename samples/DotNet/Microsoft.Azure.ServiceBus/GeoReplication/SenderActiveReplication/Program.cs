@@ -21,38 +21,23 @@ namespace MessagingSamples
     using System.Threading.Tasks;
     using Microsoft.Azure.ServiceBus;
     using Microsoft.Azure.ServiceBus.Core;
+    using System.Text;
 
-    public class Program : IDualBasicQueueSampleWithKeys
+    public class Program : IConnectionStringSample
     {
-        public async Task Run(
-            string connectionString,
-            string basicQueueName,
-            string basicQueue2Name,
-            string sendKeyName,
-            string sendKey,
-            string receiveKeyName,
-            string receiveKey)
+        public async Task Run(string connectionString)
         {
-            var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendKeyName, sendKey);
-
-            var primaryFactory = MessagingFactory.Create(
-                connectionString,
-                new MessagingFactorySettings {TokenProvider = tokenProvider, TransportType = TransportType.Amqp});
-            var secondaryFactory = MessagingFactory.Create(
-                connectionString,
-                new MessagingFactorySettings {TokenProvider = tokenProvider, TransportType = TransportType.Amqp});
-
             try
             {
                 // Create a primary and secondary queue client.
-                var primaryQueueClient = primaryFactory.CreateQueueClient(basicQueueName);
-                var secondaryQueueClient = secondaryFactory.CreateQueueClient(basicQueue2Name);
+                var primaryQueueClient = new QueueClient(connectionString, Sample.BasicQueueName);
+                var secondaryQueueClient = new QueueClient(connectionString, Sample.BasicQueue2Name);
                 Console.WriteLine("\nSending messages to primary and secondary queues...\n");
 
                 for (var i = 1; i <= 5; i++)
                 {
                     // Create brokered message.
-                    var m1 = new Message("Message" + i)
+                    var m1 = new Message(Encoding.UTF8.GetBytes("Message" + i))
                     {
                         MessageId = i.ToString(),
                         TimeToLive = TimeSpan.FromMinutes(2.0)
@@ -71,7 +56,7 @@ namespace MessagingSamples
                     try
                     {
                         await t1;
-                        Console.WriteLine("Message {0} sent to primary queue: Body = {1}", m1.MessageId, m1.GetBody<string>());
+                        Console.WriteLine("Message {0} sent to primary queue: Body = {1}", m1.MessageId, Encoding.UTF8.GetString(m1.Body));
                     }
                     catch (Exception e)
                     {
@@ -83,7 +68,7 @@ namespace MessagingSamples
                     try
                     {
                         await t2;
-                        Console.WriteLine("Message {0} sent to secondary queue: Body = {1}", m2.MessageId, m2.GetBody<string>());
+                        Console.WriteLine("Message {0} sent to secondary queue: Body = {1}", m2.MessageId, Encoding.UTF8.GetString(m2.Body));
                     }
                     catch (Exception e)
                     {
@@ -105,12 +90,6 @@ namespace MessagingSamples
             {
                 Console.WriteLine("Unexpected exception {0}", e);
                 throw e;
-            }
-            finally
-            {
-                // Closing factories closes all entities created from these factories.
-                primaryFactory?.Close();
-                secondaryFactory?.Close();
             }
         }
     }

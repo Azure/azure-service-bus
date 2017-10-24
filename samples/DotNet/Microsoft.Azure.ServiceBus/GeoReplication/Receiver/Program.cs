@@ -23,31 +23,16 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus;
     using Microsoft.Azure.ServiceBus.Core;
 
-    public class Program : IDualBasicQueueSampleWithKeys
+    public class Program : IConnectionStringSample
     {
-        public async Task Run(
-            string connectionString,
-            string basicQueueName,
-            string basicQueue2Name,
-            string sendKeyName,
-            string sendKey,
-            string receiveKeyName,
-            string receiveKey)
+        public async Task Run(string connectionString)
         {
-            var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveKeyName, receiveKey);
-
-            var primaryFactory = MessagingFactory.Create(
-                connectionString,
-                new MessagingFactorySettings {TokenProvider = tokenProvider, TransportType = TransportType.Amqp});
-            var secondaryFactory = MessagingFactory.Create(
-                connectionString,
-                new MessagingFactorySettings {TokenProvider = tokenProvider, TransportType = TransportType.Amqp});
 
             try
             {
                 // Create a primary and secondary queue client.
-                var primaryQueueClient = primaryFactory.CreateQueueClient(basicQueueName);
-                var secondaryQueueClient = secondaryFactory.CreateQueueClient(basicQueue2Name);
+                var primaryQueueClient = new QueueClient(connectionString, Sample.BasicQueueName);
+                var secondaryQueueClient = new QueueClient(connectionString, Sample.BasicQueue2Name);
 
 
                 this.RegisterMessageHandler(
@@ -64,12 +49,6 @@ namespace MessagingSamples
                 Console.WriteLine("Unexpected exception {0}", e);
                 throw;
             }
-            finally
-            {
-                // Closing factories closes all entities created from these factories.
-                primaryFactory?.Close();
-                secondaryFactory?.Close();
-            }
         }
 
         void RegisterMessageHandler(
@@ -81,7 +60,7 @@ namespace MessagingSamples
             var receivedMessageList = new List<string>();
             var receivedMessageListLock = new object();
 
-            Func<int, Func<Message, Task>, Message, Task> callback = async (maxCount, fwd, message) =>
+            Func<QueueClient, int, Func<Message, Task>, Message, Task> callback = async (qc, maxCount, fwd, message) =>
             {
                 // Detect if a message with an identical ID has been received through the other queue.
                 bool duplicate;
@@ -101,14 +80,20 @@ namespace MessagingSamples
                 {
                     await fwd(message);
                 }
-                else
-                {
-                    await receiveClient.CompleteAsync(message.SystemProperties.LockToken);
-                }
             };
 
-            primaryQueueClient.RegisterMessageHandler(msg => callback(maxDeduplicationListLength, handlerCallback, msg));
-            secondaryQueueClient.RegisterMessageHandler(msg => callback(maxDeduplicationListLength, handlerCallback, msg));
+            primaryQueueClient.RegisterMessageHandler((msg, ct) => callback(primaryQueueClient, maxDeduplicationListLength, handlerCallback, msg),
+                new MessageHandlerOptions((e) => LogMessageHandlerException(e)) { AutoComplete = true, MaxConcurrentCalls = 1 });
+            secondaryQueueClient.RegisterMessageHandler((msg, ct) => callback(secondaryQueueClient, maxDeduplicationListLength, handlerCallback, msg),
+                new MessageHandlerOptions((e) => LogMessageHandlerException(e)) { AutoComplete = true, MaxConcurrentCalls = 1 });
+        }
+
+
+
+        private Task LogMessageHandlerException(ExceptionReceivedEventArgs e)
+        {
+            Console.WriteLine("Exception: \"{0}\" {0}", e.Exception.Message, e.ExceptionReceivedContext.EntityPath);
+            return Task.CompletedTask;
         }
     }
 }

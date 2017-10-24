@@ -1,5 +1,5 @@
 //   
-//   Copyright � Microsoft Corporation, All Rights Reserved
+//   Copyright (c) Microsoft Corporation, All Rights Reserved
 // 
 //   Licensed under the Apache License, Version 2.0 (the "License"); 
 //   you may not use this file except in compliance with the License. 
@@ -20,9 +20,11 @@ namespace MessagingSamples
     using System;
     using System.Threading.Tasks;
     using Microsoft.Azure.ServiceBus;
-    using Microsoft.Azure.ServiceBus.Core;
-
-    public class Program : IDynamicSample
+    using Microsoft.Azure.Management.ResourceManager.Fluent;
+    using Microsoft.Azure.Management.ServiceBus;
+    using Microsoft.Azure.Management.ServiceBus.Models;
+    
+    public class Program : IConnectionStringSample
     {
         const string TopicName = "PrioritySubscriptionsTopic";
 
@@ -37,42 +39,45 @@ namespace MessagingSamples
             ConsoleColor.White
         };
 
-        public async Task Run(string connectionString, string manageToken)
+        public async Task Run(string connectionString)
         {
-            // Create the Topic / Subscription entities 
-            var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(manageToken);
-            var namespaceManager = new NamespaceManager(connectionString, tokenProvider);
-            var topicDescription = new TopicDescription(TopicName);
+            var managementCredentials = SdkContext.AzureCredentialsFactory.FromFile(Environment.GetEnvironmentVariable("AZURE_AUTH_LOCATION"));
+            var managementClient = new ServiceBusManagementClient(managementCredentials);
+            var namespaceName = "";
+            var resourceGroupName = "";
+            await managementClient.Topics.CreateOrUpdateAsync(resourceGroupName, namespaceName, TopicName,
+                new SBTopic { /* defaults are fine */ });
 
-            // Delete the topic if it already exists before creation. 
-            if (await namespaceManager.TopicExistsAsync(topicDescription.Path))
-            {
-                await namespaceManager.DeleteTopicAsync(topicDescription.Path);
-            }
-            await namespaceManager.CreateTopicAsync(topicDescription);
             await Task.WhenAll(
                 // this sub receives messages for Priority = 1
-                namespaceManager.CreateSubscriptionAsync(
-                    new SubscriptionDescription(TopicName, "Priority1Subscription"),
-                    new RuleDescription(new SqlFilter("Priority = 1"))),
+                managementClient.Subscriptions.CreateOrUpdateAsync(
+                    resourceGroupName, namespaceName, TopicName, "Priority1Subscription", 
+                    new SBSubscription { /* defaults are fine */ }).
+                    ContinueWith(t =>
+                       managementClient.Rules.CreateOrUpdateAsync(resourceGroupName, namespaceName, TopicName, t.Result.Name, "$default",
+                           new Rule { SqlFilter = new Microsoft.Azure.Management.ServiceBus.Models.SqlFilter { SqlExpression = "Priority = 1" } })),
                 // this sub receives messages for Priority = 2
-                namespaceManager.CreateSubscriptionAsync(
-                    new SubscriptionDescription(TopicName, "Priority2Subscription"),
-                    new RuleDescription(new SqlFilter("Priority = 2"))),
+                managementClient.Subscriptions.CreateOrUpdateAsync(
+                    resourceGroupName, namespaceName, TopicName, "Priority2Subscription", 
+                    new SBSubscription { /* defaults are fine */ }).
+                    ContinueWith(t =>
+                       managementClient.Rules.CreateOrUpdateAsync(resourceGroupName, namespaceName, TopicName, t.Result.Name, "$default",
+                           new Rule { SqlFilter = new Microsoft.Azure.Management.ServiceBus.Models.SqlFilter { SqlExpression = "Priority = 2" } })),
                 // this sub receives messages for Priority Less than 2
-                namespaceManager.CreateSubscriptionAsync(
-                    new SubscriptionDescription(TopicName, "PriorityLessThan2Subscription"),
-                    new RuleDescription(new SqlFilter("Priority > 2")))
+                managementClient.Subscriptions.CreateOrUpdateAsync(
+                    resourceGroupName, namespaceName, TopicName, "PriorityGreaterThan2Subscription", 
+                    new SBSubscription { /* defaults are fine */ }).
+                    ContinueWith(t =>
+                       managementClient.Rules.CreateOrUpdateAsync(resourceGroupName, namespaceName, TopicName, t.Result.Name, "$default",
+                           new Rule { SqlFilter = new Microsoft.Azure.Management.ServiceBus.Models.SqlFilter { SqlExpression = "Priority > 2" } }))
                 );
 
 
             // Start senders and receivers:
             Console.WriteLine("\nLaunching senders and receivers...");
 
-            //send messages to topic            
-            var messagingFactory = MessagingFactory.Create(connectionString, tokenProvider);
-
-            var topicClient = messagingFactory.CreateTopicClient(TopicName);
+    
+            var topicClient = new TopicClient(connectionString, TopicName);
 
             Console.WriteLine("Preparing to send messages to {0}...", topicClient.Path);
 
@@ -85,7 +90,7 @@ namespace MessagingSamples
                 var msg = new Message()
                 {
                     TimeToLive = TimeSpan.FromMinutes(2),
-                    Properties =
+                    UserProperties =
                     {
                         { "Priority", rand.Next(1, 4) }
                     }
@@ -105,62 +110,53 @@ namespace MessagingSamples
 
             // start receive
             Console.WriteLine("Receiving messages by priority ...");
-            var subClient1 = messagingFactory.CreateSubscriptionClient(
-                TopicName,
-                new SubscriptionDescription(TopicName, "Priority1Subscription").Name,
-                ReceiveMode.ReceiveAndDelete);
-            var subClient2 = messagingFactory.CreateSubscriptionClient(
-                TopicName,
-                new SubscriptionDescription(TopicName, "Priority2Subscription").Name,
-                ReceiveMode.ReceiveAndDelete);
-            var subClient3 = messagingFactory.CreateSubscriptionClient(
-                TopicName,
-                new SubscriptionDescription(TopicName, "PriorityLessThan2Subscription").Name,
-                ReceiveMode.ReceiveAndDelete);
+            var subClient1 = new Microsoft.Azure.ServiceBus.SubscriptionClient( connectionString,
+                TopicName, "Priority1Subscription", ReceiveMode.PeekLock);
+            var subClient2 = new Microsoft.Azure.ServiceBus.SubscriptionClient(connectionString,
+                TopicName, "Priority2Subscription", ReceiveMode.PeekLock);
+            var subClient3 = new Microsoft.Azure.ServiceBus.SubscriptionClient(connectionString,
+                TopicName, "PriorityGreaterThan2Subscription", ReceiveMode.PeekLock);
 
-            while (true)
-            {
-                try
-                {
-                    // Please see the README.md file regarding this loop and 
-                    // the handling strategy below. 
-                    var message = await subClient1.ReceiveAsync(TimeSpan.Zero) ??
-                                  (await subClient2.ReceiveAsync(TimeSpan.Zero) ?? 
-                                   await subClient3.ReceiveAsync(TimeSpan.Zero));
+#if null            
+            Func<Microsoft.Azure.ServiceBus.SubscriptionClient, Message,CancellationToken,Task> callback = async (c, m, ct) =>
+             {
+                 try
+                 {
+                     if (message != null)
+                     {
+                         this.OutputMessageInfo("Received: ", message);
+                     }
+                     else
+                     {
+                         break;
+                     }
+                 }
+                 catch (MessageNotFoundException)
+                 {
+                     Console.WriteLine("Got MessageNotFoundException, waiting for messages to be available");
+                 }
+                 catch (ServiceBusException e)
+                 {
+                     Console.WriteLine("Error: " + e.Message);
+                 }
+             };
 
-                    if (message != null)
-                    {
-                        this.OutputMessageInfo("Received: ", message);
-                    }
-                    else
-                    {
-                        break;
-                    }
-                }
-                catch (MessageNotFoundException)
-                {
-                    Console.WriteLine("Got MessageNotFoundException, waiting for messages to be available");
-                }
-                catch (ServiceBusException e)
-                {
-                    Console.WriteLine("Error: " + e.Message);
-                }
-            }
+#endif
 
             Console.WriteLine("\nReceiver complete. press ENTER");
             Console.ReadLine();
 
             // Cleanup:
-            namespaceManager.DeleteTopic(TopicName);
+            await managementClient.Topics.DeleteAsync(resourceGroupName, namespaceName, TopicName);
         }
 
         public void OutputMessageInfo(string action, Message message, string additionalText = "")
         {
-            var prop = message?.Properties["Priority"];
+            var prop = message?.UserProperties["Priority"];
             if (prop != null)
             {
                 Console.ForegroundColor = this.colors[int.Parse(prop.ToString()) % this.colors.Length];
-                Console.WriteLine("{0}{1} - Priority {2}. {3}", action, message.MessageId, message.Properties["Priority"], additionalText);
+                Console.WriteLine("{0}{1} - Priority {2}. {3}", action, message.MessageId, message.UserProperties["Priority"], additionalText);
                 Console.ResetColor();
             }
         }

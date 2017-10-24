@@ -27,32 +27,23 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
-    public class Program : IBasicQueueSendReceiveSample
+    public class Program : IConnectionStringSample
     {
-        public async Task Run(string connectionString, string queueName, string sendToken)
+        public async Task Run(string connectionString)
         {
             Console.WriteLine("Press any key to exit the scenario");
 
-            var sendTask = this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, queueName, sendToken);
-            var receiveTask = this.ReceiveMessagesAsync(connectionString, queueName, receiveToken);
+            var sendTask = this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, Sample.SessionQueueName);
+            var receiveTask = this.ReceiveMessagesAsync(connectionString, Sample.SessionQueueName);
 
             await Task.WhenAll(sendTask, receiveTask);
 
             Console.ReadKey();
         }
 
-        async Task SendMessagesAsync(string session, string connectionString, string queueName, string sendToken)
+        async Task SendMessagesAsync(string session, string connectionString, string queueName)
         {
-            var senderFactory = MessagingFactory.Create(
-                connectionString,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)
-                });
-            senderFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
-
-            var sender = new MessageSender(connectionString,queueName);
+           var sender = new MessageSender(connectionString,queueName);
 
 
             Console.WriteLine("Sending messages to Queue...");
@@ -96,16 +87,7 @@ namespace MessagingSamples
 
         async Task ReceiveMessagesAsync(string connectionString, string queueName)
         {
-            var receiverFactory = MessagingFactory.Create(
-                connectionString,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.NetMessaging, // deferral not yet supported on AMQP 
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken)
-                });
-            receiverFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
-
-            var client = receiverFactory.CreateQueueClient(queueName, ReceiveMode.PeekLock);
+            var client = new SessionClient(connectionString, queueName, ReceiveMode.PeekLock);
             while (true)
             {
                 var session = await client.AcceptMessageSessionAsync();
@@ -114,10 +96,10 @@ namespace MessagingSamples
                     {
                         dynamic processingState;
 
-                        var stateStream = await session.GetStateAsync();
-                        if (stateStream != null)
+                        var stateData = await session.GetStateAsync();
+                        if (stateData != null)
                         {
-                            processingState = JsonConvert.DeserializeObject(new StreamReader(stateStream, true).ReadToEnd());
+                            processingState = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(stateData));
                         }
                         else
                         {
@@ -162,7 +144,7 @@ namespace MessagingSamples
                                                     recipeStep.title);
                                                 Console.ResetColor();
                                             }
-                                            await receiveClient.CompleteAsync(message.SystemProperties.LockToken);
+                                            await session.CompleteAsync(message.SystemProperties.LockToken);
                                             processingState.lastProcessedRecipeStep = recipeStep.step;
                                             await
                                                 session.SetStateAsync(
@@ -171,7 +153,7 @@ namespace MessagingSamples
                                         else
                                         {
                                             processingState.deferredSteps.Add((int) recipeStep.step, (long) message.SystemProperties.SequenceNumber);
-                                            await message.DeferAsync();
+                                            await session.DeferAsync(message.SystemProperties.LockToken);
                                             await
                                                 session.SetStateAsync(
                                                     Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(processingState)));
@@ -179,7 +161,7 @@ namespace MessagingSamples
                                     }
                                     else
                                     {
-                                        await receiver.DeadLetterAsync(message.SystemProperties.LockToken, "ProcessingError", "Don't know what to do with this message");
+                                        await session.DeadLetterAsync(message.SystemProperties.LockToken);//, "ProcessingError", "Don't know what to do with this message");
                                     }
                                 }
                                 else
@@ -190,7 +172,7 @@ namespace MessagingSamples
 
                                         if (processingState.deferredSteps.TryGetValue(processingState.lastProcessedRecipeStep + 1, out step))
                                         {
-                                            var deferredMessage = await session.ReceiveAsync(step);
+                                            var deferredMessage = await session.ReceiveDeferredMessageAsync(step);
                                             var body = deferredMessage.Body;
                                             dynamic recipeStep = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(body));
                                             lock (Console.Out)
@@ -200,8 +182,8 @@ namespace MessagingSamples
                                                     "\t\t\t\tdeferredMessage received: \n\t\t\t\t\t\tMessageId = {0}, \n\t\t\t\t\t\tSequenceNumber = {1}, \n\t\t\t\t\t\tEnqueuedTimeUtc = {2}," +
                                                     "\n\t\t\t\t\t\tExpiresAtUtc = {5}, \n\t\t\t\t\t\tContentType = \"{3}\", \n\t\t\t\t\t\tSize = {4},  \n\t\t\t\t\t\tContent: [ step = {6}, title = {7} ]",
                                                     deferredMessage.MessageId,
-                                                    deferredmessage.SystemProperties.SequenceNumber,
-                                                    deferredmessage.SystemProperties.EnqueuedTimeUtc,
+                                                    deferredMessage.SystemProperties.SequenceNumber,
+                                                    deferredMessage.SystemProperties.EnqueuedTimeUtc,
                                                     deferredMessage.ContentType,
                                                     deferredMessage.Size,
                                                     deferredMessage.ExpiresAtUtc,
@@ -209,12 +191,10 @@ namespace MessagingSamples
                                                     recipeStep.title);
                                                 Console.ResetColor();
                                             }
-                                            await deferredreceiveClient.CompleteAsync(message.SystemProperties.LockToken);
+                                            await session.CompleteAsync(message.SystemProperties.LockToken);
                                             processingState.lastProcessedRecipeStep = processingState.lastProcessedRecipeStep + 1;
                                             processingState.deferredSteps.Remove(processingState.lastProcessedRecipeStep);
-                                            await
-                                                session.SetStateAsync(
-                                                    Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(processingState)));
+                                            await session.SetStateAsync( Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(processingState)));
                                         }
                                     }
                                     break;
@@ -232,7 +212,6 @@ namespace MessagingSamples
                         await session.CloseAsync();
                     });
             }
-            await receiverFactory.CloseAsync();
         }
     }
 }

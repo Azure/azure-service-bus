@@ -21,45 +21,22 @@ namespace MessagingSamples
     using System.Threading.Tasks;
     using Microsoft.Azure.ServiceBus;
     using Microsoft.Azure.ServiceBus.Core;
+    using System.Text;
 
-    public class Program : IDualBasicQueueSampleWithKeys
+    public class Program : IConnectionStringSample
     {
         readonly object swapMutex = new object();
         QueueClient activeQueueClient;
         QueueClient backupQueueClient;
 
-        public async Task Run(
-            string connectionString,
-            string basicQueueName,
-            string basicQueue2Name,
-            string sendKeyName,
-            string sendKey,
-            string receiveKeyName,
-            string receiveKey)
+        public async Task Run(string connectionString)
         {
-            var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendKeyName, sendKey);
-
-            var primaryFactory = MessagingFactory.Create(
-                connectionString,
-                new MessagingFactorySettings {TokenProvider = tokenProvider, TransportType = TransportType.Amqp});
-            var secondaryFactory = MessagingFactory.Create(
-                connectionString,
-                new MessagingFactorySettings {TokenProvider = tokenProvider, TransportType = TransportType.Amqp});
-
-            this.activeQueueClient = primaryFactory.CreateQueueClient(basicQueueName);
-            this.backupQueueClient = secondaryFactory.CreateQueueClient(basicQueue2Name);
+            this.activeQueueClient = new QueueClient(connectionString, Sample.BasicQueueName);
+            this.backupQueueClient = new QueueClient(connectionString, Sample.BasicQueue2Name);
 
             try
             {
                 // Create a primary and secondary queue client.
-
-                // forcing an error after 5 seconds by taking down the primary factory
-                // usually, errors will be more transient
-#pragma warning disable 4014
-                Task.Delay(5000).ContinueWith(
-                    t => primaryFactory.Abort()
-                    );
-#pragma warning restore 4014
 
 
                 Console.WriteLine("\nSending messages to primary or secondary queue...\n");
@@ -67,7 +44,7 @@ namespace MessagingSamples
                 for (var i = 1; i <= 500; i++)
                 {
                     // Create brokered message.
-                    var message = new Message("Message" + i)
+                    var message = new Message(Encoding.UTF8.GetBytes("Message" + i))
                     {
                         MessageId = i.ToString(),
                         TimeToLive = TimeSpan.FromMinutes(2.0)
@@ -91,12 +68,6 @@ namespace MessagingSamples
             {
                 Console.WriteLine("Unexpected exception {0}", e);
                 throw;
-            }
-            finally
-            {
-                // Closing factories closes all entities created from these factories.
-                primaryFactory?.Close();
-                secondaryFactory?.Close();
             }
         }
 

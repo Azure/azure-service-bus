@@ -27,32 +27,23 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
-    public class Program : IBasicQueueSendReceiveSample
+    public class Program : IConnectionStringSample
     {
-        public async Task Run(string connectionString, string queueName, string sendToken)
+        public async Task Run(string connectionString)
         {
             Console.WriteLine("Press any key to exit the scenario");
 
-            var sendTask = this.SendMessagesAsync(connectionString, queueName, sendToken);
-            var receiveTask = this.ReceiveMessagesAsync(connectionString, queueName, receiveToken);
+            var sendTask = this.SendMessagesAsync(connectionString, Sample.BasicQueueName);
+            var receiveTask = this.ReceiveMessagesAsync(connectionString, Sample.BasicQueueName);
 
             await Task.WhenAll(sendTask, receiveTask);
 
             Console.ReadKey();
         }
 
-        async Task SendMessagesAsync(string connectionString, string queueName, string sendToken)
+        async Task SendMessagesAsync(string connectionString, string queueName)
         {
-            var senderFactory = MessagingFactory.Create(
-                connectionString,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)
-                });
-            senderFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
-
-            var sender = new MessageSender(connectionString,queueName);
+            var sender = new MessageSender(connectionString, queueName);
 
 
             Console.WriteLine("Sending messages to Queue...");
@@ -95,16 +86,7 @@ namespace MessagingSamples
 
         async Task ReceiveMessagesAsync(string connectionString, string queueName)
         {
-            var receiverFactory = MessagingFactory.Create(
-                connectionString,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.NetMessaging, // deferral not yet supported on AMQP 
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken)
-                });
-            receiverFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
-
-            var receiver = new MessageReceiver(connectionString,queueName, ReceiveMode.PeekLock);
+            var receiver = new MessageReceiver(connectionString, queueName, ReceiveMode.PeekLock);
 
             Console.WriteLine("Receiving message from Queue...");
 
@@ -145,18 +127,18 @@ namespace MessagingSamples
                                         recipeStep.title);
                                     Console.ResetColor();
                                 }
-                                await receiveClient.CompleteAsync(message.SystemProperties.LockToken);
+                                await receiver.CompleteAsync(message.SystemProperties.LockToken);
                                 lastProcessedRecipeStep = recipeStep.step;
                             }
                             else
                             {
                                 deferredSteps.Add((int)recipeStep.step, (long)message.SystemProperties.SequenceNumber);
-                                await message.DeferAsync();
+                                await receiver.DeferAsync(message.SystemProperties.LockToken);
                             }
                         }
                         else
                         {
-                            await receiver.DeadLetterAsync(message.SystemProperties.LockToken, "ProcessingError", "Don't know what to do with this message");
+                            await receiver.DeadLetterAsync(message.SystemProperties.LockToken); //, "ProcessingError", "Don't know what to do with this message");
                         }
                     }
                     else
@@ -181,7 +163,7 @@ namespace MessagingSamples
 
                 if (deferredSteps.TryGetValue(lastProcessedRecipeStep + 1, out step))
                 {
-                    var message = await receiver.ReceiveAsync(step);
+                    var message = await receiver.ReceiveDeferredMessageAsync(step);
                     var body = message.Body;
                     dynamic recipeStep = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(body));
                     lock (Console.Out)
@@ -200,14 +182,13 @@ namespace MessagingSamples
                             recipeStep.title);
                         Console.ResetColor();
                     }
-                    await receiveClient.CompleteAsync(message.SystemProperties.LockToken);
+                    await receiver.CompleteAsync(message.SystemProperties.LockToken);
                     lastProcessedRecipeStep = lastProcessedRecipeStep + 1;
                     deferredSteps.Remove(lastProcessedRecipeStep);
                 }
             }
 
             await receiver.CloseAsync();
-            await receiverFactory.CloseAsync();
         }
     }
 }
