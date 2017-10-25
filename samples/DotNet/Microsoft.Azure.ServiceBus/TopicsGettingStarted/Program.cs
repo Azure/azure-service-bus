@@ -24,7 +24,7 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus;
     using Newtonsoft.Json;
 
-    public class Program : IConnectionStringSample
+    public class Program : Sample
     {
         TopicClient sendClient;
         SubscriptionClient subscription1Client;
@@ -133,5 +133,10 @@ namespace MessagingSamples
             return Task.CompletedTask;
         }
 
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
+        }
     }
 }

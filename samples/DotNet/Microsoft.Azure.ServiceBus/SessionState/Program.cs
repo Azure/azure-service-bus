@@ -27,7 +27,7 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
-    public class Program : IConnectionStringSample
+    public class Program : Sample
     {
         public async Task Run(string connectionString)
         {
@@ -94,19 +94,19 @@ namespace MessagingSamples
                 await Task.Run(
                     async () =>
                     {
-                        dynamic processingState;
+                        ProcessingState processingState;
 
                         var stateData = await session.GetStateAsync();
                         if (stateData != null)
                         {
-                            processingState = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(stateData));
+                            processingState = JsonConvert.DeserializeObject<ProcessingState>(Encoding.UTF8.GetString(stateData));
                         }
                         else
                         {
-                            processingState = new
+                            processingState = new ProcessingState
                             {
-                                lastProcessedRecipeStep = 0,
-                                deferredSteps = new Dictionary<int, long>()
+                                LastProcessedRecipeStep = 0,
+                                DeferredSteps = new Dictionary<int, long>()
                             };
                         }
 
@@ -125,8 +125,8 @@ namespace MessagingSamples
                                     {
                                         var body = message.Body;
 
-                                        dynamic recipeStep = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(body));
-                                        if (recipeStep.step == processingState.lastProcessedRecipeStep + 1)
+                                        ProcessingState recipeStep = JsonConvert.DeserializeObject <ProcessingState>(Encoding.UTF8.GetString(body));
+                                        if (recipeStep.Step == processingState.LastProcessedRecipeStep + 1)
                                         {
                                             lock (Console.Out)
                                             {
@@ -140,19 +140,19 @@ namespace MessagingSamples
                                                     message.ContentType,
                                                     message.Size,
                                                     message.ExpiresAtUtc,
-                                                    recipeStep.step,
-                                                    recipeStep.title);
+                                                    recipeStep.Step,
+                                                    recipeStep.Title);
                                                 Console.ResetColor();
                                             }
                                             await session.CompleteAsync(message.SystemProperties.LockToken);
-                                            processingState.lastProcessedRecipeStep = recipeStep.step;
+                                            processingState.LastProcessedRecipeStep = recipeStep.Step;
                                             await
                                                 session.SetStateAsync(
                                                     Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(processingState)));
                                         }
                                         else
                                         {
-                                            processingState.deferredSteps.Add((int) recipeStep.step, (long) message.SystemProperties.SequenceNumber);
+                                            processingState.DeferredSteps.Add((int) recipeStep.Step, (long) message.SystemProperties.SequenceNumber);
                                             await session.DeferAsync(message.SystemProperties.LockToken);
                                             await
                                                 session.SetStateAsync(
@@ -166,15 +166,15 @@ namespace MessagingSamples
                                 }
                                 else
                                 {
-                                    while (processingState.deferredSteps.Count > 0)
+                                    while (processingState.DeferredSteps.Count > 0)
                                     {
                                         long step;
 
-                                        if (processingState.deferredSteps.TryGetValue(processingState.lastProcessedRecipeStep + 1, out step))
+                                        if (processingState.DeferredSteps.TryGetValue(processingState.LastProcessedRecipeStep + 1, out step))
                                         {
                                             var deferredMessage = await session.ReceiveDeferredMessageAsync(step);
                                             var body = deferredMessage.Body;
-                                            dynamic recipeStep = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(body));
+                                            ProcessingState recipeStep = JsonConvert.DeserializeObject<ProcessingState>(Encoding.UTF8.GetString(body));
                                             lock (Console.Out)
                                             {
                                                 Console.ForegroundColor = ConsoleColor.Cyan;
@@ -187,13 +187,13 @@ namespace MessagingSamples
                                                     deferredMessage.ContentType,
                                                     deferredMessage.Size,
                                                     deferredMessage.ExpiresAtUtc,
-                                                    recipeStep.step,
-                                                    recipeStep.title);
+                                                    recipeStep.Step,
+                                                    recipeStep.Title);
                                                 Console.ResetColor();
                                             }
                                             await session.CompleteAsync(message.SystemProperties.LockToken);
-                                            processingState.lastProcessedRecipeStep = processingState.lastProcessedRecipeStep + 1;
-                                            processingState.deferredSteps.Remove(processingState.lastProcessedRecipeStep);
+                                            processingState.LastProcessedRecipeStep = processingState.LastProcessedRecipeStep + 1;
+                                            processingState.DeferredSteps.Remove(processingState.LastProcessedRecipeStep);
                                             await session.SetStateAsync( Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(processingState)));
                                         }
                                     }
@@ -212,6 +212,20 @@ namespace MessagingSamples
                         await session.CloseAsync();
                     });
             }
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
+        }
+
+        private class ProcessingState
+        {
+            public int LastProcessedRecipeStep { get; set; }
+            public Dictionary<int, long> DeferredSteps { get; set; }
+            public int Step { get; internal set; }
+            public string Title { get; internal set; }
         }
     }
 }

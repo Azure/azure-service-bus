@@ -22,20 +22,26 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Microsoft.Azure.ServiceBus;
 
-    class Program : IConnectionStringSample
+    class Program : Sample
     {
         public async Task Run(string connectionString)
         {
+            await Send(connectionString);
+            await Receive(connectionString);
+        }
+        
+        static async Task Send(string connectionString)
+        {
             // Create communication objects to send and receive on the queue
-             var sender = new MessageSender(connectionString, Sample.DupdetectQueueName);
+            var sender = new MessageSender(connectionString, Sample.DupdetectQueueName);
 
-            var receiver = new MessageReceiver(connectionString, Sample.DupdetectQueueName, ReceiveMode.PeekLock);
 
+            string messageId = Guid.NewGuid().ToString();
             // Send messages to queue
             Console.WriteLine("\tSending messages to {0} ...", sender.Path);
             var message = new Message
             {
-                MessageId = "ABC123",
+                MessageId = messageId,
                 TimeToLive = TimeSpan.FromMinutes(1)
             };
             await sender.SendAsync(message);
@@ -43,11 +49,16 @@ namespace MessagingSamples
 
             var message2 = new Message
             {
-                MessageId = "ABC123",
+                MessageId = messageId,
                 TimeToLive = TimeSpan.FromMinutes(1)
             };
             await sender.SendAsync(message2);
             Console.WriteLine("\t=> Sent a duplicate message with messageId {0}", message.MessageId);
+            await sender.CloseAsync();
+        }
+        static async Task Receive(string connectionString)
+        {
+            var receiver = new MessageReceiver(connectionString, Sample.DupdetectQueueName, ReceiveMode.PeekLock);
 
             // Receive messages from queue
             var receivedMessageId = "";
@@ -62,7 +73,7 @@ namespace MessagingSamples
                     break;
                 }
                 Console.WriteLine("\t<= Received a message with messageId {0}", receivedMessage.MessageId);
-                await receiver.CompleteAsync(message.SystemProperties.LockToken);
+                await receiver.CompleteAsync(receivedMessage.SystemProperties.LockToken);
                 if (receivedMessageId.Equals(receivedMessage.MessageId, StringComparison.OrdinalIgnoreCase))
                 {
                     Console.WriteLine("\t\tRECEIVED a DUPLICATE MESSAGE");
@@ -74,7 +85,11 @@ namespace MessagingSamples
             Console.WriteLine("\tDone receiving messages from {0}", receiver.Path);
 
             await receiver.CloseAsync();
-            await sender.CloseAsync();
+        }
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

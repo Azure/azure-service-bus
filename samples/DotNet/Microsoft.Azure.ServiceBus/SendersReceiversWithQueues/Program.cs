@@ -26,7 +26,7 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
-    public class Program : IConnectionStringSample
+    public class Program : Sample
     {
         async Task SendMessagesAsync(string connectionString, string queueName)
         {
@@ -141,6 +141,12 @@ namespace MessagingSamples
             cts.Cancel();
 
             await Task.WhenAll(sendTask, receiveTask);
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

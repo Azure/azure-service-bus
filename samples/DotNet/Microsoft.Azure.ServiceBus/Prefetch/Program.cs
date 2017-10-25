@@ -32,7 +32,7 @@ namespace MessagingSamples
     ///     prefecthCount = 100. For each case, it calculates the time taken to receive and complete
     ///     all messages and at the end, it prints the difference between both times.
     /// </summary>
-    class Program : IConnectionStringSample
+    class Program : Sample
     {
         public async Task Run(string connectionString)
         {
@@ -118,6 +118,12 @@ namespace MessagingSamples
             Console.WriteLine("Time to receive and complete all messages = {0} milliseconds", timeTaken);
 
             return timeTaken;
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

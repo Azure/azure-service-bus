@@ -23,7 +23,7 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using System.Text;
 
-    public class Program : IConnectionStringSample
+    public class Program : Sample
     {
         readonly object swapMutex = new object();
         QueueClient activeQueueClient;
@@ -100,6 +100,12 @@ namespace MessagingSamples
                 }
             }
             while (true);
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

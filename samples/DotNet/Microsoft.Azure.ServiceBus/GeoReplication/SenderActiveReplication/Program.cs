@@ -23,7 +23,7 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using System.Text;
 
-    public class Program : IConnectionStringSample
+    public class Program : Sample
     {
         public async Task Run(string connectionString)
         {
@@ -91,6 +91,12 @@ namespace MessagingSamples
                 Console.WriteLine("Unexpected exception {0}", e);
                 throw e;
             }
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

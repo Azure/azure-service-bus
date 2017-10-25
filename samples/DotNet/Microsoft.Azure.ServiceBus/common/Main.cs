@@ -19,19 +19,16 @@ namespace MessagingSamples
 {
     using System;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
 
-    // IF YOU ARE JUST GETTING STARTED, 
-    // THESE ARE NOT THE DROIDS YOU ARE LOOKING FOR
-    // PLEASE REVIEW "Program.cs" IN THE SAMPLE PROJECT
 
-    // This is a common entry point class for all samples that provides
-    // the Main() method entry point called by the CLR. It loads the properties
+    // This is a common entry point class for all samples. It loads the properties
     // stored in the "azure-msg-samples.properties" file from the user profile
     // and then allows override of the settings from environment variables.
-    class Sample
+    public class Sample
     {
         public const string BasicQueueName = "BasicQueue";
         public const string PartitionedQueueName = "PartitionedQueue";
@@ -39,23 +36,16 @@ namespace MessagingSamples
         public const string BasicTopicName = "BasicTopic";
         public const string SessionQueueName = "SessionQueue";
         public const string BasicQueue2Name = "BasicQueue2";
-        static readonly string connectionString = "SB_SAMPLES_CONNECTIONSTRING";
         static readonly string samplePropertiesFileName = "azure-msg-config.properties";
 #if STA
         [STAThread]
 #endif
-
-        static void Main(string[] args)
-        {
-            Run();
-        }
-
-        // [DebuggerStepThrough]
-        static void Run()
+        [DebuggerStepThrough]
+        public void RunSample(string[] args, Func<string, Task> run)
         {
             var properties = new Dictionary<string, string>
             {
-                {connectionString, null},
+                {"SB_SAMPLES_CONNECTIONSTRING", null},
             };
 
             // read the settings file created by the ./setup.ps1 file
@@ -106,17 +96,8 @@ namespace MessagingSamples
                 }
             }
 
-            var program = Activator.CreateInstance(typeof(Program));
-
-
-            if (program is IConnectionStringSample)
-            {
-                ((IConnectionStringSample)program).Run(connectionString).GetAwaiter().GetResult();
-            }
+            run(properties["SB_SAMPLES_CONNECTIONSTRING"]).GetAwaiter().GetResult();
         }
     }
-    interface IConnectionStringSample
-    {
-        Task Run(string connectionString);
-    }
+
 }

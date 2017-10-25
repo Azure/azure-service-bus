@@ -26,7 +26,7 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
-    public class Program : IConnectionStringSample
+    public class Program : Sample
     {
         public async Task Run(string connectionString)
         {
@@ -94,7 +94,7 @@ namespace MessagingSamples
 
             while (true)
             {
-                var msg = await receiver.ReceiveAsync(TimeSpan.Zero);
+                var msg = await receiver.ReceiveAsync(TimeSpan.FromSeconds(10));
                 if (msg != null)
                 {
                     Console.WriteLine("Picked up message; DeliveryCount {0}", msg.SystemProperties.DeliveryCount);
@@ -109,7 +109,7 @@ namespace MessagingSamples
             var deadletterReceiver = new MessageReceiver(connectionString, EntityNameHelper.FormatDeadLetterPath(queueName), ReceiveMode.PeekLock);
             while (true)
             {
-                var msg = await deadletterReceiver.ReceiveAsync(TimeSpan.Zero);
+                var msg = await deadletterReceiver.ReceiveAsync(TimeSpan.FromSeconds(10));
                 if (msg != null)
                 {
                     Console.WriteLine("Deadletter message:");
@@ -117,7 +117,7 @@ namespace MessagingSamples
                     {
                         Console.WriteLine("{0}={1}", prop.Key, prop.Value);
                     }
-                    await receiver.CompleteAsync(msg.SystemProperties.LockToken);
+                    await deadletterReceiver.CompleteAsync(msg.SystemProperties.LockToken);
                 }
                 else
                 {
@@ -216,7 +216,7 @@ namespace MessagingSamples
                     }
                     await dlqReceiver.CompleteAsync(message.SystemProperties.LockToken);
                 },
-                new MessageHandlerOptions((e) => LogMessageHandlerException(e)) { AutoComplete = true, MaxConcurrentCalls = 1 });
+                new MessageHandlerOptions((e) => LogMessageHandlerException(e)) { AutoComplete = false, MaxConcurrentCalls = 1 });
 
             await doneReceiving.Task;
         }
@@ -225,6 +225,12 @@ namespace MessagingSamples
         {
             Console.WriteLine("Exception: \"{0}\" {0}", e.Exception.Message, e.ExceptionReceivedContext.EntityPath);
             return Task.CompletedTask;
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

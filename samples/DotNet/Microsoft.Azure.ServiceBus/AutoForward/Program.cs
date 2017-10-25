@@ -23,7 +23,7 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using System.Text;
 
-    class Program : IConnectionStringSample
+    class Program : Sample
     {
         string sharedAccessRuleKey;
 
@@ -62,7 +62,7 @@ namespace MessagingSamples
         async Task PrintReceivedMessage(Message receivedMessage)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            await Console.Out.WriteLineAsync(string.Format("Received message:\n" + "\tLabel:\t{0}\n" + "\tBody:\t{1}\n", receivedMessage.Label, receivedMessage.GetBody<string>()));
+            await Console.Out.WriteLineAsync(string.Format("Received message:\n" + "\tLabel:\t{0}\n" + "\tBody:\t{1}\n", receivedMessage.Label, Encoding.UTF8.GetString(receivedMessage.Body));
             foreach (var p in receivedMessage.UserProperties)
             {
                 await Console.Out.WriteLineAsync(string.Format("\tProperty:\t{0} = {1}", p.Key, p.Value));
@@ -81,7 +81,13 @@ namespace MessagingSamples
             msg.TimeToLive = TimeSpan.FromSeconds(90);
             return msg;
         }
-        
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
+        }
+                
     }
 }
 

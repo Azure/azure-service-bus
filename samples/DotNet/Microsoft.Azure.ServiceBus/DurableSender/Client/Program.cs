@@ -25,7 +25,7 @@ namespace MessagingSamples
     using System.Text;
     using Microsoft.Azure.ServiceBus.Core;
 
-    class Program : IConnectionStringSample
+    class Program : Sample
     {
         public async Task Run(string connectionString)
         {
@@ -140,6 +140,12 @@ namespace MessagingSamples
                 Console.WriteLine("   Property: " + p.Key + " = " + p.Value);
             }
             Console.ForegroundColor = ConsoleColor.Gray;
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }
