@@ -27,7 +27,7 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : IBasicQueueSendReceiveSample
+    public class Program : ISessionQueueSendReceiveSample
     {
         public async Task Run(string namespaceAddress, string queueName, string sendToken, string receiveToken)
         {
@@ -57,13 +57,13 @@ namespace MessagingSamples
 
             Console.WriteLine("Sending messages to Queue...");
 
-            dynamic data = new[]
+            ProcessingStep[] data = new ProcessingStep[]
             {
-                new {step = 1, title = "Shop"},
-                new {step = 2, title = "Unpack"},
-                new {step = 3, title = "Prepare"},
-                new {step = 4, title = "Cook"},
-                new {step = 5, title = "Eat"},
+                new ProcessingStep{step = 1, title = "Shop"},
+                new ProcessingStep{step = 2, title = "Unpack"},
+                new ProcessingStep{step = 3, title = "Prepare"},
+                new ProcessingStep{step = 4, title = "Cook"},
+                new ProcessingStep{step = 5, title = "Eat"},
             };
 
             var rnd = new Random();
@@ -112,16 +112,16 @@ namespace MessagingSamples
                 await Task.Run(
                     async () =>
                     {
-                        dynamic processingState;
+                        ProcessingStep processingState;
 
                         var stateStream = await session.GetStateAsync();
                         if (stateStream != null)
                         {
-                            processingState = JsonConvert.DeserializeObject(new StreamReader(stateStream, true).ReadToEnd());
+                            processingState = JsonConvert.DeserializeObject<ProcessingStep>(new StreamReader(stateStream, true).ReadToEnd());
                         }
                         else
                         {
-                            processingState = new
+                            processingState = new ProcessingStep
                             {
                                 lastProcessedRecipeStep = 0,
                                 deferredSteps = new Dictionary<int, long>()
@@ -143,7 +143,7 @@ namespace MessagingSamples
                                     {
                                         var body = message.GetBody<Stream>();
 
-                                        dynamic recipeStep = JsonConvert.DeserializeObject(new StreamReader(body, true).ReadToEnd());
+                                        ProcessingStep recipeStep = JsonConvert.DeserializeObject<ProcessingStep>(new StreamReader(body, true).ReadToEnd());
                                         if (recipeStep.step == processingState.lastProcessedRecipeStep + 1)
                                         {
                                             lock (Console.Out)
@@ -192,7 +192,7 @@ namespace MessagingSamples
                                         {
                                             var deferredMessage = await session.ReceiveAsync(step);
                                             var body = deferredMessage.GetBody<Stream>();
-                                            dynamic recipeStep = JsonConvert.DeserializeObject(new StreamReader(body, true).ReadToEnd());
+                                            ProcessingStep recipeStep = JsonConvert.DeserializeObject<ProcessingStep>(new StreamReader(body, true).ReadToEnd());
                                             lock (Console.Out)
                                             {
                                                 Console.ForegroundColor = ConsoleColor.Cyan;
@@ -234,5 +234,17 @@ namespace MessagingSamples
             }
             await receiverFactory.CloseAsync();
         }
+    }
+
+    internal class ProcessingStep
+    {
+        [JsonProperty]
+        public int lastProcessedRecipeStep { get; set; }
+        [JsonProperty]
+        public Dictionary<int, long> deferredSteps { get; set; }
+        [JsonProperty]
+        public int step { get; internal set; }
+        [JsonProperty]
+        public string title { get; internal set; }
     }
 }
