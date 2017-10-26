@@ -23,19 +23,20 @@ namespace MessagingSamples
     using Microsoft.ServiceBus;
     using System.Linq;
 
-    public class Program : ISessionQueueReceiveSample
+    public class Program : Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string receiveToken)
+        public async Task Run(string connectionString)
         {
+            var sbb = new ServiceBusConnectionStringBuilder(connectionString);
             try
             {
                 // Create MessageReceiver for queue which requires session
-                Console.WriteLine("Ready to receive messages from {0}...",queueName);
+                Console.WriteLine("Ready to receive messages from {0}...", SessionQueueName);
 
                 // Creating the service host object as defined in config
-                using (var serviceHost = new ServiceHost(typeof (SequenceProcessingService), new Uri(new Uri(namespaceAddress), queueName)))
+                using (var serviceHost = new ServiceHost(typeof(SequenceProcessingService), new Uri(sbb.GetAbsoluteRuntimeEndpoints()[0], SessionQueueName)))
                 {
-                    var authBehavior = new TransportClientEndpointBehavior(TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken));
+                    var authBehavior = new TransportClientEndpointBehavior(TokenProvider.CreateSharedAccessSignatureTokenProvider(sbb.SharedAccessKeyName, sbb.SharedAccessKey));
                     serviceHost.Description.Behaviors.Add(new ErrorServiceBehavior());
                     foreach (var ep in serviceHost.Description.Endpoints) { ep.EndpointBehaviors.Add(authBehavior);}
 
@@ -64,6 +65,12 @@ namespace MessagingSamples
         {
             Console.WriteLine("Fault occurred. Aborting the service host object ...");
             ((ServiceHost) sender).Abort();
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

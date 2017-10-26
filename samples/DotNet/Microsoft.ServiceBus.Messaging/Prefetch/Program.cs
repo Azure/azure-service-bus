@@ -33,28 +33,21 @@ namespace MessagingSamples
     ///     prefecthCount = 100. For each case, it calculates the time taken to receive and complete
     ///     all messages and at the end, it prints the difference between both times.
     /// </summary>
-    class Program : IBasicQueueSendReceiveSample
+    class Program : Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string sendToken, string receiveToken)
+        public async Task Run(string connectionString)
         {
             // Create communication objects to send and receive on the queue
-            var senderMessagingFactory = 
-                await MessagingFactory.CreateAsync(namespaceAddress, new MessagingFactorySettings {
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken),
-                    TransportType = TransportType.Amqp,
-                    });
-            var sender = await senderMessagingFactory.CreateMessageSenderAsync(queueName);
+            var senderMessagingFactory =
+                MessagingFactory.CreateFromConnectionString(connectionString);
+            var sender = await senderMessagingFactory.CreateMessageSenderAsync(BasicQueueName);
 
             var receiverMessagingFactory =
-                await MessagingFactory.CreateAsync(namespaceAddress, new MessagingFactorySettings
-                {
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken),
-                    TransportType = TransportType.Amqp,
-                });
+                MessagingFactory.CreateFromConnectionString(connectionString);
 
-          
+
             // Run 1
-            var receiver = await receiverMessagingFactory.CreateMessageReceiverAsync(queueName, ReceiveMode.PeekLock);
+            var receiver = await receiverMessagingFactory.CreateMessageReceiverAsync(BasicQueueName, ReceiveMode.PeekLock);
             receiver.PrefetchCount = 0;
             // Send and Receive messages with prefetch OFF
             var timeTaken1 = await this.SendAndReceiveMessages(sender, receiver, 100);
@@ -62,7 +55,7 @@ namespace MessagingSamples
             receiver.Close();
             
             // Run 2
-            receiver = await receiverMessagingFactory.CreateMessageReceiverAsync(queueName, ReceiveMode.PeekLock);
+            receiver = await receiverMessagingFactory.CreateMessageReceiverAsync(BasicQueueName, ReceiveMode.PeekLock);
             receiver.PrefetchCount = 10;
             // Send and Receive messages with prefetch ON
             var timeTaken2 = await this.SendAndReceiveMessages(sender, receiver, 100);
@@ -137,6 +130,12 @@ namespace MessagingSamples
             Console.WriteLine("Time to receive and complete all messages = {0} milliseconds", timeTaken);
 
             return timeTaken;
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

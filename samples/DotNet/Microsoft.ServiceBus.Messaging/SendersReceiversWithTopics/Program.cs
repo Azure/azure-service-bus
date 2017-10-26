@@ -27,18 +27,18 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : IBasicTopicSendReceiveSample
+    public class Program : Sample
     {
-        public async Task Run(string namespaceAddress, string topicName, string sendToken, string receiveToken)
+        public async Task Run(string connectionString)
         {
             var cts = new CancellationTokenSource();
 
-            await this.SendMessagesAsync(namespaceAddress, topicName, sendToken);
+            await this.SendMessagesAsync(connectionString, Sample.BasicTopicName);
 
             var allReceives = Task.WhenAll(
-                this.ReceiveMessagesAsync(namespaceAddress, topicName, "Subscription1", receiveToken, cts.Token, ConsoleColor.Cyan),
-                this.ReceiveMessagesAsync(namespaceAddress, topicName, "Subscription2", receiveToken, cts.Token, ConsoleColor.Green),
-                this.ReceiveMessagesAsync(namespaceAddress, topicName, "Subscription3", receiveToken, cts.Token, ConsoleColor.Yellow));
+                this.ReceiveMessagesAsync(connectionString, Sample.BasicTopicName, "Subscription1", cts.Token, ConsoleColor.Cyan),
+                this.ReceiveMessagesAsync(connectionString, Sample.BasicTopicName, "Subscription2", cts.Token, ConsoleColor.Green),
+                this.ReceiveMessagesAsync(connectionString, Sample.BasicTopicName, "Subscription3", cts.Token, ConsoleColor.Yellow));
             Console.WriteLine("\nEnd of scenario, press any key to exit.");
             Console.ReadKey();
 
@@ -46,15 +46,9 @@ namespace MessagingSamples
             await allReceives;
         }
 
-        async Task SendMessagesAsync(string namespaceAddress, string topicName, string sendToken)
+        async Task SendMessagesAsync(string connectionString, string topicName)
         {
-            var senderFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)
-                });
+            var senderFactory = MessagingFactory.CreateFromConnectionString(connectionString);
             var sender = await senderFactory.CreateMessageSenderAsync(topicName);
 
             dynamic data = new[]
@@ -92,15 +86,9 @@ namespace MessagingSamples
             }
         }
 
-        async Task ReceiveMessagesAsync(string namespaceAddress, string topicName, string subscriptionName, string receiveToken, CancellationToken cancellationToken, ConsoleColor color)
+        async Task ReceiveMessagesAsync(string connectionString, string topicName, string subscriptionName, CancellationToken cancellationToken, ConsoleColor color)
         {
-            var receiverFactory = MessagingFactory.Create(
-                 namespaceAddress,
-                 new MessagingFactorySettings
-                 {
-                     TransportType = TransportType.Amqp,
-                     TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken)
-                 });
+            var receiverFactory = MessagingFactory.CreateFromConnectionString(connectionString);
 
            // var subscriptionPath = SubscriptionClient.FormatSubscriptionPath(topicName, subscriptionName);
             //var receiver = await receiverFactory.CreateMessageReceiverAsync(subscriptionPath, ReceiveMode.PeekLock);
@@ -159,5 +147,10 @@ namespace MessagingSamples
             await doneReceiving.Task;
         }
 
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
+        }
     }
 }

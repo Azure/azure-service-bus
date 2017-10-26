@@ -23,20 +23,21 @@ namespace MessagingSamples
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
 
-    public class Program : ISessionQueueSendSample
+    public class Program : Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string sendToken)
+        public async Task Run(string connectionString)
         {
+            var sbb = new ServiceBusConnectionStringBuilder(connectionString);
+
             try
             {
-
                 // Create sender to Sequence Service
                 using (var sendChannelFactory = new ChannelFactory<ISequenceServiceChannel>("sequenceSendClient"))
                 {
                     sendChannelFactory.Endpoint.Address = new EndpointAddress(
-                        new Uri(new Uri(namespaceAddress), queueName));
+                        new Uri(sbb.GetAbsoluteRuntimeEndpoints()[0], SessionQueueName));
                     sendChannelFactory.Endpoint.EndpointBehaviors.Add(
-                        new TransportClientEndpointBehavior(TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)));
+                       new TransportClientEndpointBehavior(TokenProvider.CreateSharedAccessSignatureTokenProvider(sbb.SharedAccessKeyName, sbb.SharedAccessKey)));
 
                     using (var clientChannel = sendChannelFactory.CreateChannel())
                     {
@@ -88,6 +89,12 @@ namespace MessagingSamples
             Console.WriteLine("\nSender complete.");
             Console.WriteLine("\nPress [Enter] to exit.");
             Console.ReadLine();
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

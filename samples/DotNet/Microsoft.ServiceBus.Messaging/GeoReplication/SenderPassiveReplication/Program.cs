@@ -22,32 +22,19 @@ namespace MessagingSamples
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
 
-    public class Program : IDualBasicQueueSampleWithKeys
+    public class Program : Sample
     {
         readonly object swapMutex = new object();
         QueueClient activeQueueClient;
         QueueClient backupQueueClient;
 
-        public async Task Run(
-            string namespaceAddress,
-            string basicQueueName,
-            string basicQueue2Name,
-            string sendKeyName,
-            string sendKey,
-            string receiveKeyName,
-            string receiveKey)
+        public async Task Run(string connectionString)
         {
-            var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendKeyName, sendKey);
+            var primaryFactory = MessagingFactory.CreateFromConnectionString(connectionString);
+            var secondaryFactory = MessagingFactory.CreateFromConnectionString(connectionString);
 
-            var primaryFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings {TokenProvider = tokenProvider, TransportType = TransportType.Amqp});
-            var secondaryFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings {TokenProvider = tokenProvider, TransportType = TransportType.Amqp});
-
-            this.activeQueueClient = primaryFactory.CreateQueueClient(basicQueueName);
-            this.backupQueueClient = secondaryFactory.CreateQueueClient(basicQueue2Name);
+            this.activeQueueClient = primaryFactory.CreateQueueClient(BasicQueueName);
+            this.backupQueueClient = secondaryFactory.CreateQueueClient(BasicQueue2Name);
 
             try
             {
@@ -129,6 +116,12 @@ namespace MessagingSamples
                 }
             }
             while (true);
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

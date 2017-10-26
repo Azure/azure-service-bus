@@ -26,29 +26,23 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : IBasicQueueSendReceiveSample
+    public class Program : Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string sendToken, string receiveToken)
+        public async Task Run(string connectionString)
         {
             Console.WriteLine("Press any key to exit the scenario");
 
-            var sendTask = this.SendMessagesAsync(namespaceAddress, queueName, sendToken);
-            var receiveTask = this.ReceiveMessagesAsync(namespaceAddress, queueName, receiveToken);
-            
+            var sendTask = this.SendMessagesAsync(connectionString, Sample.BasicQueueName);
+            var receiveTask = this.ReceiveMessagesAsync(connectionString, Sample.BasicQueueName);
+
             await Task.WhenAll(sendTask, receiveTask);
 
             Console.ReadKey();
         }
 
-        async Task SendMessagesAsync(string namespaceAddress, string queueName, string sendToken)
+        async Task SendMessagesAsync(string connectionString, string queueName)
         {
-            var senderFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)
-                });
+            var senderFactory = MessagingFactory.CreateFromConnectionString(connectionString);
      
             var sender = await senderFactory.CreateMessageSenderAsync(queueName);
 
@@ -90,15 +84,9 @@ namespace MessagingSamples
             }
         }
 
-        async Task ReceiveMessagesAsync(string namespaceAddress, string queueName, string receiveToken)
+        async Task ReceiveMessagesAsync(string connectionString, string queueName)
         {
-            var receiverFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken)
-                });
+            var receiverFactory = MessagingFactory.CreateFromConnectionString(connectionString);
    
             var receiver = await receiverFactory.CreateMessageReceiverAsync(queueName, ReceiveMode.PeekLock);
 
@@ -160,6 +148,12 @@ namespace MessagingSamples
             }
             await receiver.CloseAsync();
             await receiverFactory.CloseAsync();
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

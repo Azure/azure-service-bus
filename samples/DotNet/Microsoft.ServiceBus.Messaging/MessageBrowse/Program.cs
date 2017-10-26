@@ -25,27 +25,21 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : IBasicQueueSendReceiveSample
+    public class Program : Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string sendToken, string receiveToken)
+        public async Task Run(string connectionString)
         {
             Console.WriteLine("Press any key to exit the scenario");
 
-            await this.SendMessagesAsync(namespaceAddress, queueName, sendToken);
-            await this.PeekMessagesAsync(namespaceAddress, queueName, receiveToken);
-            
+            await this.SendMessagesAsync(connectionString, Sample.BasicQueueName);
+            await this.PeekMessagesAsync(connectionString, Sample.BasicQueueName);
+
             Console.ReadKey();
         }
 
-        async Task SendMessagesAsync(string namespaceAddress, string queueName, string sendToken)
+        async Task SendMessagesAsync(string connectionString, string queueName)
         {
-            var senderFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)
-                });
+            var senderFactory = MessagingFactory.CreateFromConnectionString(connectionString);
             senderFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
 
             var sender = await senderFactory.CreateMessageSenderAsync(queueName);
@@ -88,15 +82,9 @@ namespace MessagingSamples
             }
         }
 
-        async Task PeekMessagesAsync(string namespaceAddress, string queueName, string receiveToken)
+        async Task PeekMessagesAsync(string connectionString, string queueName)
         {
-            var receiverFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.NetMessaging, // Peek doesn't yet work on AMQP
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken)
-                });
+            var receiverFactory = MessagingFactory.CreateFromConnectionString(connectionString);
             receiverFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
 
             var receiver = await receiverFactory.CreateMessageReceiverAsync(queueName, ReceiveMode.PeekLock);
@@ -116,7 +104,7 @@ namespace MessagingSamples
                             Console.ForegroundColor = ConsoleColor.Cyan;
                             Console.WriteLine(
                                 "\t\t\t\tMessage peeked: \n\t\t\t\t\t\tMessageId = {0}, \n\t\t\t\t\t\tSequenceNumber = {1}, \n\t\t\t\t\t\tEnqueuedTimeUtc = {2}," +
-                                "\n\t\t\t\t\t\tExpiresAtUtc = {5}, \n\t\t\t\t\t\tContentType = \"{3}\", \n\t\t\t\t\t\tSize = {4}, \n\t\t\t\t\t\tState = {6}, "+
+                                "\n\t\t\t\t\t\tExpiresAtUtc = {5}, \n\t\t\t\t\t\tContentType = \"{3}\", \n\t\t\t\t\t\tSize = {4}, \n\t\t\t\t\t\tState = {6}, " +
                                 "  \n\t\t\t\t\t\tContent: [ {7} ]",
                                 message.MessageId,
                                 message.SequenceNumber,
@@ -124,7 +112,7 @@ namespace MessagingSamples
                                 message.ContentType,
                                 message.Size,
                                 message.ExpiresAtUtc,
-                                message.State, 
+                                message.State,
                                 body);
                             Console.ResetColor();
                         }
@@ -146,6 +134,12 @@ namespace MessagingSamples
             }
             await receiver.CloseAsync();
             await receiverFactory.CloseAsync();
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

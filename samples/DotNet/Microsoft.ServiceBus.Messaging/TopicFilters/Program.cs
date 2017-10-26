@@ -25,7 +25,7 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    class Program : IDynamicSample
+    class Program : Sample
     {
         const string TopicName = "TopicFilterSampleTopic";
         const string SubscriptionAllMessages = "AllOrders";
@@ -33,7 +33,7 @@ namespace MessagingSamples
         const string SubscriptionColorRed = "ColorRed";
         const string SubscriptionHighPriorityOrders = "HighPriorityOrders";
 
-        public async Task Run(string namespaceAddress, string manageToken)
+        public async Task Run(string connectionString)
         {
             // This sample demonstrates how to use advanced filters with ServiceBus topics and subscriptions.
             // The sample creates a topic and 3 subscriptions with different filter definitions.
@@ -46,8 +46,7 @@ namespace MessagingSamples
             // topics and subscriptions is a system configuration operation. 
 
             // Create messaging factory and ServiceBus namespace client.
-            var sharedAccessSignatureTokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(manageToken);
-            var namespaceManager = new NamespaceManager(namespaceAddress, sharedAccessSignatureTokenProvider);
+            var namespaceManager = new NamespaceManager(connectionString);
 
             Console.WriteLine("\nCreating a topic and 3 subscriptions.");
 
@@ -98,7 +97,7 @@ namespace MessagingSamples
             Console.WriteLine("Create completed.");
 
 
-            await this.SendAndReceiveTestsAsync(namespaceAddress, sharedAccessSignatureTokenProvider);
+            await this.SendAndReceiveTestsAsync(connectionString);
 
 
             Console.WriteLine("Press [Enter] to quit...");
@@ -118,9 +117,9 @@ namespace MessagingSamples
             Console.WriteLine("Delete completed.");
         }
 
-        async Task SendAndReceiveTestsAsync(string namespaceAddress, TokenProvider sharedAccessSignatureTokenProvider)
+        async Task SendAndReceiveTestsAsync(string connectionString)
         {
-            var messagingFactory = MessagingFactory.Create(namespaceAddress, sharedAccessSignatureTokenProvider);
+            var messagingFactory = MessagingFactory.CreateFromConnectionString(connectionString);
 
             // Send sample messages.
             await this.SendMessagesToTopicAsync(messagingFactory);
@@ -214,6 +213,12 @@ namespace MessagingSamples
                 }
             }
             Console.WriteLine("Received {0} messages from subscription {1}.", receivedMessages, subscriptionClient.Name);
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

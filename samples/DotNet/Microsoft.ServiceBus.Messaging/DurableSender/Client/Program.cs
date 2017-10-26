@@ -24,16 +24,16 @@ namespace MessagingSamples
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
 
-    class Program : IDupdetectQueueSendReceiveSample
+    class Program : Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string sendToken, string receiveToken)
+        public async Task Run(string connectionString)
         {
             Trace.Listeners.Add(new ConsoleTraceListener());
 
-            var sendFactory = MessagingFactory.Create(namespaceAddress, TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken));
+            var sendFactory = MessagingFactory.CreateFromConnectionString(connectionString);
 
             // Create a durable sender.
-            var durableSender = new DurableSender(sendFactory, queueName);
+            var durableSender = new DurableSender(sendFactory, DupdetectQueueName);
 
             /*
             ** Send messages.
@@ -86,8 +86,8 @@ namespace MessagingSamples
             ** Receive messages.
             */
 
-            var receiveFactory = MessagingFactory.Create(namespaceAddress, TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken));
-            var receiver = receiveFactory.CreateQueueClient(queueName, ReceiveMode.ReceiveAndDelete);
+            var receiveFactory = MessagingFactory.CreateFromConnectionString(connectionString);
+            var receiver = receiveFactory.CreateQueueClient(DupdetectQueueName, ReceiveMode.ReceiveAndDelete);
             for (var i = 1; i <= 4; i++)
             {
                 try
@@ -143,6 +143,12 @@ namespace MessagingSamples
                 Console.WriteLine("   Property: " + p.Key + " = " + p.Value);
             }
             Console.ForegroundColor = ConsoleColor.Gray;
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

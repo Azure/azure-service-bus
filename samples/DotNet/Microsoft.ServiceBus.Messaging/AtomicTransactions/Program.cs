@@ -28,7 +28,7 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : IDynamicSampleWithKeys
+    public class Program : Sample
     {
         const string SagaQueuePathPrefix = "sagas/1";
         const string BookRentalCarQueueName = SagaQueuePathPrefix + "/Ta";
@@ -41,14 +41,7 @@ namespace MessagingSamples
         const string SagaInputQueueName = SagaQueuePathPrefix + "/input";
         static int pendingTransactions;
 
-        public async Task Run(
-            string namespaceAddress,
-            string manageKeyName,
-            string manageKey,
-            string sendKeyName,
-            string sendKey,
-            string receiveKeyName,
-            string receiveKey)
+        public async Task Run(string connectionString)
         {
             // we're going to create a topology for sagas of sequential transactions in this 
             // sample. For each transactional saga step we will have a dedicated input queue. 
@@ -72,26 +65,18 @@ namespace MessagingSamples
             // The remaining paths are set up as we initialize the Saga work and conpensation 
             // tasks in RunSaga.
 
-            var namespaceManager = new NamespaceManager(
-                namespaceAddress,
-                TokenProvider.CreateSharedAccessSignatureTokenProvider(manageKeyName, manageKey));
+            var namespaceManager = new NamespaceManager(connectionString);
 
             var queues = await this.SetupSagaTopologyAsync(namespaceManager);
-            await RunScenarioAsync(namespaceAddress, manageKeyName, manageKey);
+            await RunScenarioAsync(connectionString);
             await this.CleanupSagaTopologyAsync(namespaceManager, queues);
         }
 
-        static async Task RunScenarioAsync(string namespaceAddress, string manageKeyName, string manageKey)
+        static async Task RunScenarioAsync(string connectionString)
         {
-            var workersMessagingFactory = await MessagingFactory.CreateAsync(
-                namespaceAddress,
-                TokenProvider.CreateSharedAccessSignatureTokenProvider(manageKeyName, manageKey)); // make the token
-            var receiverMessagingFactory = await MessagingFactory.CreateAsync(
-                namespaceAddress,
-                TokenProvider.CreateSharedAccessSignatureTokenProvider(manageKeyName, manageKey)); // make the token
-            var senderMessagingFactory = await MessagingFactory.CreateAsync(
-                namespaceAddress,
-                TokenProvider.CreateSharedAccessSignatureTokenProvider(manageKeyName, manageKey)); // make the token
+            var workersMessagingFactory =  MessagingFactory.CreateFromConnectionString(connectionString);
+            var receiverMessagingFactory = MessagingFactory.CreateFromConnectionString(connectionString);
+            var senderMessagingFactory = MessagingFactory.CreateFromConnectionString(connectionString);
 
             var resultsReceiver = await RunResultsReceiver(receiverMessagingFactory);
 
@@ -294,6 +279,12 @@ namespace MessagingSamples
                     Interlocked.Decrement(ref pendingTransactions));
                 Console.ResetColor();
             }
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

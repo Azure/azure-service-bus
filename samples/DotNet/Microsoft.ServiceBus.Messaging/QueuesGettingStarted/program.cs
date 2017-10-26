@@ -24,19 +24,19 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : IBasicQueueConnectionStringSample
+    public class Program : Sample
     {
         QueueClient sendClient;
         QueueClient receiveClient;
 
-        public async Task Run(string queueName, string connectionString)
+        public async Task Run(string connectionString)
         {
             Console.WriteLine("Press any key to exit the scenario");
 
-            this.receiveClient = QueueClient.CreateFromConnectionString(connectionString, queueName, ReceiveMode.PeekLock);
+            this.receiveClient = QueueClient.CreateFromConnectionString(connectionString, BasicQueueName, ReceiveMode.PeekLock);
             this.InitializeReceiver();
 
-            this.sendClient = QueueClient.CreateFromConnectionString(connectionString, queueName);
+            this.sendClient = QueueClient.CreateFromConnectionString(connectionString, BasicQueueName);
             var sendTask = this.SendMessagesAsync();
 
             Console.ReadKey();
@@ -124,7 +124,11 @@ namespace MessagingSamples
                 new OnMessageOptions { AutoComplete = false, MaxConcurrentCalls = 1 });
         }
 
-
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
+        }
 
     }
 }

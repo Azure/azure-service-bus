@@ -22,29 +22,30 @@ namespace MessagingSamples
     using System.Threading.Tasks;
     using Microsoft.ServiceBus;
 
-    public class Program : IBasicQueueSendSample
+    public class Program : Sample
     {
         static readonly Random random = new Random();
 
-        public async Task Run(string namespaceAddress, string queueName, string sendToken)
+        public async Task Run(string connectionString)
         {
             try
             {
                 // Send messages to queue which does not require session
                 Console.Title = "Client";
 
+                var sbb = new ServiceBusConnectionStringBuilder(connectionString);
                 // Create sender to Order Service
                 using (var factory = new ChannelFactory<IOnewayServiceChannel>("client"))
                 {
                     factory.Endpoint.Address = new EndpointAddress(
-                        new Uri(new Uri(namespaceAddress), queueName));
+                        new Uri(sbb.GetAbsoluteRuntimeEndpoints()[0], BasicQueueName));
                     factory.Endpoint.EndpointBehaviors.Add(
-                        new TransportClientEndpointBehavior(TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)));
+                        new TransportClientEndpointBehavior(TokenProvider.CreateSharedAccessSignatureTokenProvider(sbb.SharedAccessKeyName, sbb.SharedAccessKey)));
 
                     using (var clientChannel = factory.CreateChannel())
                     {
                         int numberOfMessages = random.Next(10, 30);
-                        Console.WriteLine("Sending {0} messages to {1}...", numberOfMessages, queueName);
+                        Console.WriteLine("Sending {0} messages to {1}...", numberOfMessages, BasicQueueName);
                         
                         // Send messages to queue
                         for (var i = 0; i < numberOfMessages; i++)
@@ -68,6 +69,12 @@ namespace MessagingSamples
             Console.WriteLine("\nSender complete.");
             Console.WriteLine("\nPress [Enter] to exit.");
             Console.ReadLine();
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

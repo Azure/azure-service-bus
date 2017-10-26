@@ -22,7 +22,7 @@ namespace MessagingSamples
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
 
-    public class Program : IDynamicSample
+    public class Program : Sample
     {
         const string TopicName = "PrioritySubscriptionsTopic";
 
@@ -37,11 +37,10 @@ namespace MessagingSamples
             ConsoleColor.White
         };
 
-        public async Task Run(string namespaceAddress, string manageToken)
+        public async Task Run(string connectionString)
         {
             // Create the Topic / Subscription entities 
-            var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(manageToken);
-            var namespaceManager = new NamespaceManager(namespaceAddress, tokenProvider);
+             var namespaceManager = new NamespaceManager(connectionString);
             var topicDescription = new TopicDescription(TopicName);
 
             // Delete the topic if it already exists before creation. 
@@ -70,7 +69,7 @@ namespace MessagingSamples
             Console.WriteLine("\nLaunching senders and receivers...");
 
             //send messages to topic            
-            var messagingFactory = MessagingFactory.Create(namespaceAddress, tokenProvider);
+            var messagingFactory = MessagingFactory.CreateFromConnectionString(connectionString);
 
             var topicClient = messagingFactory.CreateTopicClient(TopicName);
 
@@ -163,6 +162,12 @@ namespace MessagingSamples
                 Console.WriteLine("{0}{1} - Priority {2}. {3}", action, message.MessageId, message.Properties["Priority"], additionalText);
                 Console.ResetColor();
             }
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }

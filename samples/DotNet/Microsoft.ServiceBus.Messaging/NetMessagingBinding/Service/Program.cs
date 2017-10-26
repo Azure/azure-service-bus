@@ -22,19 +22,21 @@ namespace MessagingSamples
     using System.Threading.Tasks;
     using Microsoft.ServiceBus;
 
-    public class Program : IBasicQueueReceiveSample
+    public class Program : Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string receiveToken)
+        public async Task Run(string connectionString)
         {
             try
             {
+                var sbb = new ServiceBusConnectionStringBuilder(connectionString);
+
                 Console.Title = "Service";
-                Console.WriteLine("Ready to receive messages from {0}...", queueName);
+                Console.WriteLine("Ready to receive messages from {0}...", BasicQueueName);
 
                 // Creating the service host object as defined in config
-                using (var serviceHost = new ServiceHost(typeof (OnewayService), new Uri(new Uri(namespaceAddress), queueName)))
+                using (var serviceHost = new ServiceHost(typeof (OnewayService), new Uri(sbb.GetAbsoluteRuntimeEndpoints()[0], BasicQueueName)))
                 {
-                    var authBehavior = new TransportClientEndpointBehavior(TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken));
+                    var authBehavior = new TransportClientEndpointBehavior(TokenProvider.CreateSharedAccessSignatureTokenProvider(sbb.SharedAccessKeyName, sbb.SharedAccessKey));
                     foreach (var ep in serviceHost.Description.Endpoints)
                     {
                         ep.EndpointBehaviors.Add(authBehavior);
@@ -66,6 +68,12 @@ namespace MessagingSamples
         {
             Console.WriteLine("Fault occured. Aborting the service host object ...");
             ((ServiceHost) sender).Abort();
+        }
+
+        static void Main(string[] args)
+        {
+            var app = new Program();
+            app.RunSample(args, app.Run);
         }
     }
 }
