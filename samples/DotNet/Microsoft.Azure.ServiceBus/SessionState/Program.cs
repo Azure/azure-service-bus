@@ -43,18 +43,18 @@ namespace MessagingSamples
 
         async Task SendMessagesAsync(string session, string connectionString, string queueName)
         {
-           var sender = new MessageSender(connectionString,queueName);
+            var sender = new MessageSender(connectionString, queueName);
 
 
             Console.WriteLine("Sending messages to Queue...");
 
-            dynamic data = new[]
+            ProcessingState[] data = new[]
             {
-                new {step = 1, title = "Shop"},
-                new {step = 2, title = "Unpack"},
-                new {step = 3, title = "Prepare"},
-                new {step = 4, title = "Cook"},
-                new {step = 5, title = "Eat"},
+                new ProcessingState {Step = 1, Title = "Buy"},
+                new ProcessingState {Step = 2, Title = "Unpack"},
+                new ProcessingState {Step = 3, Title = "Prepare"},
+                new ProcessingState {Step = 4, Title = "Cook"},
+                new ProcessingState {Step = 5, Title = "Eat"},
             };
 
             var rnd = new Random();
@@ -88,6 +88,7 @@ namespace MessagingSamples
         async Task ReceiveMessagesAsync(string connectionString, string queueName)
         {
             var client = new SessionClient(connectionString, queueName, ReceiveMode.PeekLock);
+
             while (true)
             {
                 var session = await client.AcceptMessageSessionAsync();
@@ -125,7 +126,7 @@ namespace MessagingSamples
                                     {
                                         var body = message.Body;
 
-                                        ProcessingState recipeStep = JsonConvert.DeserializeObject <ProcessingState>(Encoding.UTF8.GetString(body));
+                                        ProcessingState recipeStep = JsonConvert.DeserializeObject<ProcessingState>(Encoding.UTF8.GetString(body));
                                         if (recipeStep.Step == processingState.LastProcessedRecipeStep + 1)
                                         {
                                             lock (Console.Out)
@@ -152,11 +153,9 @@ namespace MessagingSamples
                                         }
                                         else
                                         {
-                                            processingState.DeferredSteps.Add((int) recipeStep.Step, (long) message.SystemProperties.SequenceNumber);
+                                            processingState.DeferredSteps.Add((int)recipeStep.Step, (long)message.SystemProperties.SequenceNumber);
                                             await session.DeferAsync(message.SystemProperties.LockToken);
-                                            await
-                                                session.SetStateAsync(
-                                                    Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(processingState)));
+                                            await session.SetStateAsync(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(processingState)));
                                         }
                                     }
                                     else
@@ -194,7 +193,7 @@ namespace MessagingSamples
                                             await session.CompleteAsync(message.SystemProperties.LockToken);
                                             processingState.LastProcessedRecipeStep = processingState.LastProcessedRecipeStep + 1;
                                             processingState.DeferredSteps.Remove(processingState.LastProcessedRecipeStep);
-                                            await session.SetStateAsync( Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(processingState)));
+                                            await session.SetStateAsync(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(processingState)));
                                         }
                                     }
                                     break;
@@ -220,11 +219,15 @@ namespace MessagingSamples
             app.RunSample(args, app.Run);
         }
 
-        private class ProcessingState
+        class ProcessingState
         {
+            [JsonProperty]
             public int LastProcessedRecipeStep { get; set; }
+            [JsonProperty]
             public Dictionary<int, long> DeferredSteps { get; set; }
+            [JsonProperty]
             public int Step { get; internal set; }
+            [JsonProperty]
             public string Title { get; internal set; }
         }
     }

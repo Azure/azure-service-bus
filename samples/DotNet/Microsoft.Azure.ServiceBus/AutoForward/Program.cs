@@ -30,14 +30,14 @@ namespace MessagingSamples
            
             Console.WriteLine("\nSending messages\n");
 
-            var topicSender = new MessageSender(connectionString, "SourceTopic");
+            var topicSender = new MessageSender(connectionString, "AutoForwardSourceTopic");
             await topicSender.SendAsync(CreateMessage("M1"));
 
-            var queueSender = new MessageSender(connectionString, "TargetQueue");
+            var queueSender = new MessageSender(connectionString, "AutoForwardTargetQueue");
             await queueSender.SendAsync(CreateMessage("M1"));
 
 
-            var targetQueueReceiver = new MessageReceiver(connectionString, "TargetQueue");
+            var targetQueueReceiver = new MessageReceiver(connectionString, "AutoForwardTargetQueue");
             while (true)
             {
                 var message = await targetQueueReceiver.ReceiveAsync(TimeSpan.FromSeconds(10));
@@ -53,7 +53,7 @@ namespace MessagingSamples
             }
             await targetQueueReceiver.CloseAsync();
 
-            Console.WriteLine("\nPress ENTER to delete topics and exit\n");
+            Console.WriteLine("\nPress ENTER to exit\n");
             Console.ReadLine();
         }
 
