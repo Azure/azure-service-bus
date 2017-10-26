@@ -25,8 +25,6 @@ namespace MessagingSamples
 
     class Program : Sample
     {
-        string sharedAccessRuleKey;
-
         public async Task Run(string connectionString)
         {
            
@@ -62,7 +60,7 @@ namespace MessagingSamples
         async Task PrintReceivedMessage(Message receivedMessage)
         {
             Console.ForegroundColor = ConsoleColor.Yellow;
-            await Console.Out.WriteLineAsync(string.Format("Received message:\n" + "\tLabel:\t{0}\n" + "\tBody:\t{1}\n", receivedMessage.Label, Encoding.UTF8.GetString(receivedMessage.Body));
+            await Console.Out.WriteLineAsync(string.Format("Received message:\n" + "\tLabel:\t{0}\n" + "\tBody:\t{1}\n", receivedMessage.Label, Encoding.UTF8.GetString(receivedMessage.Body)));
             foreach (var p in receivedMessage.UserProperties)
             {
                 await Console.Out.WriteLineAsync(string.Format("\tProperty:\t{0} = {1}", p.Key, p.Value));

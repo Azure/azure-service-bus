@@ -85,9 +85,10 @@ namespace MessagingSamples
                 TopicName, "PriorityGreaterThan2Subscription", ReceiveMode.PeekLock);
 
 
-            Func<Microsoft.Azure.ServiceBus.SubscriptionClient, Message, CancellationToken, Task> callback = async (c, message, ct) =>
+            Func<SubscriptionClient, Message, CancellationToken, Task> callback = (c, message, ct) =>
                {
                    this.OutputMessageInfo("Received: ", message);
+                   return Task.CompletedTask;
                };
 
             subClient1.RegisterMessageHandler((m, c) => callback(subClient1, m, c),

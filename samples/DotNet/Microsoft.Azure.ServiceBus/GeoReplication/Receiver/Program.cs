@@ -25,7 +25,7 @@ namespace MessagingSamples
 
     public class Program : Sample
     {
-        public async Task Run(string connectionString)
+        public Task Run(string connectionString)
         {
 
             try
@@ -49,6 +49,7 @@ namespace MessagingSamples
                 Console.WriteLine("Unexpected exception {0}", e);
                 throw;
             }
+            return Task.CompletedTask;
         }
 
         void RegisterMessageHandler(

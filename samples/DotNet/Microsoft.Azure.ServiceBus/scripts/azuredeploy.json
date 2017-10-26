@@ -370,7 +370,7 @@
                 {
                   "apiVersion": "[variables('apiVersion')]",
                   "name": "rule1",
-                  "type" : "rules",
+                  "type": "rules",
                   "dependsOn": [ "Priority1Subscription" ],
                   "properties": {
                     "filterType": "SqlFilter",
@@ -392,7 +392,7 @@
                 {
                   "apiVersion": "[variables('apiVersion')]",
                   "name": "rule1",
-                  "type" : "rules",
+                  "type": "rules",
                   "dependsOn": [ "Priority2Subscription" ],
                   "properties": {
                     "filterType": "SqlFilter",
@@ -415,7 +415,7 @@
                 {
                   "apiVersion": "[variables('apiVersion')]",
                   "name": "rule1",
-                  "type" : "rules",
+                  "type": "rules",
                   "dependsOn": [ "PriorityGreaterThan2Subscription" ],
                   "properties": {
                     "filterType": "SqlFilter",
@@ -452,7 +452,7 @@
                 {
                   "apiVersion": "[variables('apiVersion')]",
                   "name": "rule1",
-                  "type" : "rules",
+                  "type": "rules",
                   "dependsOn": [ "AllOrders" ],
                   "properties": {
                     "filterType": "SqlFilter",
@@ -474,7 +474,7 @@
                 {
                   "apiVersion": "[variables('apiVersion')]",
                   "name": "rule1",
-                  "type" : "rules",
+                  "type": "rules",
                   "dependsOn": [ "ColorBlueSize10Orders" ],
                   "properties": {
                     "filterType": "SqlFilter",
@@ -497,7 +497,7 @@
                 {
                   "apiVersion": "[variables('apiVersion')]",
                   "name": "rule1",
-                  "type" : "rules",
+                  "type": "rules",
                   "dependsOn": [ "ColorRed" ],
                   "properties": {
                     "filterType": "SqlFilter",
@@ -523,7 +523,7 @@
                 {
                   "apiVersion": "[variables('apiVersion')]",
                   "name": "rule1",
-                  "type" : "rules",
+                  "type": "rules",
                   "dependsOn": [ "HighPriorityOrders" ],
                   "properties": {
                     "filterType": "CorrelationFilter",
@@ -536,14 +536,14 @@
               ]
             }
           ]
-        } /*,
-       {
+        },
+        {
           "apiVersion": "[variables('apiVersion')]",
           "name": "AutoForwardSourceTopic",
           "type": "topics",
           "dependsOn": [
             "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
-            "AutoForwardTargetQueue"
+            "AutoForwardTargetQueue",
             "Send",
             "Listen",
             "SendListen",
@@ -577,7 +577,6 @@
           "properties": {},
           "resources": []
         }
-        */
       ]
     }
   ],
