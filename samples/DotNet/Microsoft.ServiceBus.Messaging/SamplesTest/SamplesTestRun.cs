@@ -122,14 +122,14 @@ namespace SamplesTest
             Assert.Equal(0, TopicFilters.Program.Main(new string[0]));
         }
 
-        [Fact(Skip = "Fix app config")]
+        [Fact]
         public void NetMessagingTest()
         {
             Assert.Equal(0, NetMessagingBindingClient.Program.Main(new string[0]));
             Assert.Equal(0, NetMessagingBindingService.Program.Main(new string[0]));
         }
 
-        [Fact(Skip = "Fix app config")]
+        [Fact]
         public void NetMessagingSessionTest()
         {
             Assert.Equal(0, NetMessagingSessionClient.Program.Main(new string[0]));
