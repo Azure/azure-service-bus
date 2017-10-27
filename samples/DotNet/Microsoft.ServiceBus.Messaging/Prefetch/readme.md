@@ -122,10 +122,6 @@ set up a fresh receiver.
     var timeDifference = timeTaken1 - timeTaken2;
 
     Console.WriteLine("\nTime difference = {0} milliseconds", timeDifference);
-
-    Console.WriteLine();
-    Console.WriteLine("Press [Enter] to quit...");
-    Console.ReadLine();
 ```
 
 The core of the ```SendAndReceiveMessages``` method is a loop that picks up the previously sent 

@@ -150,7 +150,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GeoSenderActiveReplication"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GeoSenderPassiveReplication", "GeoSenderPassiveReplication", "{7D20196E-6FD7-42C2-94EF-9614484F1C8C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Receiver", "GeoReplication\Receiver\Receiver.csproj", "{3212E2FD-B7DF-47DA-92E2-CF9AF50EEC27}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeoReceiver", "GeoReplication\Receiver\GeoReceiver.csproj", "{3212E2FD-B7DF-47DA-92E2-CF9AF50EEC27}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SenderActiveReplication", "GeoReplication\SenderActiveReplication\SenderActiveReplication.csproj", "{84DD54F3-B686-4000-8289-C4D9C46CAB61}"
 EndProject
@@ -176,13 +176,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NetMessagingSessionClient",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NetMessagingSessionService", "NetMessagingSessionService", "{257BFB98-6725-4A20-88B5-39EE0688FADE}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Client", "NetMessagingBinding\Client\Client.csproj", "{9F78C49A-31BF-48C1-9A51-046C1D068F81}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetMessagingBindingClient", "NetMessagingBinding\Client\NetMessagingBindingClient.csproj", "{9F78C49A-31BF-48C1-9A51-046C1D068F81}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Service", "NetMessagingBinding\Service\Service.csproj", "{AE7AF0E7-5365-446E-A7ED-7C2DB65760FF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetMessagingBindingService", "NetMessagingBinding\Service\NetMessagingBindingService.csproj", "{AE7AF0E7-5365-446E-A7ED-7C2DB65760FF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrderClient", "NetMessagingSession\Client\OrderClient.csproj", "{A6F717CF-C81F-406E-9B18-F2930FFB4F39}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetMessagingSessionClient", "NetMessagingSession\Client\NetMessagingSessionClient.csproj", "{A6F717CF-C81F-406E-9B18-F2930FFB4F39}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OrderService", "NetMessagingSession\OrderService\OrderService.csproj", "{7DE43754-26D3-4FB3-B699-47E51BE6D33B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetMessagingSessionService", "NetMessagingSession\OrderService\NetMessagingSessionService.csproj", "{7DE43754-26D3-4FB3-B699-47E51BE6D33B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Autoforward", "Autoforward", "{613E7D9B-A1F8-423D-AAB1-B2F3526122D3}"
 	ProjectSection(SolutionItems) = preProject
@@ -200,6 +200,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DurableSenderClient", "DurableSender\Client\DurableSenderClient.csproj", "{DE140815-5E06-4310-A52D-44BB2B40248D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{591117AE-C87A-41C3-BA40-6749FB92D59D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SamplesTest", "SamplesTest\SamplesTest.csproj", "{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -534,6 +538,18 @@ Global
 		{DE140815-5E06-4310-A52D-44BB2B40248D}.Release|AnyCPU.Build.0 = Release|Any CPU
 		{DE140815-5E06-4310-A52D-44BB2B40248D}.Release|x86.ActiveCfg = Release|Any CPU
 		{DE140815-5E06-4310-A52D-44BB2B40248D}.Release|x86.Build.0 = Release|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Debug|AnyCPU.ActiveCfg = Debug|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Debug|AnyCPU.Build.0 = Debug|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Debug|x86.Build.0 = Debug|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Release|AnyCPU.ActiveCfg = Release|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Release|AnyCPU.Build.0 = Release|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Release|x86.ActiveCfg = Release|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -597,6 +613,7 @@ Global
 		{613E7D9B-A1F8-423D-AAB1-B2F3526122D3} = {0473E8D7-F4E9-44E8-A400-CDFFFF3738C1}
 		{C9B6BEF6-7566-4A52-A79A-DC22F758A657} = {613E7D9B-A1F8-423D-AAB1-B2F3526122D3}
 		{DE140815-5E06-4310-A52D-44BB2B40248D} = {D6CA5007-6F3B-4025-9EEC-FD06DCE9D428}
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C} = {591117AE-C87A-41C3-BA40-6749FB92D59D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AAAEE60A-5604-415A-960A-AC84B4D84927}

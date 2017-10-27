@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace SendersReceiversWithTopics
 {
     using System;
     using System.Collections.Generic;
@@ -27,20 +27,23 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
             var cts = new CancellationTokenSource();
 
-            await this.SendMessagesAsync(connectionString, Sample.BasicTopicName);
+            await this.SendMessagesAsync(connectionString, BasicTopicName);
 
             var allReceives = Task.WhenAll(
-                this.ReceiveMessagesAsync(connectionString, Sample.BasicTopicName, "Subscription1", cts.Token, ConsoleColor.Cyan),
-                this.ReceiveMessagesAsync(connectionString, Sample.BasicTopicName, "Subscription2", cts.Token, ConsoleColor.Green),
-                this.ReceiveMessagesAsync(connectionString, Sample.BasicTopicName, "Subscription3", cts.Token, ConsoleColor.Yellow));
-            Console.WriteLine("\nEnd of scenario, press any key to exit.");
-            Console.ReadKey();
+                this.ReceiveMessagesAsync(connectionString, BasicTopicName, "Subscription1", cts.Token, ConsoleColor.Cyan),
+                this.ReceiveMessagesAsync(connectionString, BasicTopicName, "Subscription2", cts.Token, ConsoleColor.Green),
+                this.ReceiveMessagesAsync(connectionString, BasicTopicName, "Subscription3", cts.Token, ConsoleColor.Yellow));
+
+            await Task.WhenAny(
+                Task.Run(() => Console.ReadKey()),
+                Task.Delay(TimeSpan.FromSeconds(10))
+            );
 
             cts.Cancel();
             await allReceives;
@@ -147,10 +150,19 @@ namespace MessagingSamples
             await doneReceiving.Task;
         }
 
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

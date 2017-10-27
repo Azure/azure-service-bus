@@ -15,14 +15,14 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace GeoSenderPassiveReplication
 {
     using System;
     using System.Threading.Tasks;
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         readonly object swapMutex = new object();
         QueueClient activeQueueClient;
@@ -70,9 +70,6 @@ namespace MessagingSamples
                         Console.WriteLine("Unable to send to primary or secondary queue: Exception {0}", e);
                     }
                 }
-
-                Console.WriteLine("\nPress ENTER to clean up and exit.");
-                Console.ReadLine();
             }
             catch (Exception e)
             {
@@ -118,10 +115,19 @@ namespace MessagingSamples
             while (true);
         }
 
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

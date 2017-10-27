@@ -15,14 +15,14 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace NetMessagingBindingService
 {
     using System;
     using System.ServiceModel;
     using System.Threading.Tasks;
     using Microsoft.ServiceBus;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
@@ -34,7 +34,7 @@ namespace MessagingSamples
                 Console.WriteLine("Ready to receive messages from {0}...", BasicQueueName);
 
                 // Creating the service host object as defined in config
-                using (var serviceHost = new ServiceHost(typeof (OnewayService), new Uri(sbb.GetAbsoluteRuntimeEndpoints()[0], BasicQueueName)))
+                using (var serviceHost = new ServiceHost(typeof(OnewayService), new Uri(sbb.GetAbsoluteRuntimeEndpoints()[0], BasicQueueName)))
                 {
                     var authBehavior = new TransportClientEndpointBehavior(TokenProvider.CreateSharedAccessSignatureTokenProvider(sbb.SharedAccessKeyName, sbb.SharedAccessKey));
                     foreach (var ep in serviceHost.Description.Endpoints)
@@ -49,7 +49,11 @@ namespace MessagingSamples
                     serviceHost.Open();
 
                     Console.WriteLine("\nPress [Enter] to Close the ServiceHost.");
-                    Console.ReadLine();
+
+                    await Task.WhenAny(
+                         Task.Run(() => Console.ReadKey()),
+                         Task.Delay(TimeSpan.FromSeconds(60))
+                     );
 
                     // Close the service
                     serviceHost.Close();
@@ -58,22 +62,29 @@ namespace MessagingSamples
             catch (Exception exception)
             {
                 Console.WriteLine("Exception occurred: {0}", exception);
-                
-                Console.WriteLine("\nPress [Enter] to exit.");
-                Console.ReadLine();
+                throw;                
             }
         }
 
         static void serviceHost_Faulted(object sender, EventArgs e)
         {
             Console.WriteLine("Fault occured. Aborting the service host object ...");
-            ((ServiceHost) sender).Abort();
+            ((ServiceHost)sender).Abort();
         }
 
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

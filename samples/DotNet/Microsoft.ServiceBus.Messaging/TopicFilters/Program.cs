@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace TopicFilters
 {
     using System;
     using System.IO;
@@ -25,7 +25,7 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         const string TopicName = "TopicFilterSampleTopic";
         const string SubscriptionAllMessages = "AllOrders";
@@ -39,81 +39,10 @@ namespace MessagingSamples
             // The sample creates a topic and 3 subscriptions with different filter definitions.
             // Each receiver will receive matching messages depending on the filter associated with a subscription.
 
-            // NOTE:
-            // This is primarily an example illustrating the management features related to setting up 
-            // Service Bus subscriptions. It is DISCOURAGED for applications to routinely set up and 
-            // tear down topics and subscriptions as a part of regular message processing. Managing 
-            // topics and subscriptions is a system configuration operation. 
-
-            // Create messaging factory and ServiceBus namespace client.
-            var namespaceManager = new NamespaceManager(connectionString);
-
-            Console.WriteLine("\nCreating a topic and 3 subscriptions.");
-
-            // Create a topic and several subscriptions; clean house ahead of time
-            if (await namespaceManager.TopicExistsAsync(TopicName))
-            {
-                await namespaceManager.DeleteTopicAsync(TopicName);
-            }
-
-            var topicDescription = await namespaceManager.CreateTopicAsync(TopicName);
-            Console.WriteLine("Topic created.");
-
-            // Create a subscription for all messages sent to topic.
-            await namespaceManager.CreateSubscriptionAsync(topicDescription.Path, SubscriptionAllMessages, new TrueFilter());
-            Console.WriteLine("Subscription {0} added with filter definition set to TrueFilter.", SubscriptionAllMessages);
-            
-
-            // Create a subscription that'll receive all orders which have color "blue" and quantity 10.
-
-            await namespaceManager.CreateSubscriptionAsync(
-                topicDescription.Path,
-                SubscriptionColorBlueSize10Orders,
-                new SqlFilter("color = 'blue' AND quantity = 10"));
-            Console.WriteLine(
-                "Subscription {0} added with filter definition \"color = 'blue' AND quantity = 10\".",
-                 SubscriptionColorBlueSize10Orders);
-
-            // Create a subscription that'll receive all orders which have color "red"
-            await namespaceManager.CreateSubscriptionAsync(
-                topicDescription.Path,
-                SubscriptionColorRed,
-                new RuleDescription
-                {
-                    Name = "RedRule",
-                    Filter = new SqlFilter("color = 'red'"),
-                    Action = new SqlRuleAction(
-                        "SET quantity = quantity / 2;" +
-                        "REMOVE priority;" +
-                        "SET sys.CorrelationId = 'low';")
-                });
-            Console.WriteLine("Subscription {0} added with filter definition \"color = 'red'\" and action definition.", SubscriptionColorRed);
-     
-            // Create a subscription that'll receive all high priority orders.
-            namespaceManager.CreateSubscription(topicDescription.Path, SubscriptionHighPriorityOrders, 
-                new CorrelationFilter { Label = "red", CorrelationId = "high"});
-            Console.WriteLine("Subscription {0} added with correlation filter definition \"high\".", SubscriptionHighPriorityOrders);
-     
-            Console.WriteLine("Create completed.");
-
-
             await this.SendAndReceiveTestsAsync(connectionString);
 
 
-            Console.WriteLine("Press [Enter] to quit...");
-            Console.ReadLine();
-
             Console.WriteLine("\nDeleting topic and subscriptions from previous run if any.");
-
-            try
-            {
-                namespaceManager.DeleteTopic(TopicName);
-            }
-            catch (MessagingEntityNotFoundException)
-            {
-                Console.WriteLine("No topic found to delete.");
-            }
-
             Console.WriteLine("Delete completed.");
         }
 
@@ -215,10 +144,19 @@ namespace MessagingSamples
             Console.WriteLine("Received {0} messages from subscription {1}.", receivedMessages, subscriptionClient.Name);
         }
 
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

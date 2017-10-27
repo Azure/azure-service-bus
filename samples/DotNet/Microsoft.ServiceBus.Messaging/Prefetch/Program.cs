@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace Prefetch
 {
     using System;
     using System.Collections.Generic;
@@ -33,7 +33,7 @@ namespace MessagingSamples
     ///     prefecthCount = 100. For each case, it calculates the time taken to receive and complete
     ///     all messages and at the end, it prints the difference between both times.
     /// </summary>
-    class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
@@ -66,11 +66,7 @@ namespace MessagingSamples
             var timeDifference = timeTaken1 - timeTaken2;
 
             Console.WriteLine("\nTime difference = {0} milliseconds", timeDifference);
-
-            Console.WriteLine();
-            Console.WriteLine("Press [Enter] to quit...");
-            Console.ReadLine();
-
+            
             // Cleanup:
             senderMessagingFactory.Close();
             receiverMessagingFactory.Close();
@@ -132,10 +128,19 @@ namespace MessagingSamples
             return timeTaken;
         }
 
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

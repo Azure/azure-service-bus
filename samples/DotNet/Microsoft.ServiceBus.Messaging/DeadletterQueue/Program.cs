@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace DeadletterQueue
 {
     using System;
     using System.IO;
@@ -26,7 +26,7 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
@@ -48,7 +48,11 @@ namespace MessagingSamples
             var receiveTask = this.ReceiveMessagesAsync(messagingFactory, BasicQueueName, cts.Token);
             var fixupTask = this.PickUpAndFixDeadletters(messagingFactory, BasicQueueName, sender, cts.Token);
 
-            Console.ReadKey();
+            await Task.WhenAny(
+                Task.Run(() => Console.ReadKey()),
+                Task.Delay(TimeSpan.FromSeconds(10))
+            );
+
             cts.Cancel();
 
             await Task.WhenAll(sendTask, receiveTask);
@@ -223,10 +227,19 @@ namespace MessagingSamples
 
             await doneReceiving.Task;
         }
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

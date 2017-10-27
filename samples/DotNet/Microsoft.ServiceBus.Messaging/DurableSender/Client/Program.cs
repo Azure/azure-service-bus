@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace DurableSenderClient
 {
     using System;
     using System.Diagnostics;
@@ -23,8 +23,9 @@ namespace MessagingSamples
     using System.Transactions;
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
+    using DurableSenderLibrary;
 
-    class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
@@ -104,13 +105,6 @@ namespace MessagingSamples
                 }
             }
 
-            /*
-            ** Cleanup
-            */
-
-            Console.WriteLine("\nPress ENTER to exit\n");
-            Console.ReadLine();
-
             durableSender.Dispose();
             receiver.Close();
             sendFactory.Close();
@@ -145,10 +139,19 @@ namespace MessagingSamples
             Console.ForegroundColor = ConsoleColor.Gray;
         }
 
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

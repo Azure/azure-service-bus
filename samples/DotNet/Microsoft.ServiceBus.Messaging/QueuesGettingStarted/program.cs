@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace QueuesGettingStarted
 {
     using System;
     using System.IO;
@@ -24,7 +24,7 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         QueueClient sendClient;
         QueueClient receiveClient;
@@ -39,7 +39,10 @@ namespace MessagingSamples
             this.sendClient = QueueClient.CreateFromConnectionString(connectionString, BasicQueueName);
             var sendTask = this.SendMessagesAsync();
 
-            Console.ReadKey();
+            await Task.WhenAny(
+                Task.Run(() => Console.ReadKey()),
+                Task.Delay(TimeSpan.FromSeconds(10))
+            );
 
             // shut down the receiver, which will stop the OnMessageAsync loop
             await this.receiveClient.CloseAsync();
@@ -124,10 +127,19 @@ namespace MessagingSamples
                 new OnMessageOptions { AutoComplete = false, MaxConcurrentCalls = 1 });
         }
 
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
 
     }

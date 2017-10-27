@@ -16,6 +16,6 @@
     <PackageReference Include="System.Linq" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\OrderService\OrderService.csproj" />
+    <ProjectReference Include="..\Service\NetMessagingBindingService.csproj" />
   </ItemGroup>
 </Project>

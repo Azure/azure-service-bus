@@ -15,14 +15,14 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace AutoForward
 {
     using System;
     using System.Threading.Tasks;
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
 
-    class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
@@ -36,7 +36,7 @@ namespace MessagingSamples
             await queueSender.SendAsync(CreateMessage("M1"));
 
             var targetQueueReceiver = messagingFactory.CreateQueueClient("AutoForwardTargetQueue");
-            while (true)
+            for (int i = 0; i < 2; i++)
             {
                 var message = await targetQueueReceiver.ReceiveAsync(TimeSpan.FromSeconds(10));
                 if (message != null)
@@ -46,13 +46,10 @@ namespace MessagingSamples
                 }
                 else
                 {
-                    break;
+                    throw new Exception("Expected message not received.");
                 }
             }
             await targetQueueReceiver.CloseAsync();
-
-            Console.WriteLine("\nPress ENTER to delete topics and exit\n");
-            Console.ReadLine();
             messagingFactory.Close();
         }
 
@@ -79,10 +76,19 @@ namespace MessagingSamples
             return msg;
         }
 
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }
