@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace TopicsGettingStarted
 {
     using System;
     using System.IO;
@@ -24,7 +24,7 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus;
     using Newtonsoft.Json;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         TopicClient sendClient;
         SubscriptionClient subscription1Client;
@@ -33,11 +33,11 @@ namespace MessagingSamples
 
         public async Task Run(string connectionString)
         {
-            this.sendClient = new TopicClient(connectionString, Sample.BasicTopicName);
+            this.sendClient = new TopicClient(connectionString, BasicTopicName);
 
-            this.subscription1Client = new SubscriptionClient(connectionString, Sample.BasicTopicName, "Subscription1");
-            this.subscription2Client = new SubscriptionClient(connectionString, Sample.BasicTopicName, "Subscription2");
-            this.subscription3Client = new SubscriptionClient(connectionString, Sample.BasicTopicName, "Subscription3");
+            this.subscription1Client = new SubscriptionClient(connectionString, BasicTopicName, "Subscription1");
+            this.subscription2Client = new SubscriptionClient(connectionString, BasicTopicName, "Subscription2");
+            this.subscription3Client = new SubscriptionClient(connectionString, BasicTopicName, "Subscription3");
 
             this.InitializeReceiver(this.subscription1Client, ConsoleColor.Cyan);
             this.InitializeReceiver(this.subscription2Client, ConsoleColor.Green);
@@ -45,8 +45,10 @@ namespace MessagingSamples
 
             await this.SendMessagesAsync();
 
-            Console.WriteLine("\nEnd of scenario, press any key to exit.");
-            Console.ReadKey();
+            await Task.WhenAny(
+               Task.Run(() => Console.ReadKey()),
+               Task.Delay(TimeSpan.FromSeconds(10))
+           );
 
             await this.subscription1Client.CloseAsync();
             await this.subscription2Client.CloseAsync();
@@ -133,10 +135,19 @@ namespace MessagingSamples
             return Task.CompletedTask;
         }
 
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

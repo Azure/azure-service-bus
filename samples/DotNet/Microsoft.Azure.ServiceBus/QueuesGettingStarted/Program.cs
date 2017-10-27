@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace QueuesGettingStarted
 {
     using System;
     using System.IO;
@@ -24,24 +24,26 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus;
     using Newtonsoft.Json;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         QueueClient sendClient;
         QueueClient receiveClient;
 
         public async Task Run(string connectionString)
         {
-            Console.WriteLine("Press any key to exit the scenario");
-
-            this.receiveClient = new QueueClient(connectionString, Sample.BasicQueueName, ReceiveMode.PeekLock);
+            this.receiveClient = new QueueClient(connectionString, BasicQueueName, ReceiveMode.PeekLock);
             this.InitializeReceiver();
 
-            this.sendClient = new QueueClient(connectionString, Sample.BasicQueueName);
+            this.sendClient = new QueueClient(connectionString, BasicQueueName);
             var sendTask = this.SendMessagesAsync();
 
-            Console.ReadKey();
-
             // shut down the receiver, which will stop the RegisterMessageHandler loop
+            await Task.WhenAny(
+                Task.Run(() => Console.ReadKey()),
+                Task.Delay(TimeSpan.FromSeconds(10))
+            );
+
+
             await this.receiveClient.CloseAsync();
 
             // wait for send work to complete if required
@@ -49,7 +51,7 @@ namespace MessagingSamples
 
             await this.sendClient.CloseAsync();
         }
-        
+
         async Task SendMessagesAsync()
         {
             dynamic data = new[]
@@ -121,7 +123,7 @@ namespace MessagingSamples
                     }
                     await receiveClient.CompleteAsync(message.SystemProperties.LockToken);
                 },
-                new MessageHandlerOptions( (e)=>LogMessageHandlerException(e) ) { AutoComplete = false, MaxConcurrentCalls = 1 });
+                new MessageHandlerOptions((e) => LogMessageHandlerException(e)) { AutoComplete = false, MaxConcurrentCalls = 1 });
         }
 
         private Task LogMessageHandlerException(ExceptionReceivedEventArgs e)
@@ -130,10 +132,19 @@ namespace MessagingSamples
             return Task.CompletedTask;
         }
 
-        static void Main(string[] args)
+        public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

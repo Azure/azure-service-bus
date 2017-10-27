@@ -15,25 +15,25 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace DuplicateDetection
 {
+    using Microsoft.Azure.ServiceBus;
+    using Microsoft.Azure.ServiceBus.Core;
     using System;
     using System.Threading.Tasks;
-    using Microsoft.Azure.ServiceBus.Core;
-    using Microsoft.Azure.ServiceBus;
 
-    class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
             await Send(connectionString);
             await Receive(connectionString);
         }
-        
+
         static async Task Send(string connectionString)
         {
             // Create communication objects to send and receive on the queue
-            var sender = new MessageSender(connectionString, Sample.DupdetectQueueName);
+            var sender = new MessageSender(connectionString, DupdetectQueueName);
 
 
             string messageId = Guid.NewGuid().ToString();
@@ -58,15 +58,15 @@ namespace MessagingSamples
         }
         static async Task Receive(string connectionString)
         {
-            var receiver = new MessageReceiver(connectionString, Sample.DupdetectQueueName, ReceiveMode.PeekLock);
+            var receiver = new MessageReceiver(connectionString, DupdetectQueueName, ReceiveMode.PeekLock);
 
             // Receive messages from queue
             var receivedMessageId = "";
 
-            Console.WriteLine("\n\tWaiting for messages from {0} ...", receiver.Path);
+            Console.WriteLine("\n\tWaiting up to 5 seconds for messages from {0} ...", receiver.Path);
             while (true)
             {
-                var receivedMessage = await receiver.ReceiveAsync(TimeSpan.FromSeconds(10));
+                var receivedMessage = await receiver.ReceiveAsync(TimeSpan.FromSeconds(5));
 
                 if (receivedMessage == null)
                 {
@@ -76,20 +76,27 @@ namespace MessagingSamples
                 await receiver.CompleteAsync(receivedMessage.SystemProperties.LockToken);
                 if (receivedMessageId.Equals(receivedMessage.MessageId, StringComparison.OrdinalIgnoreCase))
                 {
-                    Console.WriteLine("\t\tRECEIVED a DUPLICATE MESSAGE");
+                    throw new Exception("Received a duplicate messsage");
                 }
-
                 receivedMessageId = receivedMessage.MessageId;
             }
-
             Console.WriteLine("\tDone receiving messages from {0}", receiver.Path);
 
             await receiver.CloseAsync();
         }
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

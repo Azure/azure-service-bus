@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace DurableSenderClient
 {
     using System;
     using System.Diagnostics;
@@ -24,15 +24,16 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus;
     using System.Text;
     using Microsoft.Azure.ServiceBus.Core;
+    using DurableSenderLibrary;
 
-    class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
             Trace.Listeners.Add(new ConsoleTraceListener());
 
             // Create a durable sender.
-            var durableSender = new DurableSender(connectionString, Sample.DupdetectQueueName);
+            var durableSender = new DurableSender(connectionString, DupdetectQueueName);
 
             /*
             ** Send messages.
@@ -85,7 +86,7 @@ namespace MessagingSamples
             ** Receive messages.
             */
 
-            var receiver = new MessageReceiver(connectionString, Sample.DupdetectQueueName, ReceiveMode.ReceiveAndDelete);
+            var receiver = new MessageReceiver(connectionString, DupdetectQueueName, ReceiveMode.ReceiveAndDelete);
             for (var i = 1; i <= 4; i++)
             {
                 try
@@ -105,10 +106,7 @@ namespace MessagingSamples
             /*
             ** Cleanup
             */
-
-            Console.WriteLine("\nPress ENTER to exit\n");
-            Console.ReadLine();
-
+            
             durableSender.Dispose();
             await receiver.CloseAsync();
         }
@@ -142,10 +140,19 @@ namespace MessagingSamples
             Console.ForegroundColor = ConsoleColor.Gray;
         }
 
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

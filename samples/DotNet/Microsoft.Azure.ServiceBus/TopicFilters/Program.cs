@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace TopicFilters
 {
     using System;
     using System.IO;
@@ -25,7 +25,7 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
     
-    class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         const string TopicName = "TopicFilterSampleTopic";
         const string SubscriptionAllMessages = "AllOrders";
@@ -40,12 +40,6 @@ namespace MessagingSamples
             // Each receiver will receive matching messages depending on the filter associated with a subscription.
 
             await this.SendAndReceiveTestsAsync(connectionString);
-
-
-            Console.WriteLine("Press [Enter] to quit...");
-            Console.ReadLine();
-
-            Console.WriteLine("\nDeleting topic and subscriptions from previous run if any.");
         }
 
         async Task SendAndReceiveTestsAsync(string connectionString)
@@ -139,10 +133,19 @@ namespace MessagingSamples
             Console.WriteLine("Received {0} messages from subscription {1}.", receivedMessages, subsName);
         }
 
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

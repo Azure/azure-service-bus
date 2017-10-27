@@ -15,15 +15,14 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace GeoSenderPassiveReplication
 {
-    using System;
-    using System.Threading.Tasks;
     using Microsoft.Azure.ServiceBus;
-    using Microsoft.Azure.ServiceBus.Core;
+    using System;
     using System.Text;
+    using System.Threading.Tasks;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         readonly object swapMutex = new object();
         QueueClient activeQueueClient;
@@ -31,43 +30,29 @@ namespace MessagingSamples
 
         public async Task Run(string connectionString)
         {
-            this.activeQueueClient = new QueueClient(connectionString, Sample.BasicQueueName);
-            this.backupQueueClient = new QueueClient(connectionString, Sample.BasicQueue2Name);
+            this.activeQueueClient = new QueueClient(connectionString, BasicQueueName);
+            this.backupQueueClient = new QueueClient(connectionString, BasicQueue2Name);
 
-            try
+            // Create a primary and secondary queue client.
+            Console.WriteLine("\nSending messages to primary or secondary queue...\n");
+            for (var i = 1; i <= 500; i++)
             {
-                // Create a primary and secondary queue client.
-
-
-                Console.WriteLine("\nSending messages to primary or secondary queue...\n");
-
-                for (var i = 1; i <= 500; i++)
+                // Create brokered message.
+                var message = new Message(Encoding.UTF8.GetBytes("Message" + i))
                 {
-                    // Create brokered message.
-                    var message = new Message(Encoding.UTF8.GetBytes("Message" + i))
-                    {
-                        MessageId = i.ToString(),
-                        TimeToLive = TimeSpan.FromMinutes(2.0)
-                    };
-                    var m1 = message;
+                    MessageId = i.ToString(),
+                    TimeToLive = TimeSpan.FromMinutes(2.0)
+                };
+                var m1 = message;
 
-                    try
-                    {
-                        await this.SendMessage(m1);
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("Unable to send to primary or secondary queue: Exception {0}", e);
-                    }
+                try
+                {
+                    await this.SendMessage(m1);
                 }
-
-                Console.WriteLine("\nPress ENTER to clean up and exit.");
-                Console.ReadLine();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Unexpected exception {0}", e);
-                throw;
+                catch (Exception e)
+                {
+                    Console.WriteLine("Unable to send to primary or secondary queue: Exception {0}", e);
+                }
             }
         }
 
@@ -102,10 +87,19 @@ namespace MessagingSamples
             while (true);
         }
 
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

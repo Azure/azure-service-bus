@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace PartitionedQueues
 {
     using System;
     using System.IO;
@@ -26,7 +26,7 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
@@ -34,10 +34,13 @@ namespace MessagingSamples
 
             var cts = new CancellationTokenSource();
 
-            await this.SendMessagesAsync(connectionString, Sample.PartitionedQueueName);
-            var receiveTask = this.ReceiveMessagesAsync(connectionString, Sample.PartitionedQueueName, cts.Token);
+            await this.SendMessagesAsync(connectionString, PartitionedQueueName);
+            var receiveTask = this.ReceiveMessagesAsync(connectionString, PartitionedQueueName, cts.Token);
 
-            Console.ReadKey();
+            Task.WaitAny(
+                Task.Run(()=>Console.ReadKey()),
+                Task.Delay(TimeSpan.FromSeconds(10)));
+
             cts.Cancel();
 
             await receiveTask;
@@ -143,10 +146,19 @@ namespace MessagingSamples
             return Task.CompletedTask;
         }
 
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

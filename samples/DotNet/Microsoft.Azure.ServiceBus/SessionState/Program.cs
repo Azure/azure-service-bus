@@ -15,30 +15,26 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace SessionState
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Microsoft.Azure.ServiceBus;
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
+    using System;
+    using System.Collections.Generic;
+    using System.Text;
+    using System.Threading.Tasks;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
             Console.WriteLine("Press any key to exit the scenario");
 
-            var sendTask = this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, Sample.SessionQueueName);
-            var receiveTask = this.ReceiveMessagesAsync(connectionString, Sample.SessionQueueName);
+            var sendTask = this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, SessionQueueName);
+            var receiveTask = this.ReceiveMessagesAsync(connectionString, SessionQueueName);
 
             await Task.WhenAll(sendTask, receiveTask);
-
-            Console.ReadKey();
         }
 
         async Task SendMessagesAsync(string session, string connectionString, string queueName)
@@ -213,10 +209,19 @@ namespace MessagingSamples
             }
         }
 
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
 
         class ProcessingState

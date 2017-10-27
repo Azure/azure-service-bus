@@ -15,23 +15,22 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace SendersReceiversWithQueues
 {
-    using System;
-    using System.IO;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Microsoft.Azure.ServiceBus;
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
+    using System;
+    using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         async Task SendMessagesAsync(string connectionString, string queueName)
         {
             var sender = new MessageSender(connectionString, queueName);
-            
+
             dynamic data = new[]
             {
                 new {name = "Einstein", firstName = "Albert"},
@@ -69,7 +68,7 @@ namespace MessagingSamples
 
         async Task ReceiveMessagesAsync(string connectionString, string queueName, CancellationToken cancellationToken)
         {
-           var receiver = new MessageReceiver(connectionString,queueName, ReceiveMode.PeekLock);
+            var receiver = new MessageReceiver(connectionString, queueName, ReceiveMode.PeekLock);
 
 
             var doneReceiving = new TaskCompletionSource<bool>();
@@ -117,7 +116,7 @@ namespace MessagingSamples
                         await receiver.DeadLetterAsync(message.SystemProperties.LockToken); //, "ProcessingError", "Don't know what to do with this message");
                     }
                 },
-                new MessageHandlerOptions( (e)=>LogMessageHandlerException(e) ) {AutoComplete = false, MaxConcurrentCalls = 1});
+                new MessageHandlerOptions((e) => LogMessageHandlerException(e)) { AutoComplete = false, MaxConcurrentCalls = 1 });
 
             await doneReceiving.Task;
         }
@@ -130,23 +129,33 @@ namespace MessagingSamples
 
         public async Task Run(string connectionString)
         {
-            Console.WriteLine("Press any key to exit the scenario");
-
             var cts = new CancellationTokenSource();
 
-            var sendTask = this.SendMessagesAsync(connectionString, Sample.BasicQueueName);
-            var receiveTask = this.ReceiveMessagesAsync(connectionString, Sample.BasicQueueName, cts.Token);
+            var sendTask = this.SendMessagesAsync(connectionString, BasicQueueName);
+            var receiveTask = this.ReceiveMessagesAsync(connectionString, BasicQueueName, cts.Token);
 
-            Console.ReadKey();
-            cts.Cancel();
-
-            await Task.WhenAll(sendTask, receiveTask);
+            await Task.WhenAll(
+                 Task.WhenAny(
+                    Task.Run(() => Console.ReadKey()),
+                    Task.Delay(TimeSpan.FromSeconds(10))
+                ).ContinueWith((t) => cts.Cancel()),
+                sendTask,
+                receiveTask);
         }
 
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

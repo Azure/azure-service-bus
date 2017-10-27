@@ -15,19 +15,18 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace AutoForward
 {
-    using System;
-    using System.Threading.Tasks;
     using Microsoft.Azure.ServiceBus;
     using Microsoft.Azure.ServiceBus.Core;
+    using System;
     using System.Text;
+    using System.Threading.Tasks;
 
-    class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
-           
             Console.WriteLine("\nSending messages\n");
 
             var topicSender = new MessageSender(connectionString, "AutoForwardSourceTopic");
@@ -36,9 +35,9 @@ namespace MessagingSamples
             var queueSender = new MessageSender(connectionString, "AutoForwardTargetQueue");
             await queueSender.SendAsync(CreateMessage("M1"));
 
-
+            Console.WriteLine("\nReceiving messages\n");
             var targetQueueReceiver = new MessageReceiver(connectionString, "AutoForwardTargetQueue");
-            while (true)
+            for (int i = 0; i < 2; i++)
             {
                 var message = await targetQueueReceiver.ReceiveAsync(TimeSpan.FromSeconds(10));
                 if (message != null)
@@ -48,13 +47,10 @@ namespace MessagingSamples
                 }
                 else
                 {
-                    break;
+                    throw new Exception("Expected message not received.");
                 }
             }
             await targetQueueReceiver.CloseAsync();
-
-            Console.WriteLine("\nPress ENTER to exit\n");
-            Console.ReadLine();
         }
 
         async Task PrintReceivedMessage(Message receivedMessage)
@@ -67,7 +63,7 @@ namespace MessagingSamples
             }
             Console.ResetColor();
         }
-        
+
         // Create a new Service Bus message.
         public static Message CreateMessage(string label)
         {
@@ -80,12 +76,21 @@ namespace MessagingSamples
             return msg;
         }
 
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
-                
+
     }
 }
 

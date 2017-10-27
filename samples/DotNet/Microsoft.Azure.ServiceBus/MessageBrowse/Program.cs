@@ -15,26 +15,21 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace MessageBrowse
 {
-    using System;
-    using System.IO;
-    using System.Text;
-    using System.Threading.Tasks;
     using Microsoft.Azure.ServiceBus;
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
+    using System;
+    using System.Text;
+    using System.Threading.Tasks;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
-            Console.WriteLine("Press any key to exit the scenario");
-
-            await this.SendMessagesAsync(connectionString, Sample.BasicQueueName);
-            await this.PeekMessagesAsync(connectionString, Sample.BasicQueueName);
-            
-            Console.ReadKey();
+            await this.SendMessagesAsync(connectionString, BasicQueueName);
+            await this.PeekMessagesAsync(connectionString, BasicQueueName);
         }
 
         async Task SendMessagesAsync(string connectionString, string queueName)
@@ -129,10 +124,19 @@ namespace MessagingSamples
             await receiver.CloseAsync();
         }
 
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace SendersReceiversWithTopics
 {
     using System;
     using System.Collections.Generic;
@@ -27,24 +27,9 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
-        public async Task Run(string connectionString)
-        {
-            var cts = new CancellationTokenSource();
-
-            await this.SendMessagesAsync(connectionString, Sample.BasicTopicName);
-
-            var allReceives = Task.WhenAll(
-                this.ReceiveMessagesAsync(connectionString, Sample.BasicTopicName, "Subscription1", cts.Token, ConsoleColor.Cyan),
-                this.ReceiveMessagesAsync(connectionString, Sample.BasicTopicName, "Subscription2", cts.Token, ConsoleColor.Green),
-                this.ReceiveMessagesAsync(connectionString, Sample.BasicTopicName, "Subscription3", cts.Token, ConsoleColor.Yellow));
-            Console.WriteLine("\nEnd of scenario, press any key to exit.");
-            Console.ReadKey();
-
-            cts.Cancel();
-            await allReceives;
-        }
+        
 
         async Task SendMessagesAsync(string connectionString, string topicName)
         {
@@ -149,10 +134,38 @@ namespace MessagingSamples
             return Task.CompletedTask;
         }
 
-        static void Main(string[] args)
+        public async Task Run(string connectionString)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            var cts = new CancellationTokenSource();
+
+            await this.SendMessagesAsync(connectionString, BasicTopicName);
+
+            var allReceives = Task.WhenAll(
+                this.ReceiveMessagesAsync(connectionString, BasicTopicName, "Subscription1", cts.Token, ConsoleColor.Cyan),
+                this.ReceiveMessagesAsync(connectionString, BasicTopicName, "Subscription2", cts.Token, ConsoleColor.Green),
+                this.ReceiveMessagesAsync(connectionString, BasicTopicName, "Subscription3", cts.Token, ConsoleColor.Yellow));
+
+            await Task.WhenAll(
+                Task.WhenAny(
+                    Task.Run(() => Console.ReadKey()),
+                    Task.Delay(TimeSpan.FromSeconds(10))
+                ).ContinueWith((t) => cts.Cancel()),
+                allReceives);
+        }
+
+       public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
 
     }

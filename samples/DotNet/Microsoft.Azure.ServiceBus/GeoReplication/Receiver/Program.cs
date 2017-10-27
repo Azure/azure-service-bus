@@ -15,44 +15,35 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace GeoReceiver
 {
+    using Microsoft.Azure.ServiceBus;
     using System;
     using System.Collections.Generic;
     using System.Threading.Tasks;
-    using Microsoft.Azure.ServiceBus;
-    using Microsoft.Azure.ServiceBus.Core;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public Task Run(string connectionString)
         {
-
-            try
-            {
-                // Create a primary and secondary queue client.
-                var primaryQueueClient = new QueueClient(connectionString, Sample.BasicQueueName);
-                var secondaryQueueClient = new QueueClient(connectionString, Sample.BasicQueue2Name);
-
-
-                this.RegisterMessageHandler(
-                    primaryQueueClient,
-                    secondaryQueueClient,
-                    async m => { await Console.Out.WriteLineAsync(m.MessageId); });
+            // Create a primary and secondary queue client.
+            var primaryQueueClient = new QueueClient(connectionString, BasicQueueName);
+            var secondaryQueueClient = new QueueClient(connectionString, BasicQueue2Name);
+            
+            RegisterHandler(
+                primaryQueueClient,
+                secondaryQueueClient,
+                async m => { await Console.Out.WriteLineAsync(m.MessageId); });
 
 
-                Console.WriteLine("Waiting for messages, press ENTER to exit.\n");
-                Console.ReadLine();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("Unexpected exception {0}", e);
-                throw;
-            }
-            return Task.CompletedTask;
+            Console.WriteLine("Waiting for messages for 30 seconds, press any key to exit.\n");
+            return Task.WhenAny(
+                Task.Run(()=>Console.ReadKey()),
+                Task.Delay(TimeSpan.FromSeconds(30))
+                );
         }
 
-        void RegisterMessageHandler(
+        void RegisterHandler(
             QueueClient primaryQueueClient,
             QueueClient secondaryQueueClient,
             Func<Message, Task> handlerCallback,
@@ -97,10 +88,19 @@ namespace MessagingSamples
             return Task.CompletedTask;
         }
 
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

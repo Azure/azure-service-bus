@@ -15,14 +15,14 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace PrioritySubscriptions
 {
     using System;
     using System.Threading.Tasks;
     using Microsoft.Azure.ServiceBus;
     using System.Threading;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         const string TopicName = "PrioritySubscriptionsTopic";
 
@@ -72,8 +72,7 @@ namespace MessagingSamples
 
 
             // All messages sent
-            Console.WriteLine("\nSender complete. Press ENTER");
-            Console.ReadLine();
+            Console.WriteLine("\nSender complete.");
 
             // start receive
             Console.WriteLine("Receiving messages by priority ...");
@@ -97,10 +96,10 @@ namespace MessagingSamples
                 new MessageHandlerOptions(LogMessageHandlerException) { MaxConcurrentCalls = 5, AutoComplete = true });
             subClient3.RegisterMessageHandler((m, c) => callback(subClient1, m, c),
                 new MessageHandlerOptions(LogMessageHandlerException) { MaxConcurrentCalls = 1, AutoComplete = true });
-
-
-            Console.WriteLine("\nReceiver complete. press ENTER");
-            Console.ReadLine();
+            
+            Task.WaitAny(
+              Task.Run(() => Console.ReadKey()),
+              Task.Delay(TimeSpan.FromSeconds(10)));
 
             await Task.WhenAll(subClient1.CloseAsync(), subClient2.CloseAsync(), subClient3.CloseAsync());
         }
@@ -122,10 +121,19 @@ namespace MessagingSamples
             }
         }
 
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

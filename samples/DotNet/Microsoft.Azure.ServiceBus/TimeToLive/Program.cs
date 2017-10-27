@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace TimeToLive
 {
     using System;
     using System.IO;
@@ -26,27 +26,9 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
-        public async Task Run(string connectionString)
-        {
-            Console.WriteLine("Press any key to exit the scenario");
-
-            var cts = new CancellationTokenSource();
-
-            var sender = new MessageSender(connectionString, Sample.BasicQueueName);
-
-
-            var sendTask = this.SendMessagesAsync(sender);
-            var receiveTask = this.ReceiveMessagesAsync(connectionString, Sample.BasicQueueName, cts.Token);
-            var fixupTask = this.PickUpAndFixDeadletters(connectionString, Sample.BasicQueueName, sender, cts.Token);
-
-            Console.ReadKey();
-            cts.Cancel();
-
-            await Task.WhenAll(sendTask, receiveTask);
-        }
-
+      
         async Task SendMessagesAsync(MessageSender sender)
         {
             dynamic data = new[]
@@ -186,10 +168,39 @@ namespace MessagingSamples
             return Task.CompletedTask;
         }
 
-        static void Main(string[] args)
+        public async Task Run(string connectionString)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            var cts = new CancellationTokenSource();
+
+            var sender = new MessageSender(connectionString, BasicQueueName);
+
+            var sendTask = this.SendMessagesAsync(sender);
+            var receiveTask = this.ReceiveMessagesAsync(connectionString, BasicQueueName, cts.Token);
+            var fixupTask = this.PickUpAndFixDeadletters(connectionString, BasicQueueName, sender, cts.Token);
+            
+            await Task.WhenAll(
+                Task.WhenAny(
+                    Task.Run(() => Console.ReadKey()),
+                    Task.Delay(TimeSpan.FromSeconds(10))
+                ).ContinueWith((t) => cts.Cancel()), 
+                sendTask, 
+                receiveTask, 
+                fixupTask);
+        }
+
+       public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

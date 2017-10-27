@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace Deferral
 {
     using System;
     using System.Collections.Generic;
@@ -27,18 +27,14 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
-            Console.WriteLine("Press any key to exit the scenario");
-
-            var sendTask = this.SendMessagesAsync(connectionString, Sample.BasicQueueName);
-            var receiveTask = this.ReceiveMessagesAsync(connectionString, Sample.BasicQueueName);
+            var sendTask = this.SendMessagesAsync(connectionString, BasicQueueName);
+            var receiveTask = this.ReceiveMessagesAsync(connectionString, BasicQueueName);
 
             await Task.WhenAll(sendTask, receiveTask);
-
-            Console.ReadKey();
         }
 
         async Task SendMessagesAsync(string connectionString, string queueName)
@@ -191,10 +187,19 @@ namespace MessagingSamples
             await receiver.CloseAsync();
         }
 
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

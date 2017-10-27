@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace Sessions
 {
     using System;
     using System.IO;
@@ -26,23 +26,24 @@ namespace MessagingSamples
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
-    public class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
             Console.WriteLine("Press any key to exit the scenario");
 
-            CancellationTokenSource cts = new CancellationTokenSource();
-
             await Task.WhenAll(
-                this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, Sample.SessionQueueName),
-                this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, Sample.SessionQueueName),
-                this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, Sample.SessionQueueName),
-                this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, Sample.SessionQueueName));
+                this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, SessionQueueName),
+                this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, SessionQueueName),
+                this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, SessionQueueName),
+                this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, SessionQueueName));
 
-            this.InitializeReceiver(connectionString, Sample.SessionQueueName, cts.Token);
-            Console.ReadKey();
-            cts.Cancel();
+            var client = this.InitializeReceiver(connectionString, SessionQueueName);
+            Task.WaitAny(
+               Task.Run(() => Console.ReadKey()),
+               Task.Delay(TimeSpan.FromSeconds(10)));
+
+            await client.CloseAsync();
         }
 
         async Task SendMessagesAsync(string sessionId, string connectionString, string queueName)
@@ -78,7 +79,7 @@ namespace MessagingSamples
             }
         }
 
-        void InitializeReceiver(string connectionString, string queueName, CancellationToken ct)
+        QueueClient InitializeReceiver(string connectionString, string queueName)
         {
             var client = new QueueClient(connectionString, queueName, ReceiveMode.PeekLock);
             client.RegisterSessionHandler(
@@ -124,18 +125,28 @@ namespace MessagingSamples
                     MaxConcurrentSessions = 1,
                     AutoComplete = false
                 });
+            return client;
         }
-        
+
         private Task LogMessageHandlerException(ExceptionReceivedEventArgs e)
         {
             Console.WriteLine("Exception: \"{0}\" {0}", e.Exception.Message, e.ExceptionReceivedContext.EntityPath);
             return Task.CompletedTask;
         }
 
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

@@ -15,16 +15,15 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace Prefetch
 {
+    using Microsoft.Azure.ServiceBus;
+    using Microsoft.Azure.ServiceBus.Core;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
-    using System.IO;
     using System.Threading.Tasks;
-    using Microsoft.Azure.ServiceBus;
-    using Microsoft.Azure.ServiceBus.Core;
-    
+
     /// <summary>
     ///     This sample demonstrates how to use the messages prefetch feature upon receive
     ///     The sample creates a Queue, sends messages to it and receives all messages
@@ -32,14 +31,14 @@ namespace MessagingSamples
     ///     prefecthCount = 100. For each case, it calculates the time taken to receive and complete
     ///     all messages and at the end, it prints the difference between both times.
     /// </summary>
-    class Program : Sample
+    public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
             // Create communication objects to send and receive on the queue
-            var sender = new MessageSender(connectionString, Sample.BasicQueueName);
+            var sender = new MessageSender(connectionString, BasicQueueName);
             // Run 1
-            var receiver = new MessageReceiver(connectionString, Sample.BasicQueueName, ReceiveMode.PeekLock);
+            var receiver = new MessageReceiver(connectionString, BasicQueueName, ReceiveMode.PeekLock);
             receiver.PrefetchCount = 0;
             // Send and Receive messages with prefetch OFF
             var timeTaken1 = await this.SendAndReceiveMessages(sender, receiver, 100);
@@ -47,7 +46,7 @@ namespace MessagingSamples
             await receiver.CloseAsync();
 
             // Run 2
-            receiver = new MessageReceiver(connectionString, Sample.BasicQueueName, ReceiveMode.PeekLock);
+            receiver = new MessageReceiver(connectionString, BasicQueueName, ReceiveMode.PeekLock);
             receiver.PrefetchCount = 10;
             // Send and Receive messages with prefetch ON
             var timeTaken2 = await this.SendAndReceiveMessages(sender, receiver, 100);
@@ -58,10 +57,6 @@ namespace MessagingSamples
             var timeDifference = timeTaken1 - timeTaken2;
 
             Console.WriteLine("\nTime difference = {0} milliseconds", timeDifference);
-
-            Console.WriteLine();
-            Console.WriteLine("Press [Enter] to quit...");
-            Console.ReadLine();
         }
 
         async Task<long> SendAndReceiveMessages(MessageSender sender, MessageReceiver receiver, int messageCount)
@@ -120,10 +115,19 @@ namespace MessagingSamples
             return timeTaken;
         }
 
-        static void Main(string[] args)
+       public static int Main(string[] args)
         {
-            var app = new Program();
-            app.RunSample(args, app.Run);
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

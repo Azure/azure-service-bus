@@ -3,7 +3,6 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFrameworks>net462;netcoreapp2.0</TargetFrameworks>
-    
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\common\Main.cs" Link="Main.cs" />

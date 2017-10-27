@@ -139,7 +139,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GeoSenderActiveReplication"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GeoSenderPassiveReplication", "GeoSenderPassiveReplication", "{7D20196E-6FD7-42C2-94EF-9614484F1C8C}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Receiver", "GeoReplication\Receiver\Receiver.csproj", "{3212E2FD-B7DF-47DA-92E2-CF9AF50EEC27}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeoReceiver", "GeoReplication\Receiver\GeoReceiver.csproj", "{3212E2FD-B7DF-47DA-92E2-CF9AF50EEC27}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SenderActiveReplication", "GeoReplication\SenderActiveReplication\SenderActiveReplication.csproj", "{84DD54F3-B686-4000-8289-C4D9C46CAB61}"
 EndProject
@@ -171,6 +171,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		scripts\sampleenv.ps1 = scripts\sampleenv.ps1
 		scripts\sampleenv.sh = scripts\sampleenv.sh
 	EndProjectSection
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{9B998979-5E1A-4C7D-B7E7-51BAFA82D033}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SamplesTest", "SamplesTest\SamplesTest.csproj", "{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -711,6 +715,30 @@ Global
 		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.ReleaseWindowsOnly|AnyCPU.Build.0 = Release|Any CPU
 		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.ReleaseWindowsOnly|x86.ActiveCfg = Release|Any CPU
 		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.ReleaseWindowsOnly|x86.Build.0 = Release|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.Debug|AnyCPU.ActiveCfg = Debug|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.Debug|AnyCPU.Build.0 = Debug|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.Debug|x86.Build.0 = Debug|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.DebugWindowsOnly|Any CPU.ActiveCfg = Debug|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.DebugWindowsOnly|Any CPU.Build.0 = Debug|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.DebugWindowsOnly|AnyCPU.ActiveCfg = Debug|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.DebugWindowsOnly|AnyCPU.Build.0 = Debug|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.DebugWindowsOnly|x86.ActiveCfg = Debug|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.DebugWindowsOnly|x86.Build.0 = Debug|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.Release|AnyCPU.ActiveCfg = Release|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.Release|AnyCPU.Build.0 = Release|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.Release|x86.ActiveCfg = Release|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.Release|x86.Build.0 = Release|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.ReleaseWindowsOnly|Any CPU.ActiveCfg = Release|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.ReleaseWindowsOnly|Any CPU.Build.0 = Release|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.ReleaseWindowsOnly|AnyCPU.ActiveCfg = Release|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.ReleaseWindowsOnly|AnyCPU.Build.0 = Release|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.ReleaseWindowsOnly|x86.ActiveCfg = Release|Any CPU
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}.ReleaseWindowsOnly|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -762,6 +790,7 @@ Global
 		{C9D5ECB8-7F92-45E0-9CE4-6A3CE614F4B8} = {C71D0691-D6BB-4289-AA56-EA48AEE7F971}
 		{613E7D9B-A1F8-423D-AAB1-B2F3526122D3} = {0473E8D7-F4E9-44E8-A400-CDFFFF3738C1}
 		{C9B6BEF6-7566-4A52-A79A-DC22F758A657} = {613E7D9B-A1F8-423D-AAB1-B2F3526122D3}
+		{64B092EE-91BD-4D83-8959-19E1ABE2F0CD} = {9B998979-5E1A-4C7D-B7E7-51BAFA82D033}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AAAEE60A-5604-415A-960A-AC84B4D84927}
