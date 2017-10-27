@@ -6,7 +6,13 @@
     
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="app.config" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="..\..\common\Main.cs" Link="Main.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="app.config" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="WindowsAzure.ServiceBus" Version="4.1.3" />

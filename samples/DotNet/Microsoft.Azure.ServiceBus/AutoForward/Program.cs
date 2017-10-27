@@ -76,7 +76,7 @@ namespace AutoForward
             return msg;
         }
 
-       public static int Main(string[] args)
+        public static int Main(string[] args)
         {
             try
             {

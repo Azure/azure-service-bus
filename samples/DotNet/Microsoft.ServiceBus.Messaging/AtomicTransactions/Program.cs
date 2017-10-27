@@ -41,7 +41,7 @@ namespace AtomicTransactions
         const string SagaInputQueueName = SagaQueuePathPrefix + "/input";
         static int pendingTransactions;
 
-        public async Task Run(string connectionString)
+        public async Task Run(Dictionary<string, string> settings)
         {
             // we're going to create a topology for sagas of sequential transactions in this 
             // sample. For each transactional saga step we will have a dedicated input queue. 
@@ -65,10 +65,10 @@ namespace AtomicTransactions
             // The remaining paths are set up as we initialize the Saga work and conpensation 
             // tasks in RunSaga.
 
-            var namespaceManager = new NamespaceManager(connectionString);
-
+            var namespaceManager = NamespaceManager.CreateFromConnectionString(settings["SB_SAMPLES_MANAGE_CONNECTIONSTRING"]);
+            
             var queues = await this.SetupSagaTopologyAsync(namespaceManager);
-            await RunScenarioAsync(connectionString);
+            await RunScenarioAsync(settings["SB_SAMPLES_CONNECTIONSTRING"]);
             await this.CleanupSagaTopologyAsync(namespaceManager, queues);
         }
 

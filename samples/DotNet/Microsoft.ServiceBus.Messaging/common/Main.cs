@@ -40,12 +40,19 @@ namespace MessagingSamples
 #if STA
         [STAThread]
 #endif
-        [DebuggerStepThrough]
+       // [DebuggerStepThrough]
         public void RunSample(string[] args, Func<string, Task> run)
+        {
+            RunSample(args, (properties) => run(properties["SB_SAMPLES_CONNECTIONSTRING"]));
+        }
+
+        //[DebuggerStepThrough]
+        public void RunSample(string[] args, Func<Dictionary<string, string>, Task> run)
         {
             var properties = new Dictionary<string, string>
             {
                 {"SB_SAMPLES_CONNECTIONSTRING", null},
+                {"SB_SAMPLES_MANAGE_CONNECTIONSTRING", null},
             };
 
             // read the settings file created by the ./setup.ps1 file
@@ -96,7 +103,7 @@ namespace MessagingSamples
                 }
             }
 
-            run(properties["SB_SAMPLES_CONNECTIONSTRING"]).GetAwaiter().GetResult();
+            Task.WaitAll(run(properties));
         }
     }
 

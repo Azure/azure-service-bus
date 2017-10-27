@@ -65,6 +65,7 @@ namespace NetMessagingBindingClient
             catch (Exception exception)
             {
                 Console.WriteLine("Exception occurred: {0}", exception);
+                throw;
             }
 
             Console.WriteLine("\nSender complete.");

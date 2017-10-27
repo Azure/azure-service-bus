@@ -20,7 +20,7 @@ namespace NetMessagingBindingService
     using System;
     using System.ServiceModel;
     using System.ServiceModel.Channels;
-    
+
     public class OnewayService : IOnewayServiceContract
     {
         public void Process(string data)
