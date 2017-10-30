@@ -22,7 +22,8 @@
     </build>
 
     <modules>
-      <module>azure-servicebus/QueueClientQuickstart</module>
+        <module>azure-servicebus/QueuesGettingStarted</module>
+        <module>azure-servicebus/QueueClientQuickstart</module>
       <module>azure-servicebus/TopicClientQuickstart</module>
       <module>azure-servicebus/MessageReceiverQuickstart</module>
       <module>azure-servicebus/ManagingTopicRules</module>
