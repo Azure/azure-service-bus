@@ -6,10 +6,7 @@ package com.microsoft.azure.servicebus.samples.managingtopicrules;
 import com.microsoft.azure.servicebus.*;
 import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 import com.microsoft.azure.servicebus.primitives.ServiceBusException;
-import com.microsoft.azure.servicebus.rules.CorrelationFilter;
-import com.microsoft.azure.servicebus.rules.RuleDescription;
-import com.microsoft.azure.servicebus.rules.SqlFilter;
-import com.microsoft.azure.servicebus.rules.SqlRuleAction;
+import com.microsoft.azure.servicebus.rules.*;
 import org.apache.commons.cli.*;
 import org.apache.log4j.*;
 
@@ -62,11 +59,11 @@ public class ManagingTopicRules {
                 ReceiveMode.PEEKLOCK);
 
         // Drop existing rules and add a TrueFilter
-        for (RuleDescription rd : allMessagessubscriptionClientgetRules()) {
-            allMessagessubscriptionClientgetRules.removeRule(rd.getName());
+        for (RuleDescription rd : allMessagessubscriptionClient.getRules()) {
+            allMessagessubscriptionClient.removeRule(rd.getName());
         }
 
-        allMessagessubscriptionClientgetRules.addRule(new RuleDescription("MatchAll", new TrueFilter()));
+        allMessagessubscriptionClient.addRule(new RuleDescription("MatchAll", new TrueFilter()));
 
         // Drop existing rules and add a SQL filter
         for (RuleDescription rd : sqlFilterOnlySubscriptionClient.getRules()) {

@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-package com.microsoft.azure.servicebus.samples.queuesgettingstarted;
+package com.microsoft.azure.servicebus.samples.topicsgettingstarted;
 
 import com.microsoft.azure.servicebus.*;
 import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
@@ -16,23 +16,32 @@ import java.util.function.Function;
 
 import org.apache.commons.cli.*;
 
-public class QueuesGettingStarted {
+public class TopicsGettingStarted {
 
-    QueueClient sendClient;
-    QueueClient receiveClient;
+    TopicClient sendClient;
+    SubscriptionClient subscription1Client;
+    SubscriptionClient subscription2Client;
+    SubscriptionClient subscription3Client;
 
     public CompletableFuture<Void> Run(String connectionString) throws Exception {
 
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
 
+        this.sendClient = new TopicClient(new ConnectionStringBuilder(connectionString, "BasicTopic"));
+       
         // Create a QueueClient instance using the connection string builder
         // We set the receive mode to "PeekLock", meaning the message is delivered
         // under a lock and must be acknowledged ("completed") to be removed from the queue
-        this.receiveClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
-        this.InitializeReceiver();
+        this.subscription1Client = new SubscriptionClient(new ConnectionStringBuilder(connectionString,  "BasicTopic/subscriptions/Subscription1"), ReceiveMode.PEEKLOCK);
+        this.subscription2Client = new SubscriptionClient(new ConnectionStringBuilder(connectionString, "BasicTopic/subscriptions/Subscription2"), ReceiveMode.PEEKLOCK);
+        this.subscription3Client = new SubscriptionClient(new ConnectionStringBuilder(connectionString, "BasicTopic/subscriptions/Subscription3"), ReceiveMode.PEEKLOCK);
 
-        this.sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
+        this.InitializeReceiver(this.subscription1Client);
+        this.InitializeReceiver(this.subscription2Client);
+        this.InitializeReceiver(this.subscription3Client);
+
         CompletableFuture sendTask = this.SendMessagesAsync();
+
 
         // wait for ENTER or 10 seconds elapsing
         executor.invokeAny(Arrays.asList(() -> {
@@ -44,7 +53,9 @@ public class QueuesGettingStarted {
         }));
 
         return CompletableFuture.allOf(
-                this.receiveClient.closeAsync(),
+                this.subscription1Client.closeAsync(),
+                this.subscription2Client.closeAsync(),
+                this.subscription3Client.closeAsync(),
                 sendTask.thenRun(() -> this.sendClient.closeAsync())
         );
 
@@ -108,10 +119,10 @@ public class QueuesGettingStarted {
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture<?>[tasks.size()]));
     }
 
-    void InitializeReceiver() throws Exception {
+    void InitializeReceiver(SubscriptionClient receiveClient) throws Exception {
         Gson gson = new Gson();
         // register the RegisterMessageHandler callback
-        this.receiveClient.registerMessageHandler(new IMessageHandler() {
+        receiveClient.registerMessageHandler(new IMessageHandler() {
                   // callback invoked when the message handler loop has obtained a message
                   public CompletableFuture<Void> onMessageAsync(IMessage message) {
                       // receives message is passed to callback
@@ -124,8 +135,9 @@ public class QueuesGettingStarted {
                           Map scientist = gson.fromJson(new String(body, UTF_8), Map.class);
 
                           System.out.printf(
-                                  "\t\t\t\tMessage received: \n\t\t\t\t\t\tMessageId = %s, \n\t\t\t\t\t\tSequenceNumber = %s, \n\t\t\t\t\t\tEnqueuedTimeUtc = %s," +
+                                  "\t\t\t\t%s Message received: \n\t\t\t\t\t\tMessageId = %s, \n\t\t\t\t\t\tSequenceNumber = %s, \n\t\t\t\t\t\tEnqueuedTimeUtc = %s," +
                                           "\n\t\t\t\t\t\tExpiresAtUtc = %s, \n\t\t\t\t\t\tContentType = \"%s\",  \n\t\t\t\t\t\tContent: [ firstName = %s, name = %s ]",
+                                  receiveClient.getEntityPath(),
                                   message.getMessageId(),
                                   message.getSequenceNumber(),
                                   message.getEnqueuedTimeUtc(),
@@ -150,7 +162,7 @@ public class QueuesGettingStarted {
     public static void main(String[] args) {
 
         System.exit(runApp(args, (connectionString) -> {
-            QueuesGettingStarted app = new QueuesGettingStarted();
+            TopicsGettingStarted app = new TopicsGettingStarted();
             try {
                 app.Run(connectionString).join();
                 return 0;

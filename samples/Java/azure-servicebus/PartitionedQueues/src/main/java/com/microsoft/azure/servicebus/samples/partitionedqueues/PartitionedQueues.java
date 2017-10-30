@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-package com.microsoft.azure.servicebus.samples.queuesgettingstarted;
+package com.microsoft.azure.servicebus.samples.partitionedqueues;
 
 import com.microsoft.azure.servicebus.*;
 import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
@@ -16,7 +16,7 @@ import java.util.function.Function;
 
 import org.apache.commons.cli.*;
 
-public class QueuesGettingStarted {
+public class PartitionedQueues {
 
     QueueClient sendClient;
     QueueClient receiveClient;
@@ -28,10 +28,10 @@ public class QueuesGettingStarted {
         // Create a QueueClient instance using the connection string builder
         // We set the receive mode to "PeekLock", meaning the message is delivered
         // under a lock and must be acknowledged ("completed") to be removed from the queue
-        this.receiveClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
+        this.receiveClient = new QueueClient(new ConnectionStringBuilder(connectionString, "PartitionedQueue"), ReceiveMode.PEEKLOCK);
         this.InitializeReceiver();
 
-        this.sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
+        this.sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, "PartitionedQueue"), ReceiveMode.PEEKLOCK);
         CompletableFuture sendTask = this.SendMessagesAsync();
 
         // wait for ENTER or 10 seconds elapsing
@@ -98,7 +98,8 @@ public class QueuesGettingStarted {
             message.setContentType("application/json");
             message.setLabel("Scientist");
             message.setMessageId(messageId);
-            message.setTimeToLive(Duration.ofMinutes(2));
+            message.setTimeToLive(Duration.ofMinutes(2)); 
+            message.setPartitionKey(data.get(i).get("name").substring(0, 1));
 
             tasks.add(
                     this.sendClient.sendAsync(message).thenRunAsync(() -> {
@@ -124,8 +125,8 @@ public class QueuesGettingStarted {
                           Map scientist = gson.fromJson(new String(body, UTF_8), Map.class);
 
                           System.out.printf(
-                                  "\t\t\t\tMessage received: \n\t\t\t\t\t\tMessageId = %s, \n\t\t\t\t\t\tSequenceNumber = %s, \n\t\t\t\t\t\tEnqueuedTimeUtc = %s," +
-                                          "\n\t\t\t\t\t\tExpiresAtUtc = %s, \n\t\t\t\t\t\tContentType = \"%s\",  \n\t\t\t\t\t\tContent: [ firstName = %s, name = %s ]",
+                                  "\t\t\t\tMessage received: \n\t\t\t\t\t\tMessageId = %s, \n\t\t\t\t\t\tSequenceNumber = %08X, \n\t\t\t\t\t\tEnqueuedTimeUtc = %s," +
+                                          "\n\t\t\t\t\t\tExpiresAtUtc = %s, \n\t\t\t\t\t\tContentType = \"%s\",  \n\t\t\t\t\t\tContent: [ firstName = %s, name = %s ]\n",
                                   message.getMessageId(),
                                   message.getSequenceNumber(),
                                   message.getEnqueuedTimeUtc(),
@@ -150,7 +151,7 @@ public class QueuesGettingStarted {
     public static void main(String[] args) {
 
         System.exit(runApp(args, (connectionString) -> {
-            QueuesGettingStarted app = new QueuesGettingStarted();
+            PartitionedQueues app = new PartitionedQueues();
             try {
                 app.Run(connectionString).join();
                 return 0;

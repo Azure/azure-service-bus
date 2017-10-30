@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-package com.microsoft.azure.servicebus.samples.queuesgettingstarted;
+package com.microsoft.azure.servicebus.samples.deadletterqueue;
 
 import com.microsoft.azure.servicebus.*;
 import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
@@ -9,6 +9,7 @@ import com.google.gson.Gson;
 
 import static java.nio.charset.StandardCharsets.*;
 
+import java.io.Console;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
@@ -16,23 +17,15 @@ import java.util.function.Function;
 
 import org.apache.commons.cli.*;
 
-public class QueuesGettingStarted {
+public class DeadletterQueue {
 
-    QueueClient sendClient;
-    QueueClient receiveClient;
-
+    
     public CompletableFuture<Void> Run(String connectionString) throws Exception {
 
         ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
 
-        // Create a QueueClient instance using the connection string builder
-        // We set the receive mode to "PeekLock", meaning the message is delivered
-        // under a lock and must be acknowledged ("completed") to be removed from the queue
-        this.receiveClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
-        this.InitializeReceiver();
-
-        this.sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
-        CompletableFuture sendTask = this.SendMessagesAsync();
+        IMessageSender sendClient = ClientFactory.createMessageSenderFromConnectionStringBuilder(new ConnectionStringBuilder(connectionString, "BasicQueue"));
+        this.SendMessagesAsync(sendClient, 1).join();
 
         // wait for ENTER or 10 seconds elapsing
         executor.invokeAny(Arrays.asList(() -> {
@@ -50,7 +43,7 @@ public class QueuesGettingStarted {
 
     }
 
-    CompletableFuture<Void> SendMessagesAsync() {
+    CompletableFuture<Void> SendMessagesAsync(IMessageSender sendClient, int maxMessages ) {
         Gson gson = new Gson();
         ArrayList<HashMap<String, String>> data = new ArrayList<HashMap<String, String>>() {{
             add(new HashMap<String, String>() {{
@@ -92,20 +85,63 @@ public class QueuesGettingStarted {
         }};
 
         List<CompletableFuture> tasks = new ArrayList<>();
-        for (int i = 0; i < data.size(); i++) {
+        for (int i = 0; i < Math.max(data.size(),maxMessages); i++) {
             final String messageId = Integer.toString(i);
             Message message = new Message(gson.toJson(data.get(i), Map.class).getBytes(UTF_8));
             message.setContentType("application/json");
-            message.setLabel("Scientist");
+            message.setLabel(i % 2 == 0 ? "Scientist" : "Physicist");
             message.setMessageId(messageId);
             message.setTimeToLive(Duration.ofMinutes(2));
 
             tasks.add(
-                    this.sendClient.sendAsync(message).thenRunAsync(() -> {
+                    sendClient.sendAsync(message).thenRunAsync(() -> {
                         System.out.printf("Message sent: Id = %s\n", message.getMessageId());
                     }));
         }
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture<?>[tasks.size()]));
+    }
+
+    CompletableFuture<Void> ExceedMaxDelivery(String connectionString, String queueName) throws Exception
+    {
+        IMessageReceiver receiver = ClientFactory.createMessageReceiverFromConnectionStringBuilder( new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
+
+        boolean done = false;
+        while (!done)
+        {
+           done = receiver.receiveAsync(Duration.ofSeconds(10)).thenApply((msg)-> {
+                if ( msg != null ) {
+                    System.out.printf("Picked up message; DeliveryCount %d", msg.getDeliveryCount());
+                    try {
+                        receiver.abandon(msg.getLockToken());
+                    }
+                    catch (Exception e) {
+
+                    }
+                } else {
+                    return true;
+                }
+                return false;
+            }).join();
+        }
+
+        IMessageReceiver deadletterReceiver = ClientFactory.createMessageReceiverFromConnectionStringBuilder( new ConnectionStringBuilder(connectionString, "BasicQueue/$deadletter"), ReceiveMode.PEEKLOCK);
+        while (true)
+        {
+            IMessage msg = deadletterReceiver.receive(Duration.ofSeconds(10));
+            if (msg != null)
+            {
+                System.out.printf("Deadletter message:");
+                for( var prop : msg.getProperties())
+                {
+                    Console.WriteLine("{0}={1}", prop.Key, prop.Value);
+                }
+                await deadletterReceiver.CompleteAsync(msg.SystemProperties.LockToken);
+            }
+            else
+            {
+                break;
+            }
+        }
     }
 
     void InitializeReceiver() throws Exception {
@@ -150,7 +186,7 @@ public class QueuesGettingStarted {
     public static void main(String[] args) {
 
         System.exit(runApp(args, (connectionString) -> {
-            QueuesGettingStarted app = new QueuesGettingStarted();
+            DeadletterQueue app = new DeadletterQueue();
             try {
                 app.Run(connectionString).join();
                 return 0;
