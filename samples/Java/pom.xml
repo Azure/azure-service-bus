@@ -22,6 +22,8 @@
     </build>
 
     <modules>
+        <module>azure-servicebus/DuplicateDetection</module>
+        <module>azure-servicebus/AutoForward</module>
         <module>azure-servicebus/Prefetch</module>
         <module>azure-servicebus/ReceiveLoop</module>
         <module>azure-servicebus/MessageBrowse</module>
