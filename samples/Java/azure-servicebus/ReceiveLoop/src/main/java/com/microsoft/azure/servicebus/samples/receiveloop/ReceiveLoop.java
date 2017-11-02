@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-package com.microsoft.azure.servicebus.samples.queuesgettingstarted;
+package com.microsoft.azure.servicebus.samples.receiveloop;
 
 import com.microsoft.azure.servicebus.*;
 import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
@@ -16,36 +16,39 @@ import java.util.function.Function;
 
 import org.apache.commons.cli.*;
 
-public class QueuesGettingStarted {
+public class ReceiveLoop {
 
     QueueClient sendClient;
-    QueueClient receiveClient;
 
     public CompletableFuture<Void> Run(String connectionString) throws Exception {
 
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+        ExecutorService executor = Executors.newScheduledThreadPool(10);
 
         // Create a QueueClient instance using the connection string builder
         // We set the receive mode to "PeekLock", meaning the message is delivered
         // under a lock and must be acknowledged ("completed") to be removed from the queue
-        this.receiveClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
-        this.InitializeReceiver();
 
         this.sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
         CompletableFuture sendTask = this.SendMessagesAsync();
+
+        IMessageReceiver receiver = ClientFactory.createMessageReceiverFromConnectionStringBuilder(
+                        new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
+        CompletableFuture receiveTask = this.ReceiveMessagesAsync(receiver, executor);
 
         // wait for ENTER or 10 seconds elapsing
         executor.invokeAny(Arrays.asList(() -> {
             System.in.read();
             return 0;
         }, () -> {
-            Thread.sleep(10*1000);
+            Thread.sleep(10 * 1000);
             return 0;
         }));
 
+        receiveTask.cancel(true);
+        receiver.close();
+
         return CompletableFuture.allOf(
-                this.receiveClient.closeAsync(),
-                sendTask.thenRun(() -> this.sendClient.closeAsync())
+               receiveTask, sendTask.thenRun(() -> this.sendClient.closeAsync())
         );
 
     }
@@ -108,49 +111,64 @@ public class QueuesGettingStarted {
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture<?>[tasks.size()]));
     }
 
-    void InitializeReceiver() throws Exception {
-        Gson gson = new Gson();
-        // register the RegisterMessageHandler callback
-        this.receiveClient.registerMessageHandler(new IMessageHandler() {
-                  // callback invoked when the message handler loop has obtained a message
-                  public CompletableFuture<Void> onMessageAsync(IMessage message) {
-                      // receives message is passed to callback
-                      if (message.getLabel() != null &&
-                              message.getContentType() != null &&
-                              message.getLabel().contentEquals("Scientist") &&
-                              message.getContentType().contentEquals("application/json")) {
+    CompletableFuture ReceiveMessagesAsync(IMessageReceiver receiver, Executor executor) {
 
-                          byte[] body = message.getBody();
-                          Map scientist = gson.fromJson(new String(body, UTF_8), Map.class);
+        CompletableFuture task = new CompletableFuture();
+        try {
 
-                          System.out.printf(
-                                  "\t\t\t\tMessage received: \n\t\t\t\t\t\tMessageId = %s, \n\t\t\t\t\t\tSequenceNumber = %s, \n\t\t\t\t\t\tEnqueuedTimeUtc = %s," +
-                                          "\n\t\t\t\t\t\tExpiresAtUtc = %s, \n\t\t\t\t\t\tContentType = \"%s\",  \n\t\t\t\t\t\tContent: [ firstName = %s, name = %s ]",
-                                  message.getMessageId(),
-                                  message.getSequenceNumber(),
-                                  message.getEnqueuedTimeUtc(),
-                                  message.getExpiresAtUtc(),
-                                  message.getContentType(),
-                                  scientist != null ? scientist.get("firstName") : "",
-                                  scientist != null ? scientist.get("name") : "");
-                      }
-                      return CompletableFuture.completedFuture(null);
-                  }
+            Gson gson = new Gson();
 
-                  // callback invoked when the message handler has an exception to report
-                  public void notifyException(Throwable throwable, ExceptionPhase exceptionPhase) {
-                      System.out.printf(exceptionPhase + "-" + throwable.getMessage());
-                  }
-              },
-              // 1 concurrent call, messages are auto-completed, auto-renew duration
-              new MessageHandlerOptions(1, true, Duration.ofMinutes(1)));
+            try {
+                executor.execute(() -> {
+                    while (!task.isCancelled()) {
+                        try {
+                            IMessage message = receiver.receive(Duration.ofSeconds(60));
+                            if (message != null) {
+                                // receives message is passed to callback
+                                if (message.getLabel() != null &&
+                                        message.getContentType() != null &&
+                                        message.getLabel().contentEquals("Scientist") &&
+                                        message.getContentType().contentEquals("application/json")) {
 
+                                    byte[] body = message.getBody();
+                                    Map scientist = gson.fromJson(new String(body, UTF_8), Map.class);
+
+                                    System.out.printf(
+                                            "\n\t\t\t\tMessage received: \n\t\t\t\t\t\tMessageId = %s, \n\t\t\t\t\t\tSequenceNumber = %s, \n\t\t\t\t\t\tEnqueuedTimeUtc = %s," +
+                                                    "\n\t\t\t\t\t\tExpiresAtUtc = %s, \n\t\t\t\t\t\tContentType = \"%s\",  \n\t\t\t\t\t\tContent: [ firstName = %s, name = %s ]\n",
+                                            message.getMessageId(),
+                                            message.getSequenceNumber(),
+                                            message.getEnqueuedTimeUtc(),
+                                            message.getExpiresAtUtc(),
+                                            message.getContentType(),
+                                            scientist != null ? scientist.get("firstName") : "",
+                                            scientist != null ? scientist.get("name") : "");
+                                }
+                                receiver.completeAsync(message.getLockToken());
+                            }
+                        } catch (Exception e) {
+                            task.completeExceptionally(e);
+                        }
+                    }
+                    task.complete(null);
+                });
+                return task;
+            } catch (Exception e) {
+                task.completeExceptionally(e);
+            }
+        } catch (Exception e) {
+            CompletableFuture failure = new CompletableFuture();
+            failure.completeExceptionally(e);
+            return failure;
+        }
+        return task;
     }
+
 
     public static void main(String[] args) {
 
         System.exit(runApp(args, (connectionString) -> {
-            QueuesGettingStarted app = new QueuesGettingStarted();
+            ReceiveLoop app = new ReceiveLoop();
             try {
                 app.Run(connectionString).join();
                 return 0;

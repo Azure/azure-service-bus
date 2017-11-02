@@ -22,6 +22,9 @@
     </build>
 
     <modules>
+        <module>azure-servicebus/Prefetch</module>
+        <module>azure-servicebus/ReceiveLoop</module>
+        <module>azure-servicebus/MessageBrowse</module>
         <module>azure-servicebus/DeadletterQueue</module>
         <module>azure-servicebus/QueuesGettingStarted</module>
         <module>azure-servicebus/TopicsGettingStarted</module>
