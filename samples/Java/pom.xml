@@ -32,6 +32,7 @@
         <module>azure-servicebus/QueuesGettingStarted</module>
         <module>azure-servicebus/TopicsGettingStarted</module>
         <module>azure-servicebus/TopicFilters</module>
+        <module>azure-servicebus/TimeToLive</module>
         <module>azure-servicebus/PartitionedQueues</module>
         <module>qpid-jms-client/JmsQueueQuickstart</module>
     </modules>
