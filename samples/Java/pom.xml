@@ -35,6 +35,7 @@
         <module>azure-servicebus/TimeToLive</module>
         <module>azure-servicebus/PartitionedQueues</module>
         <module>qpid-jms-client/JmsQueueQuickstart</module>
+        <module>qpid-jms-client/JmsTopicQuickstart</module>
     </modules>
 
 </project>
