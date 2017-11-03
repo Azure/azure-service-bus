@@ -30,6 +30,25 @@ namespace SendersReceiversWithTopics
     public class Program : MessagingSamples.Sample
     {
         
+        public async Task Run(string connectionString)
+        {
+            var cts = new CancellationTokenSource();
+
+            await this.SendMessagesAsync(connectionString, BasicTopicName);
+
+            var allReceives = Task.WhenAll(
+                this.ReceiveMessagesAsync(connectionString, BasicTopicName, "Subscription1", cts.Token, ConsoleColor.Cyan),
+                this.ReceiveMessagesAsync(connectionString, BasicTopicName, "Subscription2", cts.Token, ConsoleColor.Green),
+                this.ReceiveMessagesAsync(connectionString, BasicTopicName, "Subscription3", cts.Token, ConsoleColor.Yellow));
+
+            await Task.WhenAll(
+                Task.WhenAny(
+                    Task.Run(() => Console.ReadKey()),
+                    Task.Delay(TimeSpan.FromSeconds(10))
+                ).ContinueWith((t) => cts.Cancel()),
+                allReceives);
+        }
+
 
         async Task SendMessagesAsync(string connectionString, string topicName)
         {
@@ -134,25 +153,7 @@ namespace SendersReceiversWithTopics
             return Task.CompletedTask;
         }
 
-        public async Task Run(string connectionString)
-        {
-            var cts = new CancellationTokenSource();
-
-            await this.SendMessagesAsync(connectionString, BasicTopicName);
-
-            var allReceives = Task.WhenAll(
-                this.ReceiveMessagesAsync(connectionString, BasicTopicName, "Subscription1", cts.Token, ConsoleColor.Cyan),
-                this.ReceiveMessagesAsync(connectionString, BasicTopicName, "Subscription2", cts.Token, ConsoleColor.Green),
-                this.ReceiveMessagesAsync(connectionString, BasicTopicName, "Subscription3", cts.Token, ConsoleColor.Yellow));
-
-            await Task.WhenAll(
-                Task.WhenAny(
-                    Task.Run(() => Console.ReadKey()),
-                    Task.Delay(TimeSpan.FromSeconds(10))
-                ).ContinueWith((t) => cts.Cancel()),
-                allReceives);
-        }
-
+      
        public static int Main(string[] args)
         {
             try

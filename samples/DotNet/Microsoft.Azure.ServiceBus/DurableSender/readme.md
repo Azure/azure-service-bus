@@ -3,7 +3,7 @@
 This sample demonstrates how an application that is temporarily disconnected from the network can continue to send messages to Service Bus.
  
 The durable message sender library relies on the local Microsoft Message Queue (MSMQ) built into Windows, and stores all messages in a 
-local queue until connectivity is restored. 
+local queue until connectivity is restored. This sample therefore only works on Windows. 
 
 > Be aware that the library does create, but not delete local queues as it is assumed that a local application 
 > will want to continue forwarding already sent messages as it resumes or restarts 
@@ -26,16 +26,12 @@ use ```Enable-WindowsOptionalFeature -Online -FeatureName MSMQ-Server -All``` to
 
 ## Prerequisites and Setup
 
-All samples share the same basic setup, explained in the main [README](../README.md) file. There are no extra setup steps for this sample.
-The application entry points are in [Main.cs](../common/Main.md), which is shared across all samples. The sample implementations generally
-reside in *Program.cs*, starting with *Run()*.
+Refer to the main [README](../README.md) document for setup instructions. All samples share and require the same setup
+before they can be run.
 
-You can build the sample from the command line with the [build.bat](build.bat) or [build.ps1](build.ps1) scripts. This assumes that you
-have the .NET Build tools in the path. You can also open up the [DurableSender.sln](DurableSender.sln) solution file with Visual Studio and build.
-With either option, the NuGet package manager should download and install the **WindowsAzure.ServiceBus** package containing the
-Microsoft.ServiceBus.dll assembly, including dependencies.
+## Sample Code 
 
-## The Sample
+The sample is documented inline in the [Program.cs](Program.cs) C# file.
 
 To allow an application to send messages to a Service Bus Queue or Topic in the absence of network connectivity, 
 the sent messages need to be stored locally,and be transmitted to Service Bus in the background after connectivity has been 

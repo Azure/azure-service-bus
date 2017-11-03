@@ -1,6 +1,6 @@
 # Message Senders and Receivers with Service Bus Topics
 
-This sample shows how to interact with a Service Bus Topic via the ```MessagingFactory``` and the ```MessageSender``` 
+This sample shows how to interact with a Service Bus Topic via the ```MessageSender``` 
 and ```MessageReceiver``` clients, as an alternative to the ``TopicClient`` and ``SubscriptionClient`` class introduced in 
 the basic [TopicGettingStarted](../TopicsGettingStarted) sample. 
 
@@ -10,16 +10,12 @@ of these two samples and in this document we will therefore focus on the few dif
 
 ## Prerequisites and Setup
 
-All samples share the same basic setup, explained in the main [README](../README.md) file. There are no extra setup steps for this sample.
-The application entry points are in [Main.cs](../common/Main.md), which is shared across all samples. The sample implementations generally
-reside in *Program.cs*, starting with ```Run()```.
+Refer to the main [README](../README.md) document for setup instructions. All samples share and require the same setup
+before they can be run.
 
-You can build the sample from the command line with the [build.bat](build.bat) or [build.ps1](build.ps1) scripts. This assumes that you
-have the .NET Build tools in the path. You can also open up the [SendersReceiversWithTopics.sln](SendersReceiversWithTopics.sln) solution file with Visual Studio and build.
-With either option, the NuGet package manager should download and install the **WindowsAzure.ServiceBus** package containing the
-Microsoft.ServiceBus.dll assembly, including dependencies.
+## Sample Code 
 
-## The Program
+The sample is documented inline in the [Program.cs](Program.cs) C# file.
 
 The send-side of the sample is identical to the [SendersReceiversWithQueues](../SendersReceiversWithQueues) sample and therefore shows that
 queues and topics can be used interchangeably, and that an application's messaging topology can indeed be flexibly adjusted while 

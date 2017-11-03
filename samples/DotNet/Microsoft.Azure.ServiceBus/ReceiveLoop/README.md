@@ -5,16 +5,12 @@ but rather implements an explicit receive loop.
 
 ## Prerequisites and Setup
 
-All samples share the same basic setup, explained in the main [README](../README.md) file. There are no extra setup steps for this sample.
-The application entry points are in [Main.cs](../common/Main.md), which is shared across all samples. The sample implementations generally 
-reside in *Program.cs*, starting with Run().    
+Refer to the main [README](../README.md) document for setup instructions. All samples share and require the same setup
+before they can be run.
 
-You can build the sample from the command line with the [build.bat](build.bat) or [build.ps1](build.ps1) scripts. This assumes that you 
-have the .NET Build tools in the path. You can also open up the [QueuesGettingStarted.sln](QueuesGettingStarted.sln) solution file with Visual Studio and build.
-With either option, the NuGet package manager should download and install the **WindowsAzure.ServiceBus** package containing the 
-Microsoft.ServiceBus.dll assembly, including dependencies.
+## Sample Code 
 
-## The Program
+The sample is documented inline in the [Program.cs](Program.cs) C# file.
 
 To keep things reasonably simple, the sample program keeps message sender and message receiver code within a single hosting application,
 even though these roles are often spread across applications, services, or at least across independently deployed and run tiers of applications

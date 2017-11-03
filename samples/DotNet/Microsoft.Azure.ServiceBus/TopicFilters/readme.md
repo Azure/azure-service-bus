@@ -4,60 +4,16 @@ This sample illustrates creating filtered subscriptions for topics. It shows a s
 a filter with a composite SQL-like condition, a rule combining a filter with a set of actions, and a correlation filter 
 condition.  
 
+[Read more about topic filters in the documentation.](https://docs.microsoft.com/azure/service-bus-messaging/topic-filters)
+
 ## Prerequisites and Setup
 
-All samples share the same basic setup, explained in the main [README](../README.md) file. There are no extra setup steps for this sample.
-The application entry points are in [Main.cs](../common/Main.md), which is shared across all samples. The sample implementations generally
-reside in *Program.cs*, starting with *Run()*.
+Refer to the main [README](../README.md) document for setup instructions. All samples share and require the same setup
+before they can be run.
 
-You can build the sample from the command line with the [build.bat](build.bat) or [build.ps1](build.ps1) scripts. This assumes that you
-have the .NET Build tools in the path. You can also open up the [TopicFilters.sln](TopicFilters.sln) solution file with Visual Studio and build.
-With either option, the NuGet package manager should download and install the **WindowsAzure.ServiceBus** package containing the
-Microsoft.ServiceBus.dll assembly, including dependencies.
+## Sample Code 
 
-## What are Subscription Filters?
-
-Each newly created topic subscription has at least one filter. If you don't explicitly specify one, the applied filter is the 
-*true* filter that allows all messages to be selected into the subscription.  
-
-In fact, filters are applied to subscriptions as part of of a *rule*, which is a named entity and combines a condition (the filter)
-and an action. A single subscription may have hundreds of such rules. 
-
-Most applications only need filters, and therefore the Service Bus API lets you bypass the added complexity of handling 
-rules when you just need a single filter or just a single rule. This sample shows the simpler APIs, 
-the [SubscriptionRules](../SubscriptionRules) sample shows how to manage rules for more complex use-cases at runtime.
-
-Service Bus supports three kinds of filters:
-
-* **Boolean filters** - in the form of the ```TrueFilter``` and the ```FalseFilter```. The conditions of these filters either cause all 
-  arriving messages (```true```) or none of the arriving messages (```false```) to be selected for the subscription.
-* **SQL Filters** - A ```SqlFilter``` holds a [SQL-like condition expression](https://msdn.microsoft.com/library/azure/microsoft.servicebus.messaging.sqlfilter.sqlexpression.aspx)
-  that is evaluated in the broker against the arriving messages' user-defined properties and system properties. All system
-  properties (which are all properties explicitly listed on the [```Message``` class](https://msdn.microsoft.com/library/microsoft.servicebus.messaging.Message_properties.aspx)) 
-  must be prefixed with ```sys.``` in the condition expression. The SQL subset implements testing for existence of properties (```EXISTS```), 
-  testing for null-values (```IS NULL```), logical ```NOT```/```AND```/```OR```, relational operators, numeric arithmetic, and simple text pattern matching with ```LIKE```.
-* **Correlation Filters** - A [```CorrelationFilter```](https://msdn.microsoft.com/library/microsoft.servicebus.messaging.correlationfilter.aspx) holds a
-  set of conditions that are matched against one of more of an arriving message's user and system properties. A common use is a match 
-  against the ```CorrelationId``` property, but the application can also choose to match against ```ContentType```, ```Label```, ```MessageId```, ```ReplyTo```, ```ReplyToSessionId```, 
-  ```SessionId```, ```To```, and any user-defined properties. A match exists when an arriving message's value for a property is equal to the 
-  value specified in the correlation filter. For string expressions, the comparison is case-sensitive. When specifying multiple match 
-  properties, the filter combines them as a logical AND condition, meaning all conditions must match for the filter to match.   
-                                          
-All filters evaluate message properties. Filters cannot evaluate the message body.
-
-The cost of choosing complex filter rules is lower overall message throughput at the subscription, topic, and namespace level, since evaluating
-rules costs compute time. Whenever possible, applications should choose correlation filters over SQL-like filters since they are much more efficient in 
-processing and therefore have less impact on throughput.
-
-### Actions
-
-For SQL filters, you can combine the filter condition with an *action*, that is executed on the message after is has been matched and 
-before the message is selected into the topic. [*SqlRuleAction* expressions](https://msdn.microsoft.com/en-us/library/azure/microsoft.servicebus.messaging.sqlruleaction.sqlexpression.aspx) 
-also lean on SQL and allow to modify or remove message properties as the message gets selected for the subscription. The 
-changes to the message properties are private to the particular subscription. 
-
-
-## The Sample
+The sample is documented inline in the [Program.cs](Program.cs) C# file.
 
 The sample code shows how to create subscriptions with filters using the Service Bus management API (via the ```NamespaceManager``` class)
 and also shows the effects of those filters at runtime.

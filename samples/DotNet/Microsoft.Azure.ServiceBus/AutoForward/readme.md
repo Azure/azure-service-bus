@@ -1,4 +1,4 @@
-# Auto Forward
+# Auto-Forward
 This sample demonstrates how to automatically forward messages from a queue, subscription, or deadletter queue into another queue or topic. 
 
 ## What is Auto Forwarding?
