@@ -28,7 +28,7 @@ public class JmsTopicQuickstart {
     // log4j logger
     private static Logger logger = Logger.getRootLogger();
 
-    public void Run(String connectionString) throws Exception {
+    public void run(String connectionString) throws Exception {
 
 
         // The connection string builder is the only part of the azure-servicebus SDK library 
@@ -78,15 +78,15 @@ public class JmsTopicQuickstart {
         }
 
         // Look up the subscription (pretending it's a queue)
-        ReceiveFromSubscription(csb, context, cf, "SUBSCRIPTION1");
-        ReceiveFromSubscription(csb, context, cf, "SUBSCRIPTION2");
-        ReceiveFromSubscription(csb, context, cf, "SUBSCRIPTION3");
+        receiveFromSubscription(csb, context, cf, "SUBSCRIPTION1");
+        receiveFromSubscription(csb, context, cf, "SUBSCRIPTION2");
+        receiveFromSubscription(csb, context, cf, "SUBSCRIPTION3");
 
         System.out.printf("Received all messages, exiting the sample.\n");
         System.out.printf("Closing queue client.\n");
     }
 
-    private void ReceiveFromSubscription(ConnectionStringBuilder csb, Context context, ConnectionFactory cf, String name)
+    private void receiveFromSubscription(ConnectionStringBuilder csb, Context context, ConnectionFactory cf, String name)
             throws NamingException, JMSException, InterruptedException {
         AtomicInteger totalReceived = new AtomicInteger(0);
         System.out.printf("Subscription %s: \n", name);
@@ -126,7 +126,7 @@ public class JmsTopicQuickstart {
         System.exit(runApp(args, (connectionString) -> {
             JmsTopicQuickstart app = new JmsTopicQuickstart();
             try {
-                app.Run(connectionString);
+                app.run(connectionString);
                 return 0;
             } catch (Exception e) {
                 System.out.printf("%s", e.toString());

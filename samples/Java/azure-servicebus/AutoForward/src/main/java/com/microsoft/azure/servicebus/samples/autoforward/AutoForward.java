@@ -17,18 +17,24 @@ import org.apache.commons.cli.*;
 public class AutoForward {
 
 
-    void Run(String connectionString) throws Exception
+    public void run(String connectionString) throws Exception
     {
-        System.out.printf("\nSending messages\n");
+        IMessageSender topicSender;
+        IMessageSender queueSender;
+        IMessageReceiver targetQueueReceiver;
 
-        IMessageSender topicSender = ClientFactory.createMessageSenderFromConnectionStringBuilder(new ConnectionStringBuilder(connectionString, "AutoForwardSourceTopic"));
+        System.out.printf("\nSending messages\n");
+        topicSender = ClientFactory.createMessageSenderFromConnectionStringBuilder(
+                new ConnectionStringBuilder(connectionString, "AutoForwardSourceTopic"));
         topicSender.send(createMessage("M1"));
 
-        IMessageSender queueSender = ClientFactory.createMessageSenderFromConnectionStringBuilder(new ConnectionStringBuilder(connectionString, "AutoForwardTargetQueue"));
+        queueSender = ClientFactory.createMessageSenderFromConnectionStringBuilder(
+                new ConnectionStringBuilder(connectionString, "AutoForwardTargetQueue"));
         queueSender.send(createMessage("M2"));
 
         System.out.printf("\nReceiving messages\n");
-        IMessageReceiver targetQueueReceiver = ClientFactory.createMessageReceiverFromConnectionStringBuilder(new ConnectionStringBuilder(connectionString, "AutoForwardTargetQueue"), ReceiveMode.PEEKLOCK);
+        targetQueueReceiver = ClientFactory.createMessageReceiverFromConnectionStringBuilder(
+                new ConnectionStringBuilder(connectionString, "AutoForwardTargetQueue"), ReceiveMode.PEEKLOCK);
         for (int i = 0; i < 2; i++)
         {
             IMessage message = targetQueueReceiver.receive(Duration.ofSeconds(10));
@@ -73,7 +79,7 @@ public class AutoForward {
         System.exit(runApp(args, (connectionString) -> {
             AutoForward app = new AutoForward();
             try {
-                app.Run(connectionString);
+                app.run(connectionString);
                 return 0;
             } catch (Exception e) {
                 System.out.printf("%s", e.toString());

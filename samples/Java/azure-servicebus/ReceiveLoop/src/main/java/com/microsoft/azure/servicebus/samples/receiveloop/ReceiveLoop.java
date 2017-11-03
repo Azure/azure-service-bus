@@ -3,6 +3,7 @@
 
 package com.microsoft.azure.servicebus.samples.receiveloop;
 
+import com.google.gson.reflect.TypeToken;
 import com.microsoft.azure.servicebus.*;
 import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 import com.google.gson.Gson;
@@ -18,150 +19,115 @@ import org.apache.commons.cli.*;
 
 public class ReceiveLoop {
 
-    QueueClient sendClient;
+    static final Gson GSON = new Gson();
 
-    public CompletableFuture<Void> Run(String connectionString) throws Exception {
 
-        ExecutorService executor = Executors.newScheduledThreadPool(10);
+    public void run(String connectionString) throws Exception {
+
+        QueueClient sendClient;
+        IMessageReceiver receiver;
+        CompletableFuture receiveTask;
 
         // Create a QueueClient instance using the connection string builder
         // We set the receive mode to "PeekLock", meaning the message is delivered
         // under a lock and must be acknowledged ("completed") to be removed from the queue
 
-        this.sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
-        CompletableFuture sendTask = this.SendMessagesAsync();
+        sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
+        this.sendMessagesAsync(sendClient).thenRunAsync(() -> sendClient.closeAsync());
 
-        IMessageReceiver receiver = ClientFactory.createMessageReceiverFromConnectionStringBuilder(
-                        new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
-        CompletableFuture receiveTask = this.ReceiveMessagesAsync(receiver, executor);
 
-        // wait for ENTER or 10 seconds elapsing
-        executor.invokeAny(Arrays.asList(() -> {
-            System.in.read();
-            return 0;
-        }, () -> {
-            Thread.sleep(10 * 1000);
-            return 0;
-        }));
+        receiver = ClientFactory.createMessageReceiverFromConnectionStringBuilder(
+                new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
+        receiveTask = this.receiveMessagesAsync(receiver);
+
+        waitForEnter(10);
 
         receiveTask.cancel(true);
         receiver.close();
 
-        return CompletableFuture.allOf(
-               receiveTask, sendTask.thenRun(() -> this.sendClient.closeAsync())
-        );
+        CompletableFuture.allOf( receiveTask.exceptionally(t -> { if (t instanceof CancellationException) { return null; } throw new RuntimeException((Throwable) t); })).join();
 
     }
 
-    CompletableFuture<Void> SendMessagesAsync() {
-        Gson gson = new Gson();
-        ArrayList<HashMap<String, String>> data = new ArrayList<HashMap<String, String>>() {{
-            add(new HashMap<String, String>() {{
-                put("name", "Heisenberg");
-                put("firstName", "Werner");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Curie");
-                put("firstName", "Marie");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Hawking");
-                put("firstName", "Steven");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Newton");
-                put("firstName", "Isaac");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Bohr");
-                put("firstName", "Niels");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Faraday");
-                put("firstName", "Michael");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Galilei");
-                put("firstName", "Galileo");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Kepler");
-                put("firstName", "Johannes");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Kopernikus");
-                put("firstName", "Nikolaus");
-            }});
-        }};
+    CompletableFuture<Void> sendMessagesAsync(QueueClient sendClient) {
+
+        List<HashMap<String, String>> data =
+                GSON.fromJson(
+                        "[" +
+                                "{'name' = 'Einstein', 'firstName' = 'Albert'}," +
+                                "{'name' = 'Heisenberg', 'firstName' = 'Werner'}," +
+                                "{'name' = 'Curie', 'firstName' = 'Marie'}," +
+                                "{'name' = 'Hawking', 'firstName' = 'Steven'}," +
+                                "{'name' = 'Newton', 'firstName' = 'Isaac'}," +
+                                "{'name' = 'Bohr', 'firstName' = 'Niels'}," +
+                                "{'name' = 'Faraday', 'firstName' = 'Michael'}," +
+                                "{'name' = 'Galilei', 'firstName' = 'Galileo'}," +
+                                "{'name' = 'Kepler', 'firstName' = 'Johannes'}," +
+                                "{'name' = 'Kopernikus', 'firstName' = 'Nikolaus'}" +
+                                "]",
+                        new TypeToken<List<HashMap<String, String>>>() {
+                        }.getType());
 
         List<CompletableFuture> tasks = new ArrayList<>();
         for (int i = 0; i < data.size(); i++) {
             final String messageId = Integer.toString(i);
-            Message message = new Message(gson.toJson(data.get(i), Map.class).getBytes(UTF_8));
+            Message message = new Message(GSON.toJson(data.get(i), Map.class).getBytes(UTF_8));
             message.setContentType("application/json");
             message.setLabel("Scientist");
             message.setMessageId(messageId);
             message.setTimeToLive(Duration.ofMinutes(2));
 
             tasks.add(
-                    this.sendClient.sendAsync(message).thenRunAsync(() -> {
+                    sendClient.sendAsync(message).thenRunAsync(() -> {
                         System.out.printf("Message sent: Id = %s\n", message.getMessageId());
                     }));
         }
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture<?>[tasks.size()]));
     }
 
-    CompletableFuture ReceiveMessagesAsync(IMessageReceiver receiver, Executor executor) {
+    CompletableFuture receiveMessagesAsync(IMessageReceiver receiver) {
 
-        CompletableFuture task = new CompletableFuture();
+        CompletableFuture currentTask = new CompletableFuture();
+
         try {
+            CompletableFuture.runAsync(() -> {
+                while (!currentTask.isCancelled()) {
+                    try {
+                        IMessage message = receiver.receive(Duration.ofSeconds(60));
+                        if (message != null) {
+                            // receives message is passed to callback
+                            if (message.getLabel() != null &&
+                                    message.getContentType() != null &&
+                                    message.getLabel().contentEquals("Scientist") &&
+                                    message.getContentType().contentEquals("application/json")) {
 
-            Gson gson = new Gson();
+                                byte[] body = message.getBody();
+                                Map scientist = GSON.fromJson(new String(body, UTF_8), Map.class);
 
-            try {
-                executor.execute(() -> {
-                    while (!task.isCancelled()) {
-                        try {
-                            IMessage message = receiver.receive(Duration.ofSeconds(60));
-                            if (message != null) {
-                                // receives message is passed to callback
-                                if (message.getLabel() != null &&
-                                        message.getContentType() != null &&
-                                        message.getLabel().contentEquals("Scientist") &&
-                                        message.getContentType().contentEquals("application/json")) {
-
-                                    byte[] body = message.getBody();
-                                    Map scientist = gson.fromJson(new String(body, UTF_8), Map.class);
-
-                                    System.out.printf(
-                                            "\n\t\t\t\tMessage received: \n\t\t\t\t\t\tMessageId = %s, \n\t\t\t\t\t\tSequenceNumber = %s, \n\t\t\t\t\t\tEnqueuedTimeUtc = %s," +
-                                                    "\n\t\t\t\t\t\tExpiresAtUtc = %s, \n\t\t\t\t\t\tContentType = \"%s\",  \n\t\t\t\t\t\tContent: [ firstName = %s, name = %s ]\n",
-                                            message.getMessageId(),
-                                            message.getSequenceNumber(),
-                                            message.getEnqueuedTimeUtc(),
-                                            message.getExpiresAtUtc(),
-                                            message.getContentType(),
-                                            scientist != null ? scientist.get("firstName") : "",
-                                            scientist != null ? scientist.get("name") : "");
-                                }
-                                receiver.completeAsync(message.getLockToken());
+                                System.out.printf(
+                                        "\n\t\t\t\tMessage received: \n\t\t\t\t\t\tMessageId = %s, \n\t\t\t\t\t\tSequenceNumber = %s, \n\t\t\t\t\t\tEnqueuedTimeUtc = %s," +
+                                                "\n\t\t\t\t\t\tExpiresAtUtc = %s, \n\t\t\t\t\t\tContentType = \"%s\",  \n\t\t\t\t\t\tContent: [ firstName = %s, name = %s ]\n",
+                                        message.getMessageId(),
+                                        message.getSequenceNumber(),
+                                        message.getEnqueuedTimeUtc(),
+                                        message.getExpiresAtUtc(),
+                                        message.getContentType(),
+                                        scientist != null ? scientist.get("firstName") : "",
+                                        scientist != null ? scientist.get("name") : "");
                             }
-                        } catch (Exception e) {
-                            task.completeExceptionally(e);
+                            receiver.completeAsync(message.getLockToken());
                         }
+                    } catch (Exception e) {
+                        currentTask.completeExceptionally(e);
                     }
-                    task.complete(null);
-                });
-                return task;
-            } catch (Exception e) {
-                task.completeExceptionally(e);
-            }
+                }
+                currentTask.complete(null);
+            });
+            return currentTask;
         } catch (Exception e) {
-            CompletableFuture failure = new CompletableFuture();
-            failure.completeExceptionally(e);
-            return failure;
+            currentTask.completeExceptionally(e);
         }
-        return task;
+        return currentTask;
     }
 
 
@@ -170,7 +136,7 @@ public class ReceiveLoop {
         System.exit(runApp(args, (connectionString) -> {
             ReceiveLoop app = new ReceiveLoop();
             try {
-                app.Run(connectionString).join();
+                app.run(connectionString);
                 return 0;
             } catch (Exception e) {
                 System.out.printf("%s", e.toString());
@@ -210,6 +176,21 @@ public class ReceiveLoop {
         } catch (Exception e) {
             System.out.printf("%s", e.toString());
             return 3;
+        }
+    }
+
+    private void waitForEnter(int seconds) {
+        ExecutorService executor = Executors.newCachedThreadPool();
+        try {
+            executor.invokeAny(Arrays.asList(() -> {
+                System.in.read();
+                return 0;
+            }, () -> {
+                Thread.sleep(seconds * 1000);
+                return 0;
+            }));
+        } catch (Exception e) {
+            // absorb
         }
     }
 }

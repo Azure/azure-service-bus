@@ -3,6 +3,7 @@
 
 package com.microsoft.azure.servicebus.samples.partitionedqueues;
 
+import com.google.gson.reflect.TypeToken;
 import com.microsoft.azure.servicebus.*;
 import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 import com.google.gson.Gson;
@@ -18,83 +19,50 @@ import org.apache.commons.cli.*;
 
 public class PartitionedQueues {
 
-    QueueClient sendClient;
-    QueueClient receiveClient;
+    static final Gson GSON = new Gson();
 
-    public CompletableFuture<Void> Run(String connectionString) throws Exception {
+    public void run(String connectionString) throws Exception {
 
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+        QueueClient sendClient;
+        QueueClient receiveClient;
 
         // Create a QueueClient instance using the connection string builder
         // We set the receive mode to "PeekLock", meaning the message is delivered
         // under a lock and must be acknowledged ("completed") to be removed from the queue
-        this.receiveClient = new QueueClient(new ConnectionStringBuilder(connectionString, "PartitionedQueue"), ReceiveMode.PEEKLOCK);
-        this.InitializeReceiver();
+        receiveClient = new QueueClient(new ConnectionStringBuilder(connectionString, "PartitionedQueue"), ReceiveMode.PEEKLOCK);
+        this.registerMessageHandler(receiveClient);
 
-        this.sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, "PartitionedQueue"), ReceiveMode.PEEKLOCK);
-        CompletableFuture sendTask = this.SendMessagesAsync();
+        sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, "PartitionedQueue"), ReceiveMode.PEEKLOCK);
+        this.sendMessagesAsync(sendClient).thenRunAsync(()->sendClient.closeAsync());
 
         // wait for ENTER or 10 seconds elapsing
-        executor.invokeAny(Arrays.asList(() -> {
-            System.in.read();
-            return 0;
-        }, () -> {
-            Thread.sleep(10*1000);
-            return 0;
-        }));
+        waitForEnter(10);
 
-        return CompletableFuture.allOf(
-                this.receiveClient.closeAsync(),
-                sendTask.thenRun(() -> this.sendClient.closeAsync())
-        );
-
+        receiveClient.close();
     }
 
-    CompletableFuture<Void> SendMessagesAsync() {
-        Gson gson = new Gson();
-        ArrayList<HashMap<String, String>> data = new ArrayList<HashMap<String, String>>() {{
-            add(new HashMap<String, String>() {{
-                put("name", "Heisenberg");
-                put("firstName", "Werner");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Curie");
-                put("firstName", "Marie");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Hawking");
-                put("firstName", "Steven");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Newton");
-                put("firstName", "Isaac");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Bohr");
-                put("firstName", "Niels");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Faraday");
-                put("firstName", "Michael");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Galilei");
-                put("firstName", "Galileo");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Kepler");
-                put("firstName", "Johannes");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Kopernikus");
-                put("firstName", "Nikolaus");
-            }});
-        }};
+    CompletableFuture<Void> sendMessagesAsync(QueueClient sendClient) {
+
+        List<HashMap<String, String>> data =
+                GSON.fromJson(
+                        "[" +
+                                "{'name' = 'Einstein', 'firstName' = 'Albert'}," +
+                                "{'name' = 'Heisenberg', 'firstName' = 'Werner'}," +
+                                "{'name' = 'Curie', 'firstName' = 'Marie'}," +
+                                "{'name' = 'Hawking', 'firstName' = 'Steven'}," +
+                                "{'name' = 'Newton', 'firstName' = 'Isaac'}," +
+                                "{'name' = 'Bohr', 'firstName' = 'Niels'}," +
+                                "{'name' = 'Faraday', 'firstName' = 'Michael'}," +
+                                "{'name' = 'Galilei', 'firstName' = 'Galileo'}," +
+                                "{'name' = 'Kepler', 'firstName' = 'Johannes'}," +
+                                "{'name' = 'Kopernikus', 'firstName' = 'Nikolaus'}" +
+                                "]",
+                        new TypeToken<List<HashMap<String, String>>>() {}.getType());
 
         List<CompletableFuture> tasks = new ArrayList<>();
         for (int i = 0; i < data.size(); i++) {
             final String messageId = Integer.toString(i);
-            Message message = new Message(gson.toJson(data.get(i), Map.class).getBytes(UTF_8));
+            Message message = new Message(GSON.toJson(data.get(i), Map.class).getBytes(UTF_8));
             message.setContentType("application/json");
             message.setLabel("Scientist");
             message.setMessageId(messageId);
@@ -102,17 +70,16 @@ public class PartitionedQueues {
             message.setPartitionKey(data.get(i).get("name").substring(0, 1));
 
             tasks.add(
-                    this.sendClient.sendAsync(message).thenRunAsync(() -> {
+                    sendClient.sendAsync(message).thenRunAsync(() -> {
                         System.out.printf("Message sent: Id = %s\n", message.getMessageId());
                     }));
         }
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture<?>[tasks.size()]));
     }
 
-    void InitializeReceiver() throws Exception {
-        Gson gson = new Gson();
+    void registerMessageHandler(QueueClient receiveClient) throws Exception {
         // register the RegisterMessageHandler callback
-        this.receiveClient.registerMessageHandler(new IMessageHandler() {
+        receiveClient.registerMessageHandler(new IMessageHandler() {
                   // callback invoked when the message handler loop has obtained a message
                   public CompletableFuture<Void> onMessageAsync(IMessage message) {
                       // receives message is passed to callback
@@ -122,10 +89,10 @@ public class PartitionedQueues {
                               message.getContentType().contentEquals("application/json")) {
 
                           byte[] body = message.getBody();
-                          Map scientist = gson.fromJson(new String(body, UTF_8), Map.class);
+                          Map scientist = GSON.fromJson(new String(body, UTF_8), Map.class);
 
                           System.out.printf(
-                                  "\t\t\t\tMessage received: \n\t\t\t\t\t\tMessageId = %s, \n\t\t\t\t\t\tSequenceNumber = %08X, \n\t\t\t\t\t\tEnqueuedTimeUtc = %s," +
+                                  "\n\t\t\t\tMessage received: \n\t\t\t\t\t\tMessageId = %s, \n\t\t\t\t\t\tSequenceNumber = %08X, \n\t\t\t\t\t\tEnqueuedTimeUtc = %s," +
                                           "\n\t\t\t\t\t\tExpiresAtUtc = %s, \n\t\t\t\t\t\tContentType = \"%s\",  \n\t\t\t\t\t\tContent: [ firstName = %s, name = %s ]\n",
                                   message.getMessageId(),
                                   message.getSequenceNumber(),
@@ -153,7 +120,7 @@ public class PartitionedQueues {
         System.exit(runApp(args, (connectionString) -> {
             PartitionedQueues app = new PartitionedQueues();
             try {
-                app.Run(connectionString).join();
+                app.run(connectionString);
                 return 0;
             } catch (Exception e) {
                 System.out.printf("%s", e.toString());
@@ -195,5 +162,18 @@ public class PartitionedQueues {
             return 3;
         }
     }
-
+    private void waitForEnter(int seconds) {
+        ExecutorService executor = Executors.newCachedThreadPool();
+        try {
+            executor.invokeAny(Arrays.asList(() -> {
+                System.in.read();
+                return 0;
+            }, () -> {
+                Thread.sleep(seconds * 1000);
+                return 0;
+            }));
+        } catch (Exception e) {
+            // absorb
+        }
+    }
 }

@@ -3,6 +3,7 @@
 
 package com.microsoft.azure.servicebus.samples.timetolive;
 
+import com.google.gson.reflect.TypeToken;
 import com.microsoft.azure.servicebus.*;
 import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 import com.google.gson.Gson;
@@ -19,94 +20,77 @@ import org.apache.commons.cli.*;
 
 public class TimeToLive {
 
+    static final Gson GSON = new Gson();
 
-    public CompletableFuture<Void> Run(String connectionString) throws Exception {
+    public void run(String connectionString) throws Exception {
 
-        ScheduledExecutorService executor = Executors.newScheduledThreadPool(2);
+        IMessageSender sendClient;
+        CompletableFuture<Void> receiveTask;
+        CompletableFuture<Void> fixUpTask;
 
-        IMessageSender sendClient = ClientFactory.createMessageSenderFromConnectionStringBuilder(new ConnectionStringBuilder(connectionString, "BasicQueue"));
+        // send messages
+        sendClient = ClientFactory.createMessageSenderFromConnectionStringBuilder(
+                new ConnectionStringBuilder(connectionString, "BasicQueue"));
+        this.sendMessagesAsync(sendClient);
 
-        this.SendMessagesAsync(sendClient, Integer.MAX_VALUE).join();
-        executor.schedule(() -> { }, 15, TimeUnit.SECONDS).get();
+        // wait for all messages to expire
+        Thread.sleep(15 * 1000);
 
-        CompletableFuture<Void> receiveTask = this.ReceiveMessagesAsync(connectionString, "BasicQueue");
-        CompletableFuture<Void> fixupTask = this.PickUpAndFixDeadletters(connectionString, "BasicQueue", sendClient);
+        // start the receiver tasks and the fixup tasks
+        receiveTask = this.receiveMessagesAsync(connectionString, "BasicQueue");
+        fixUpTask = this.pickUpAndFixDeadLetters(connectionString, "BasicQueue", sendClient);
 
         // wait for ENTER or 10 seconds elapsing
-        executor.invokeAny(Arrays.asList(() -> {
-            System.in.read();
-            return 0;
-        }, () -> {
-            Thread.sleep(10 * 1000);
-            return 0;
-        }));
+        waitForEnter(10);
 
+        // cancel the running tasks
         receiveTask.cancel(true);
-        fixupTask.cancel(true);
+        fixUpTask.cancel(true);
 
-        return CompletableFuture.allOf(receiveTask, fixupTask);
+        // wait for the tasks to complete
+        CompletableFuture.allOf(
+            sendClient.closeAsync(),
+            receiveTask.exceptionally(t ->{ if (t instanceof CancellationException) { return null; } throw new RuntimeException(t);}),
+            fixUpTask.exceptionally(t ->{if (t instanceof CancellationException) { return null; } throw new RuntimeException(t);})
+        ).join();
     }
 
-    CompletableFuture<Void> SendMessagesAsync(IMessageSender sendClient, int maxMessages) {
-        Gson gson = new Gson();
-        ArrayList<HashMap<String, String>> data = new ArrayList<HashMap<String, String>>() {{
-            add(new HashMap<String, String>() {{
-                put("name", "Heisenberg");
-                put("firstName", "Werner");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Curie");
-                put("firstName", "Marie");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Hawking");
-                put("firstName", "Steven");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Newton");
-                put("firstName", "Isaac");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Bohr");
-                put("firstName", "Niels");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Faraday");
-                put("firstName", "Michael");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Galilei");
-                put("firstName", "Galileo");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Kepler");
-                put("firstName", "Johannes");
-            }});
-            add(new HashMap<String, String>() {{
-                put("name", "Kopernikus");
-                put("firstName", "Nikolaus");
-            }});
-        }};
+    CompletableFuture<Void> sendMessagesAsync(IMessageSender sendClient) {
+        List<HashMap<String, String>> data =
+                GSON.fromJson(
+                        "[" +
+                                "{'name' = 'Einstein', 'firstName' = 'Albert'}," +
+                                "{'name' = 'Heisenberg', 'firstName' = 'Werner'}," +
+                                "{'name' = 'Curie', 'firstName' = 'Marie'}," +
+                                "{'name' = 'Hawking', 'firstName' = 'Steven'}," +
+                                "{'name' = 'Newton', 'firstName' = 'Isaac'}," +
+                                "{'name' = 'Bohr', 'firstName' = 'Niels'}," +
+                                "{'name' = 'Faraday', 'firstName' = 'Michael'}," +
+                                "{'name' = 'Galilei', 'firstName' = 'Galileo'}," +
+                                "{'name' = 'Kepler', 'firstName' = 'Johannes'}," +
+                                "{'name' = 'Kopernikus', 'firstName' = 'Nikolaus'}" +
+                                "]",
+                        new TypeToken<List<HashMap<String, String>>>() {}.getType());
 
         List<CompletableFuture> tasks = new ArrayList<>();
-             for (int i = 0; i < Math.min(data.size(), maxMessages); i++) {
+             for (int i = 0; i < data.size(); i++) {
             final String messageId = Integer.toString(i);
-            Message message = new Message(gson.toJson(data.get(i), Map.class).getBytes(UTF_8));
+            Message message = new Message(GSON.toJson(data.get(i), Map.class).getBytes(UTF_8));
             message.setContentType("application/json");
             message.setLabel(i % 2 == 0 ? "Scientist" : "Physicist");
             message.setMessageId(messageId);
             message.setTimeToLive(Duration.ofSeconds(15));
-
+            System.out.printf("Message sending: Id = %s\n", message.getMessageId());
             tasks.add(
                     sendClient.sendAsync(message).thenRunAsync(() -> {
-                        System.out.printf("Message sent: Id = %s\n", message.getMessageId());
+                        System.out.printf("\tMessage acknowledged: Id = %s\n", message.getMessageId());
                     }));
         }
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture<?>[tasks.size()]));
     }
 
 
-    CompletableFuture ReceiveMessagesAsync(String connectionString, String queueName) throws Exception {
+    CompletableFuture receiveMessagesAsync(String connectionString, String queueName) throws Exception {
 
         CompletableFuture running = new CompletableFuture();
         QueueClient receiver = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
@@ -119,7 +103,6 @@ public class TimeToLive {
             }
         });
 
-        Gson gson = new Gson();
         // register the RegisterMessageHandler callback
         receiver.registerMessageHandler(
                 new IMessageHandler() {
@@ -132,7 +115,7 @@ public class TimeToLive {
                                 message.getContentType().contentEquals("application/json")) {
 
                             byte[] body = message.getBody();
-                            Map scientist = gson.fromJson(new String(body, UTF_8), Map.class);
+                            Map scientist = GSON.fromJson(new String(body, UTF_8), Map.class);
 
                             System.out.printf(
                                     "\n\t\t\t\tMessage received: \n\t\t\t\t\t\tMessageId = %s, \n\t\t\t\t\t\tSequenceNumber = %s, \n\t\t\t\t\t\tEnqueuedTimeUtc = %s," +
@@ -161,7 +144,7 @@ public class TimeToLive {
         return running;
     }
 
-    CompletableFuture PickUpAndFixDeadletters(String connectionString, String queueName, IMessageSender resubmitSender) throws Exception {
+    CompletableFuture pickUpAndFixDeadLetters(String connectionString, String queueName, IMessageSender resubmitSender) throws Exception {
         CompletableFuture running = new CompletableFuture();
         SubscriptionClient receiver = new SubscriptionClient(new ConnectionStringBuilder(connectionString, "BasicQueue/$deadletterqueue"), ReceiveMode.PEEKLOCK);
 
@@ -173,7 +156,6 @@ public class TimeToLive {
             }
         });
 
-        Gson gson = new Gson();
         // register the RegisterMessageHandler callback
         receiver.registerMessageHandler(
                 new IMessageHandler() {
@@ -216,7 +198,7 @@ public class TimeToLive {
         System.exit(runApp(args, (connectionString) -> {
             TimeToLive app = new TimeToLive();
             try {
-                app.Run(connectionString).join();
+                app.run(connectionString);
                 return 0;
             } catch (Exception e) {
                 System.out.printf("%s", e.toString());
@@ -256,6 +238,21 @@ public class TimeToLive {
         } catch (Exception e) {
             System.out.printf("%s", e.toString());
             return 3;
+        }
+    }
+
+    private void waitForEnter(int seconds) {
+        ExecutorService executor = Executors.newCachedThreadPool();
+        try {
+            executor.invokeAny(Arrays.asList(() -> {
+                System.in.read();
+                return 0;
+            }, () -> {
+                Thread.sleep(seconds * 1000);
+                return 0;
+            }));
+        } catch (Exception e) {
+            // absorb
         }
     }
 

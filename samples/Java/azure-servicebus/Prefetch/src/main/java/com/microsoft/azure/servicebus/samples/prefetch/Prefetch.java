@@ -6,9 +6,6 @@ package com.microsoft.azure.servicebus.samples.prefetch;
 import com.google.common.base.Stopwatch;
 import com.microsoft.azure.servicebus.*;
 import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
-import com.google.gson.Gson;
-
-import static java.nio.charset.StandardCharsets.*;
 
 import java.time.Duration;
 import java.util.*;
@@ -19,22 +16,25 @@ import org.apache.commons.cli.*;
 
 public class Prefetch {
 
-    public void Run(String connectionString) throws Exception
+    public void run(String connectionString) throws Exception
     {
+        IMessageSender sender;
+        IMessageReceiver receiver;
+
         // Create communication objects to send and receive on the queue
-        IMessageSender sender = ClientFactory.createMessageSenderFromConnectionStringBuilder(new ConnectionStringBuilder(connectionString, "BasicQueue"));
-        // Run 1
-        IMessageReceiver receiver = ClientFactory.createMessageReceiverFromConnectionStringBuilder(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
+        sender = ClientFactory.createMessageSenderFromConnectionStringBuilder(new ConnectionStringBuilder(connectionString, "BasicQueue"));
+        // run 1
+        receiver = ClientFactory.createMessageReceiverFromConnectionStringBuilder(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
         receiver.setPrefetchCount(0);
         // Send and Receive messages with prefetch OFF
-        long timeTaken1 = this.SendAndReceiveMessages(sender, receiver, 100);
+        long timeTaken1 = this.sendAndReceiveMessages(sender, receiver, 100);
         receiver.close();
 
-        // Run 2
+        // run 2
         receiver = ClientFactory.createMessageReceiverFromConnectionStringBuilder(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
         receiver.setPrefetchCount(50);
         // Send and Receive messages with prefetch ON
-        long timeTaken2 = this.SendAndReceiveMessages(sender, receiver, 100);
+        long timeTaken2 = this.sendAndReceiveMessages(sender, receiver, 100);
 
         receiver.close();
 
@@ -44,7 +44,7 @@ public class Prefetch {
         System.out.printf("\nTime difference = %d milliseconds\n", timeDifference);
     }
 
-    long SendAndReceiveMessages(IMessageSender sender, IMessageReceiver receiver, int messageCount) throws Exception
+    long sendAndReceiveMessages(IMessageSender sender, IMessageReceiver receiver, int messageCount) throws Exception
     {
         // Now we can start sending messages.
         Random rnd = new Random();
@@ -100,7 +100,7 @@ public class Prefetch {
         System.exit(runApp(args, (connectionString) -> {
             Prefetch app = new Prefetch();
             try {
-                app.Run(connectionString);
+                app.run(connectionString);
                 return 0;
             } catch (Exception e) {
                 System.out.printf("%s", e.toString());

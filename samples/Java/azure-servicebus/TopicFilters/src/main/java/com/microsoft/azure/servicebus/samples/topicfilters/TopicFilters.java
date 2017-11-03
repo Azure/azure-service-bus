@@ -18,28 +18,26 @@ import org.apache.commons.cli.*;
 
 public class TopicFilters {
 
+    static final Gson GSON = new Gson();
+
     static final String TopicName = "TopicFilterSampleTopic";
     static final String SubscriptionAllMessages = "AllOrders";
     static final String SubscriptionColorBlueSize10Orders = "ColorBlueSize10Orders";
     static final String SubscriptionColorRed = "ColorRed";
     static final String SubscriptionHighPriorityOrders = "HighPriorityOrders";
 
-    void Run(String connectionString) throws Exception {
-        this.SendAndReceiveTests(connectionString);
-    }
-
-    void SendAndReceiveTests(String connectionString) throws Exception {
+    void run(String connectionString) throws Exception {
         // Send sample messages.
-        this.SendMessagesToTopic(connectionString);
+        this.sendMessagesToTopic(connectionString);
 
         // Receive messages from subscriptions.
-        this.ReceiveAllMessageFromSubscription(connectionString, SubscriptionAllMessages);
-        this.ReceiveAllMessageFromSubscription(connectionString, SubscriptionColorBlueSize10Orders);
-        this.ReceiveAllMessageFromSubscription(connectionString, SubscriptionColorRed);
-        this.ReceiveAllMessageFromSubscription(connectionString, SubscriptionHighPriorityOrders);
+        this.receiveAllMessageFromSubscription(connectionString, SubscriptionAllMessages);
+        this.receiveAllMessageFromSubscription(connectionString, SubscriptionColorBlueSize10Orders);
+        this.receiveAllMessageFromSubscription(connectionString, SubscriptionColorRed);
+        this.receiveAllMessageFromSubscription(connectionString, SubscriptionHighPriorityOrders);
     }
 
-    void SendMessagesToTopic(String connectionString) throws Exception {
+    void sendMessagesToTopic(String connectionString) throws Exception {
         // Create client for the topic.
         TopicClient topicClient = new TopicClient(new ConnectionStringBuilder(connectionString, TopicName));
 
@@ -68,8 +66,8 @@ public class TopicFilters {
     }
 
     CompletableFuture<Void> SendOrder(TopicClient topicClient, Order order) throws Exception {
-        Gson gson = new Gson();
-        IMessage message = new Message(gson.toJson(order, Order.class).getBytes(UTF_8));
+
+        IMessage message = new Message(GSON.toJson(order, Order.class).getBytes(UTF_8));
         message.setCorrelationId(order.getPriority());
         message.setLabel(order.getColor());
         message.setProperties(new HashMap<String, String>() {{
@@ -82,7 +80,7 @@ public class TopicFilters {
         return topicClient.sendAsync(message);
     }
 
-    void ReceiveAllMessageFromSubscription(String connectionString, String subsName) throws Exception
+    void receiveAllMessageFromSubscription(String connectionString, String subsName) throws Exception
     {
         int receivedMessages = 0;
 
@@ -119,7 +117,7 @@ public class TopicFilters {
         System.exit(runApp(args, (connectionString) -> {
             TopicFilters app = new TopicFilters();
             try {
-                app.Run(connectionString);
+                app.run(connectionString);
                 return 0;
             } catch (Exception e) {
                 System.out.printf("%s", e.toString());
