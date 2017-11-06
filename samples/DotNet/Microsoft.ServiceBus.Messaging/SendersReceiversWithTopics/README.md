@@ -1,6 +1,6 @@
 # Message Senders and Receivers with Service Bus Topics
 
-This sample shows how to interact with a Service Bus Topic via the ```MessagingFactory``` and the ```MessageSender``` 
+This sample shows how to interact with a Service Bus Topic via the ```MessageSender``` 
 and ```MessageReceiver``` clients, as an alternative to the ``TopicClient`` and ``SubscriptionClient`` class introduced in 
 the basic [TopicGettingStarted](../TopicsGettingStarted) sample. 
 
@@ -10,16 +10,12 @@ of these two samples and in this document we will therefore focus on the few dif
 
 ## Prerequisites and Setup
 
-All samples share the same basic setup, explained in the main [README](../README.md) file. There are no extra setup steps for this sample.
-The application entry points are in [Main.cs](../common/Main.md), which is shared across all samples. The sample implementations generally
-reside in *Program.cs*, starting with ```Run()```.
+Refer to the main [README](../README.md) document for setup instructions. All samples share and require the same setup
+before they can be run.
 
-You can build the sample from the command line with the [build.bat](build.bat) or [build.ps1](build.ps1) scripts. This assumes that you
-have the .NET Build tools in the path. You can also open up the [SendersReceiversWithTopics.sln](SendersReceiversWithTopics.sln) solution file with Visual Studio and build.
-With either option, the NuGet package manager should download and install the **WindowsAzure.ServiceBus** package containing the
-Microsoft.ServiceBus.dll assembly, including dependencies.
+## Sample Code 
 
-## The Program
+The sample is documented inline in the [Program.cs](Program.cs) C# file.
 
 The send-side of the sample is identical to the [SendersReceiversWithQueues](../SendersReceiversWithQueues) sample and therefore shows that
 queues and topics can be used interchangeably, and that an application's messaging topology can indeed be flexibly adjusted while 
@@ -28,7 +24,7 @@ limiting or avoiding code churn.
 The *only* difference in the sender portion of this sample is that we're passing the name of a topic instead the name of a queue:
 
 ```C#
-    var sender = await senderFactory.CreateMessageSenderAsync(topicName);
+    var sender = new MessageSender(connectionString,topicName);
 ```
 
 The receive side is also nearly identical. The ```Run()``` function passes the name of the subscription in addition to the topic name, 
@@ -36,7 +32,7 @@ and also gets to pass a different console color option for displaying the messag
 
 ``` C#
 
-    async Task ReceiveMessagesAsync(string namespaceAddress, string topicName, string subscriptionName, string receiveToken, 
+    async Task ReceiveMessagesAsync(string connectionString, string topicName, string subscriptionName, 
                                     CancellationToken cancellationToken, ConsoleColor color)
     {
         ... create factory ...
@@ -52,7 +48,7 @@ The static helper method ```SubscriptionClient.FormatSubscriptionPath()``` retur
 
 ``` C#
 >       var subscriptionPath = SubscriptionClient.FormatSubscriptionPath(topicName, subscriptionName);
-        var receiver = await receiverFactory.CreateMessageReceiverAsync(subscriptionPath, ReceiveMode.PeekLock);
+        var receiver = new MessageReceiver(connectionString,subscriptionPath, ReceiveMode.PeekLock);
 ```
 
 Generally, If you want to retain flexibility for your application's messaging topology, you will manage the path from which you receive 
@@ -62,7 +58,7 @@ You can obviously also easily create a ```SubscriptionClient``` through the ```M
 single line:
 
 ```C#
-    var receiver = receiverFactory.CreateSubscriptionClient(topicName, subscriptionName);
+    var receiver = new SubscriptionClient(topicName, subscriptionName);
 ``` 
 
 The ```SubscriptionClient``` class differs from the regular receiver in that it has specific support for managing 
@@ -77,16 +73,16 @@ subscription they were received from.
 The cancellation token passed to the receiver method is being triggered when the user presses any key sometime after sender and receiver have been kicked off. 
 
 ```C#
-    public async Task Run(string namespaceAddress, string topicName, string sendToken, string receiveToken)
+    public async Task Run(string connectionString, string topicName, string sendToken)
     {
         var cts = new CancellationTokenSource();
 
-        await this.SendMessagesAsync(namespaceAddress, topicName, sendToken);
+        await this.SendMessagesAsync(connectionString, topicName, sendToken);
 
         var allReceives = Task.WhenAll(
-            this.ReceiveMessagesAsync(namespaceAddress, topicName, "Subscription1", receiveToken, cts.Token, ConsoleColor.Cyan),
-            this.ReceiveMessagesAsync(namespaceAddress, topicName, "Subscription2", receiveToken, cts.Token, ConsoleColor.Green),
-            this.ReceiveMessagesAsync(namespaceAddress, topicName, "Subscription3", receiveToken, cts.Token, ConsoleColor.Yellow));
+            this.ReceiveMessagesAsync(connectionString, topicName, "Subscription1", receiveToken, cts.Token, ConsoleColor.Cyan),
+            this.ReceiveMessagesAsync(connectionString, topicName, "Subscription2", receiveToken, cts.Token, ConsoleColor.Green),
+            this.ReceiveMessagesAsync(connectionString, topicName, "Subscription3", receiveToken, cts.Token, ConsoleColor.Yellow));
         Console.WriteLine("\nEnd of scenario, press any key to exit.");
         Console.ReadKey();
 

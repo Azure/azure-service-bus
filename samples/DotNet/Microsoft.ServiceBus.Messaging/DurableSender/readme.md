@@ -1,51 +1,50 @@
 # Durable, Transactional Senders with MSMQ
 
-This sample demonstrates how an application that is temporarily disconnected from the network can continue to send messages to Service Bus.
+This sample demonstrates how a Windows application that is temporarily
+disconnected from the network can continue to send messages to Service Bus.
  
-The durable message sender library relies on the local Microsoft Message Queue (MSMQ) built into Windows, and stores all messages in a 
-local queue until connectivity is restored. 
+The durable message sender library relies on the local Microsoft Message Queue
+(MSMQ) built into Windows, and stores all messages in a local queue until
+connectivity is restored. This sample therefore only works on Windows. 
 
-> Be aware that the library does create, but not delete local queues as it is assumed that a local application 
-> will want to continue forwarding already sent messages as it resumes or restarts 
+> Be aware that the library does create, but not delete local queues as it is
+assumed that a local application will want to continue forwarding already sent
+messages as it resumes or restarts 
 
-The library also allows the application to send messages as part of a distributed DTC transaction via MSMQ into Service Bus.
+The library also allows the application to send messages as part of a
+distributed DTC transaction via MSMQ into Service Bus.
 
+Refer to the main [README](../README.md) document for setup instructions.
 
 ## MSMQ? What is MSMQ? How do I get it?
 
-The Microsoft Message Queue (MSMQ) is a robust, local message queueing middleware that is built into nearly every version of Windows,
-including the consumer versions of Windows 7, 8, 8.1, and 10. 
+The Microsoft Message Queue (MSMQ) is a robust, local message queueing
+middleware that is built into nearly every version of Windows, including the
+consumer versions of Windows 7, 8, 8.1, and 10. 
 
-MSMQ can be installed following the [Install Message Queueing](https://technet.microsoft.com/library/cc730960.aspx) guidance. 
-The Windows 7 instructions work equivalently for newer versions of Windows. For this sample and library to function, only the 
-"Microsoft Message Queue (MSMQ) Server Core" features are required.   
+MSMQ can be installed following the [Install Message Queueing][1] guidance. The
+Windows 7 instructions work equivalently for newer versions of Windows. For this
+sample and library to function, only the "Microsoft Message Queue (MSMQ) Server
+Core" features are required.   
 
-From Windows 8 and Windows Server 2012 onwards, you can also just open up an elevated Powershell window and 
-use ```Enable-WindowsOptionalFeature -Online -FeatureName MSMQ-Server -All``` to enable MSMQ.     
+From Windows 8 and Windows Server 2012 onwards, you can also just open up an
+elevated Powershell window and use ```Enable-WindowsOptionalFeature -Online
+-FeatureName MSMQ-Server -All``` to enable MSMQ.     
 
+## Sample Code 
 
-## Prerequisites and Setup
-
-All samples share the same basic setup, explained in the main [README](../README.md) file. There are no extra setup steps for this sample.
-The application entry points are in [Main.cs](../common/Main.md), which is shared across all samples. The sample implementations generally
-reside in *Program.cs*, starting with *Run()*.
-
-You can build the sample from the command line with the [build.bat](build.bat) or [build.ps1](build.ps1) scripts. This assumes that you
-have the .NET Build tools in the path. You can also open up the [DurableSender.sln](DurableSender.sln) solution file with Visual Studio and build.
-With either option, the NuGet package manager should download and install the **WindowsAzure.ServiceBus** package containing the
-Microsoft.ServiceBus.dll assembly, including dependencies.
-
-## The Sample
-
-To allow an application to send messages to a Service Bus Queue or Topic in the absence of network connectivity, 
-the sent messages need to be stored locally,and be transmitted to Service Bus in the background after connectivity has been 
+To allow an application to send messages to a Service Bus Queue or Topic in the
+absence of network connectivity, the sent messages need to be stored locally,and
+be transmitted to Service Bus in the background after connectivity has been
 restored. 
 
-This functionality is implemented by the durable message sender library. The application calls the ```DurableMessageSender.Send()``` 
-operation of the library exactly as it would call the methods of the Service Bus client library. The required MSMQ queues are created 
-and managed by the library.  
+This functionality is implemented by the durable message sender library. The
+application calls the ```DurableMessageSender.Send()``` operation of the library
+exactly as it would call the methods of the Service Bus client library. The
+required MSMQ queues are created and managed by the library.  
 
-> Messages are only transferred while the ```DurableMessageSender``` instance is held by the client application. 
+Messages are only transferred while the ```DurableMessageSender``` instance is
+held by the client application. 
 
 
 ```C#
@@ -56,7 +55,7 @@ MessagingFactory messagingFactory = MessagingFactory.Create(namespaceUri, tokenP
 DurableMessageSender durableMessageSender = new DurableMessageSender(messagingFactory, queueName); 
  
 // Send message. 
-BrokeredMessage msg = new BrokeredMessage("This is a message."); 
+Message msg = new Message("This is a message."); 
  
 durableMessageSender.Send(msg);
 ```
@@ -67,7 +66,7 @@ Queue or Topic. ```DurableMessageSender``` maintains one MSMQ queue per Service 
 wants to send to.
 
 ```C#
-public void Send(BrokeredMessage sbusMessage) 
+public void Send(Message sbusMessage) 
 { 
     Message msmqMessage = MsmqHelper.PackSbusMessageIntoMsmqMessage(sbusMessage); 
     SendtoMsmq(this.msmqQueue, msmqMessage); 
@@ -109,9 +108,9 @@ catch (MessageQueueException ex)
  
 if (msmqMessage != null) 
 { 
-    BrokeredMessage sbusMessage = MsmqHelper.UnpackSbusMessageFromMsmqMessage(msmqMessage); 
+    Message sbusMessage = MsmqHelper.UnpackSbusMessageFromMsmqMessage(msmqMessage); 
     // Clone Service Bus message in case we need to deadletter it. 
-    BrokeredMessage sbusDeadletterMessage = CloneBrokeredMessage(sbusMessage); 
+    Message sbusDeadletterMessage = CloneMessage(sbusMessage); 
  
     switch (SendMessageToServiceBus(sbusMessage)) 
     { 
@@ -146,7 +145,7 @@ messages within a single transaction, and then Service Bus returns a permanent e
 the message will not be enqueued into the Service Bus Queue or Topic whereas other messages might.
 
 Also note that messages do not expire while they are stored in the MSMQ queue. This implementation of ```DurableMessageSender``` 
-sets the ```TimeToBeReceived``` property of the MSMQ message to *infinite*. The ```BrokeredMessage.TimeToLive``` value 
+sets the ```TimeToBeReceived``` property of the MSMQ message to *infinite*. The ```Message.TimeToLive``` value 
 becomes effective when the message is submitted into the Service Bus Queue or Topic.  
 
 ## Source Code Files
@@ -155,3 +154,8 @@ becomes effective when the message is submitted into the Service Bus Queue or To
   to and from MSMQ messages and sends and receives MSMQ messages.
 * *MsmqHelper.cs*: Implements queue management and message conversion methods.
 
+The sample is documented inline in the [Program.cs](Program.cs) C# file.
+
+
+
+[1]: https://technet.microsoft.com/library/cc730960.aspx
