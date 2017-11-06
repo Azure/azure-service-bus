@@ -2,12 +2,12 @@
 
 ### .NET Standard - Microsoft.Azure.ServiceBus
 
-The samples in the [Microsoft.Azure.ServiceBus](Microsoft.Azure.ServiceBus) folder target 
-the .NET Standard client package. 
+The samples in the [Microsoft.Azure.ServiceBus](DotNet/Microsoft.Azure.ServiceBus) folder target
+the .NET Standard client package.
 
 ### .NET Framework - Microsoft.ServiceBus.Messaging
 
-The samples in the [Microsoft.ServiceBus.Messaging](Microsoft.ServiceBus.Messaging) folder 
+The samples in the [Microsoft.ServiceBus.Messaging](DotNet/Microsoft.ServiceBus.Messaging) folder 
 target the .NET Framework `WindowsAzure.ServiceBus` NuGet package, which is maintained for 
 backwards compatibility.
 
