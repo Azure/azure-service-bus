@@ -1,10 +1,10 @@
-# Azure Service Bus .NET Framework samples
+# Azure Service Bus .NET Standard samples
 
-This repository contains the official set of samples for the Azure Service Bus service (Standard and Premium), illustrating all core 
-features of Service Bus Queues and Service Bus Topics.  This samples all use the `WindowsAzure.ServiceBus` NuGet package for
-the full .NET Framework.
+This repository contains the official set of .NET Standard samples for the Azure Service Bus service (Standard and Premium), illustrating all core 
+features of Service Bus Queues and Service Bus Topics.  This samples all use the `Microsoft.Azure.ServiceBus` NuGet package for
+.NET Standard.
 
-# Setup 
+# Setup
 
 First, clone this git repository locally. 
 
@@ -142,5 +142,3 @@ model is strongly encouraged at all times as it yields significantly more effici
    and Topics seamlessly the context of WCF applications using the NetMessagingBinding.
 * **Sessions with the NetMessagingBinding** - The [NetMessagingSession](./NetMessagingSession) sample shows how to use Service Bus
   sessions with the NetMessagingBinding.
-                              
- 
