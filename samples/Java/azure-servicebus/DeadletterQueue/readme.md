@@ -1,41 +1,33 @@
-# Queue Client Quickstart
+# Dead-Letter Queues 
 
-This sample demonstrates how to use Azure Service Bus Queues with the Azure Service Bus SDK for Java.
+This sample shows how to move messages to the Dead-letter queue, how to retrieve
+messages from it, and resubmit corrected message back into the main queue. 
 
-You will learn how to set up a QueueClient, send messages, and receive those messages into a callback 
-handler. The [MessageReceiverQuickstart](../MessageReceiverQuickstart) sample demonstrates how 
-to receive messages by explicitly pulling from the queue. The callback model shown in this sample 
-is the recommended method because the receive loop implemented by the SDK library transparently handles 
-common issues like occasional network issues or transient errors, and also allows for parallel 
-message handling on multiple worker threads. 
+For setup instructions, please refer back to the main [README](../README.md) file.
 
+## What is a Dead-Letter Queue? 
 
-## Prerequisites
+All Service Bus Queues and Subscriptions have a secondary sub-queue, called the
+*dead-letter queue* (DLQ). 
 
-Please refer to the [overview README](../../readme.md) for prerequisites and setting up the samples 
-environment, including creating a Service Bus cloud namespace. 
+This sub-queue does not need to be explicitly created and cannot be deleted or
+otherwise managed independent of the main entity. The purpose of the Dead-Letter
+Queue (DLQ) is accept and hold messages that cannot be delivered to any receiver
+or messages that could not be processed. Read more about Dead-Letter Queues [in
+the product documentation.][1]
 
-## Build and run
+## Sample Code 
 
-The sample can be built independently with 
+The sample implements two scenarios:
 
-```bash
-mvn clean package 
-```
+* Send a message and then retrierve and abandon the message until the maximum
+delivery count is exhausted and the message is automatically dead-lettered. 
 
-and then run with (or just from VS Code or another Java IDE)
+* Send a set of messages, and explicitly dead-letter messages that do not match
+a certain criterion and would therefore not be processed correctly. The messages
+are then picked up from the dead-letter queue, are automatically corrected, and
+resubmitted.  
 
-```bash
-java -jar ./target/azure-servicebus-samples-queueclientquickstart-1.0.0-jar-with-dependencies.jar
-```
+The sample code is further documented inline in the [DeadletterQueue.java](.\src\main\java\com\microsoft\azure\servicebus\samples\deadletterqueue\DeadletterQueue.java) file.
 
-The sample accepts two arguments that can either be supplied on the command line or via environment
-variables. The setup script discussed in the overview readme sets the environment variables for you.
-
-* -c (env: SB_SAMPLES_CONNECTIONSTRING) - Service Bus connection string with credentials or 
-                                          token granting send and listen rights for the namespace
-* -q (env: SB_SAMPLES_QUEUENAME) - Name of an existing queue within the namespace
-
-## Sample Code Explained
-
-For a discussion of the sample code, review the inline comments in [QueueClientQuickstart.java](./src/main/java/com/microsoft/azure/servicebus/samples/queueclientquickstart/QueueClientQuickstart.java)
+[1]: https://docs.microsoft.com/azure/service-bus-messaging/service-bus-dead-letter-queues

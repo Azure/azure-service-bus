@@ -1,41 +1,26 @@
-# Queue Client Quickstart
+# Message Browsing (Peek)
 
-This sample demonstrates how to use Azure Service Bus Queues with the Azure Service Bus SDK for Java.
+This sample shows how to enumerate messages residing in a Queue or Topic
+subscription without locking and/or deleting them. This feature is typically
+used for diagnostic and troubleshooting purposes and/or for tooling built on top
+of Service Bus. 
 
-You will learn how to set up a QueueClient, send messages, and receive those messages into a callback 
-handler. The [MessageReceiverQuickstart](../MessageReceiverQuickstart) sample demonstrates how 
-to receive messages by explicitly pulling from the queue. The callback model shown in this sample 
-is the recommended method because the receive loop implemented by the SDK library transparently handles 
-common issues like occasional network issues or transient errors, and also allows for parallel 
-message handling on multiple worker threads. 
+[Read more about message browsing in the documentation.][1]
+
+Refer to the main [README](../README.md) document for setup instructions.
+
+## Sample Code 
+
+The sample sends a set of messages into a queue and then enumerates them. When
+you run the sample repeatedly, you will see that messages accumulate in the log
+as we don't receive and remove them. 
+
+You will also observe that expired messages (we send with a 2 minute
+time-to-live setting) may hang around past their expiration time, because
+Service Bus lazily cleans up expired messages no longer available for regular
+retrieval.
+
+The sample is documented inline in the [MessageBrowse.java](.\src\main\java\com\microsoft\azure\servicebus\samples\messagebrowse\MessageBrowse.java) file.
 
 
-## Prerequisites
-
-Please refer to the [overview README](../../readme.md) for prerequisites and setting up the samples 
-environment, including creating a Service Bus cloud namespace. 
-
-## Build and run
-
-The sample can be built independently with 
-
-```bash
-mvn clean package 
-```
-
-and then run with (or just from VS Code or another Java IDE)
-
-```bash
-java -jar ./target/azure-servicebus-samples-queueclientquickstart-1.0.0-jar-with-dependencies.jar
-```
-
-The sample accepts two arguments that can either be supplied on the command line or via environment
-variables. The setup script discussed in the overview readme sets the environment variables for you.
-
-* -c (env: SB_SAMPLES_CONNECTIONSTRING) - Service Bus connection string with credentials or 
-                                          token granting send and listen rights for the namespace
-* -q (env: SB_SAMPLES_QUEUENAME) - Name of an existing queue within the namespace
-
-## Sample Code Explained
-
-For a discussion of the sample code, review the inline comments in [QueueClientQuickstart.java](./src/main/java/com/microsoft/azure/servicebus/samples/queueclientquickstart/QueueClientQuickstart.java)
+[1]: https://docs.microsoft.com/azure/service-bus-messaging/message-browsing

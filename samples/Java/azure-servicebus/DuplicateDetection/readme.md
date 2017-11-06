@@ -1,41 +1,54 @@
-# Queue Client Quickstart
+# Duplicate Detection
 
-This sample demonstrates how to use Azure Service Bus Queues with the Azure Service Bus SDK for Java.
+This sample illustrates the "duplicate detection" feature of Azure Service Bus.
 
-You will learn how to set up a QueueClient, send messages, and receive those messages into a callback 
-handler. The [MessageReceiverQuickstart](../MessageReceiverQuickstart) sample demonstrates how 
-to receive messages by explicitly pulling from the queue. The callback model shown in this sample 
-is the recommended method because the receive loop implemented by the SDK library transparently handles 
-common issues like occasional network issues or transient errors, and also allows for parallel 
-message handling on multiple worker threads. 
+The sample is specifically crafted to demonstrate the effect of duplicate
+detection when enabled on a queue or topic. The default setting is for duplicate
+detection to be turned off. 
+
+For setup instructions, please refer back to the main [README](../README.md) file.
+
+## What is duplicate detection?
+
+Enabling duplicate detection will keep track of the ```MessageId``` of all
+messages sent into a queue or topic [during a defined time window][1]. 
+
+If any new message is sent that carries a ```MessageId``` that has already been
+logged during the time window, the message will be reported as being accepted
+(the send operation succeeds), but the newly sent message will be instantly
+ignored and dropped. No other parts of the message are considered.
+
+[Read more about duplicate detection in the documentation.][2]
+
+## Sample Code 
+
+The sample sends two messages that have the same ```MessageId``` and shows that
+only one of those messages is being enqueued and retrievable, if the queue has
+the duplicate-detection flag set. 
+
+The setup template creates the queue for this example by setting the
+```requiresDuplicateDetection``` flag, which enables the feature, and it sets
+the ```duplicateDetectionHistoryTimeWindow``` to 10 minutes.
 
 
-## Prerequisites
-
-Please refer to the [overview README](../../readme.md) for prerequisites and setting up the samples 
-environment, including creating a Service Bus cloud namespace. 
-
-## Build and run
-
-The sample can be built independently with 
-
-```bash
-mvn clean package 
+``` JSON
+{
+    "apiVersion": "[variables('apiVersion')]",
+    "name": "DupdetectQueue",
+    "type": "queues",
+    "dependsOn": [
+        "[concat('Microsoft.ServiceBus/namespaces/', 
+            parameters('serviceBusNamespaceName'))]",
+    ],
+    "properties": {
+	   "requiresDuplicateDetection": true,
+       "duplicateDetectionHistoryTimeWindow" :  "T10M"
+    },
+    "resources": []
+},
 ```
 
-and then run with (or just from VS Code or another Java IDE)
+The sample is further documented inline in the [DuplicateDetection.java](.\src\main\java\com\microsoft\azure\servicebus\samples\duplicatedetection\DuplicateDetection.java) file.
 
-```bash
-java -jar ./target/azure-servicebus-samples-queueclientquickstart-1.0.0-jar-with-dependencies.jar
-```
-
-The sample accepts two arguments that can either be supplied on the command line or via environment
-variables. The setup script discussed in the overview readme sets the environment variables for you.
-
-* -c (env: SB_SAMPLES_CONNECTIONSTRING) - Service Bus connection string with credentials or 
-                                          token granting send and listen rights for the namespace
-* -q (env: SB_SAMPLES_QUEUENAME) - Name of an existing queue within the namespace
-
-## Sample Code Explained
-
-For a discussion of the sample code, review the inline comments in [QueueClientQuickstart.java](./src/main/java/com/microsoft/azure/servicebus/samples/queueclientquickstart/QueueClientQuickstart.java)
+[1]: https://docs.microsoft.com/azure/service-bus-messaging/duplicate-detection#enable-duplicate-detection
+[2]: https://docs.microsoft.com/azure/service-bus-messaging/duplicate-detection

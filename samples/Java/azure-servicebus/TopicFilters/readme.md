@@ -1,49 +1,158 @@
-# Managing Topic Rules
+# Topic Subscription Filters
 
-This sample demonstrates how to manage Topic subscription rules with the Azure Service Bus SDK for Java.
+This sample illustrates creating filtered subscriptions for topics. It shows a
+simple *true-filter* that lets all messages pass, a filter with a composite
+SQL-like condition, a rule combining a filter with a set of actions, and a
+correlation filter condition.  
 
-Expanding from the [TopicClientQuickstart](../TopicClientQuickstart) base sample, you will learn how to 
-modify the rules of existing subscriptions at runtime in order to change the conditions under which 
-messages are received from these subscriptions. 
+[Read more about topic filters in the documentation.](https://docs.microsoft.com/azure/service-bus-messaging/topic-filters)
 
-The sample demonstrates all available rule types:
-* TrueFilter - matches all messages
-* SqlFilter - matches messages with a message selector on message metadata 
-* SqlFilter with SqlAction - additionally performs a transform on message metadata
-* CorrelationFilter - performs a simple metadata property match 
+Refer to the main [README](../README.md) document for setup instructions.
 
-Correlation filters yield significantly higher performance and therefore lower latency and 
-throughput on a Topic than SQL filters and are therefore preferred.
+## Sample Code 
 
-## Prerequisites
+The sample is documented inline in the [TopicFilters.java](.\src\main\java\com\microsoft\azure\servicebus\samples\topicfilters\TopicFilters.java) file.
 
-Please refer to the [overview README](../../readme.md) for prerequisites and setting up the samples 
-environment, including creating a Service Bus cloud namespace. 
+The setup template creates the topic for this example with 4 subscriptions. 
 
-## Build and run
+``` JSON
+{
+    "apiVersion": "[variables('apiVersion')]",
+    "name": "TopicFilterSampleTopic",
+    "type": "topics",
+    "dependsOn": [
+    "[concat('Microsoft.ServiceBus/namespaces/', 
+           parameters('serviceBusNamespaceName'))]",
+    ],
+    "properties": {},
+    "resources": [
+    
 
-The sample can be built independently with 
-
-```bash
-mvn clean package 
 ```
 
-and then run with (or just from VS Code or another Java IDE)
+The first subscription selects all messages with a "true" filter, which is a SQL
+filter with an expression that is trivially true:
 
-```bash
-java -jar ./target/azure-servicebus-samples-managingtopicrules-1.0.0-jar-with-dependencies.jar
+``` JSON
+ {
+    "apiVersion": "[variables('apiVersion')]",
+    "name": "AllOrders",
+    "type": "subscriptions",
+    "dependsOn": [ "TopicFilterSampleTopic" ],
+    "properties": {},
+    "resources": [
+      {
+         "apiVersion": "[variables('apiVersion')]",
+         "name": "rule1",
+         "type": "rules",
+         "dependsOn": [ "AllOrders" ],
+         "properties": {
+            "filterType": "SqlFilter",
+            "sqlFilter": {
+               "sqlExpression": "1=1",
+               "requiresPreprocessing": false
+            }
+         }
+      }
+     ]
+   },
 ```
 
-The sample accepts two arguments that can either be supplied on the command line or via environment
-variables. The setup script discussed in the overview readme sets the environment variables for you.
+The second subscription selects all messages with a SQL filter with the user
+property 'color' having the value 'blue' and the 'quantity' user property having
+the value 10. 
 
-* -c (env: SB_SAMPLES_CONNECTIONSTRING) - Service Bus connection string with credentials or 
-                                          token granting send and listen rights for the namespace
-* -t (env: SB_SAMPLES_TOPICNAME)        - Name of an existing topic within the namespace
-* -s (env: SB_SAMPLES_SUBSCRIPTIONNAME) - Name of an existing subscription on the given topic
+``` JSON
+    {
+        "apiVersion": "[variables('apiVersion')]",
+        "name": "ColorBlueSize10Orders",
+        "type": "subscriptions",
+        "dependsOn": [ "TopicFilterSampleTopic" ],
+        "properties": {},
+        "resources": [
+         {
+            "apiVersion": "[variables('apiVersion')]",
+            "name": "rule1",
+            "type": "rules",
+            "dependsOn": [ "ColorBlueSize10Orders" ],
+            "properties": {
+            "filterType": "SqlFilter",
+               "sqlFilter": {
+                  "sqlExpression": "color = 'blue' AND quantity = 10",
+                  "requiresPreprocessing": false
+               }
+            }
+         }
+        ]
+    },
+```
 
-## Sample Code
+The third subscription selects all messages with a SQL filter with the user
+property 'color' having the value 'red'. 
 
-For a discussion of the sample code, review the inline comments in [ManagingTopicRules.java](./src/main/java/com/microsoft/azure/servicebus/samples/managingtopicrules/ManagingTopicRules.java)
+``` JSON
+
+    {
+        "apiVersion": "[variables('apiVersion')]",
+        "name": "ColorRed",
+        "type": "subscriptions",
+        "dependsOn": [ "TopicFilterSampleTopic" ],
+        "properties": {
+        },
+        "resources": [
+         {
+            "apiVersion": "[variables('apiVersion')]",
+            "name": "rule1",
+            "type": "rules",
+            "dependsOn": [ "ColorRed" ],
+            "properties": {
+            "filterType": "SqlFilter",
+               "sqlFilter": {
+                  "sqlExpression": "color = 'red'",
+                  "requiresPreprocessing": false
+               },
+               "action": {
+                  "sqlExpression": "SET quantity = quantity / 2; 
+                                    REMOVE priority; 
+                                    SET sys.CorrelationId = 'low';"
+               }
+            }
+         }
+        ]
+    },
+```
+
+The forth subscription selects all messages using a correlation filter with the
+```Label``` property having the value 'red' and the ```CorrelationId``` property
+having the value 'high' 
+
+``` JSON
+
+    {
+        "apiVersion": "[variables('apiVersion')]",
+        "name": "HighPriorityOrders",
+        "type": "subscriptions",
+        "dependsOn": [ "TopicFilterSampleTopic" ],
+        "properties": {
+        },
+        "resources": [
+        {
+            "apiVersion": "[variables('apiVersion')]",
+            "name": "rule1",
+            "type": "rules",
+            "dependsOn": [ "HighPriorityOrders" ],
+            "properties": {
+            "filterType": "CorrelationFilter",
+            "correlationFilter": {
+                "label": "red",
+                "correlationId": "high"
+            }
+            }
+        }
+        ]
+    }
+    ]
+}
+```
 
 

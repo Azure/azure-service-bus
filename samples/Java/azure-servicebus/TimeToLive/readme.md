@@ -1,41 +1,34 @@
-# Queue Client Quickstart
+# Time-to-Live sample
 
-This sample demonstrates how to use Azure Service Bus Queues with the Azure Service Bus SDK for Java.
+This sample illustrates the "time-to-live" feature of Azure Service Bus.
 
-You will learn how to set up a QueueClient, send messages, and receive those messages into a callback 
-handler. The [MessageReceiverQuickstart](../MessageReceiverQuickstart) sample demonstrates how 
-to receive messages by explicitly pulling from the queue. The callback model shown in this sample 
-is the recommended method because the receive loop implemented by the SDK library transparently handles 
-common issues like occasional network issues or transient errors, and also allows for parallel 
-message handling on multiple worker threads. 
+For setup instructions, please refer back to the main [README](../README.md) file.
+
+## What is Time-to-Live?
+
+The payload inside of a message, or a command or inquiry that a message conveys
+to a receiver, is almost always subject to some form of application-level
+expiration deadline. After such a deadline, the content shall no longer be
+delivered, or the requested operation shall no longer be executed. 
+
+The Time-to-Live feature helps witzh this by dropping such expired messages
+inside the broker. The expiration for any individual message can be controlled
+by setting the ```TimeToLive``` system-defined property, which specifies a
+relative duration. The expiration becomes an absolute instant when the message
+is enqueued into the entity. At that time, the ```ExpiresAtUtc``` property takes on
+the value ```EnqueuedTimeUtc + TimeToLive```.
+
+[Read more about time-to-live in the documentation.][1]
+
+## Sample Code 
+
+The sample sends a set of messages with a short time-to-live into the queue
+and then waits to let them expire. The default behavior in Service Bus is that 
+expired messages are [moved into the dead-letter queue][2], and therefore the "fix" 
+loop picks up those expired messages from there and resubmits them for processing.
+
+The sample is further documented inline in the [TimeToLive.java](.\src\main\java\com\microsoft\azure\servicebus\samples\timetolive\TimeToLive.java) file.
 
 
-## Prerequisites
-
-Please refer to the [overview README](../../readme.md) for prerequisites and setting up the samples 
-environment, including creating a Service Bus cloud namespace. 
-
-## Build and run
-
-The sample can be built independently with 
-
-```bash
-mvn clean package 
-```
-
-and then run with (or just from VS Code or another Java IDE)
-
-```bash
-java -jar ./target/azure-servicebus-samples-queueclientquickstart-1.0.0-jar-with-dependencies.jar
-```
-
-The sample accepts two arguments that can either be supplied on the command line or via environment
-variables. The setup script discussed in the overview readme sets the environment variables for you.
-
-* -c (env: SB_SAMPLES_CONNECTIONSTRING) - Service Bus connection string with credentials or 
-                                          token granting send and listen rights for the namespace
-* -q (env: SB_SAMPLES_QUEUENAME) - Name of an existing queue within the namespace
-
-## Sample Code Explained
-
-For a discussion of the sample code, review the inline comments in [QueueClientQuickstart.java](./src/main/java/com/microsoft/azure/servicebus/samples/queueclientquickstart/QueueClientQuickstart.java)
+[1]: https://docs.microsoft.com/azure/service-bus-messaging/message-expiration
+[2]: https://docs.microsoft.com/azure/service-bus-messaging/service-bus-dead-letter-queues#moving-messages-to-the-dlq

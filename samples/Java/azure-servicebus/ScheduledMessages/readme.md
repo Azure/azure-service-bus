@@ -1,41 +1,15 @@
-# Queue Client Quickstart
+# Scheduled Messages
 
-This sample demonstrates how to use Azure Service Bus Queues with the Azure Service Bus SDK for Java.
+This sample shows how to send messages into Service Bus that will be 
+activates at a predetermined, later time.
 
-You will learn how to set up a QueueClient, send messages, and receive those messages into a callback 
-handler. The [MessageReceiverQuickstart](../MessageReceiverQuickstart) sample demonstrates how 
-to receive messages by explicitly pulling from the queue. The callback model shown in this sample 
-is the recommended method because the receive loop implemented by the SDK library transparently handles 
-common issues like occasional network issues or transient errors, and also allows for parallel 
-message handling on multiple worker threads. 
+[Read more about scheduling in the documentation.][1]
+
+Refer to the main [README](../README.md) document for setup instructions. 
+
+## Sample Code 
+
+The sample is documented inline in the [ScheduledMessages.java](.\src\main\java\com\microsoft\azure\servicebus\samples\scheduledmessages\ScheduledMessages.java) file.
 
 
-## Prerequisites
-
-Please refer to the [overview README](../../readme.md) for prerequisites and setting up the samples 
-environment, including creating a Service Bus cloud namespace. 
-
-## Build and run
-
-The sample can be built independently with 
-
-```bash
-mvn clean package 
-```
-
-and then run with (or just from VS Code or another Java IDE)
-
-```bash
-java -jar ./target/azure-servicebus-samples-queueclientquickstart-1.0.0-jar-with-dependencies.jar
-```
-
-The sample accepts two arguments that can either be supplied on the command line or via environment
-variables. The setup script discussed in the overview readme sets the environment variables for you.
-
-* -c (env: SB_SAMPLES_CONNECTIONSTRING) - Service Bus connection string with credentials or 
-                                          token granting send and listen rights for the namespace
-* -q (env: SB_SAMPLES_QUEUENAME) - Name of an existing queue within the namespace
-
-## Sample Code Explained
-
-For a discussion of the sample code, review the inline comments in [QueueClientQuickstart.java](./src/main/java/com/microsoft/azure/servicebus/samples/queueclientquickstart/QueueClientQuickstart.java)
+[1]: https://docs.microsoft.com/en-us/azure/service-bus-messaging/message-sequencing#scheduled-messages 

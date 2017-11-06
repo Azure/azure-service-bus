@@ -1,41 +1,76 @@
-# Queue Client Quickstart
+# Auto-Forward
 
-This sample demonstrates how to use Azure Service Bus Queues with the Azure Service Bus SDK for Java.
+This sample demonstrates how to automatically forward messages from a queue,
+subscription, or deadletter queue into another queue or topic. 
 
-You will learn how to set up a QueueClient, send messages, and receive those messages into a callback 
-handler. The [MessageReceiverQuickstart](../MessageReceiverQuickstart) sample demonstrates how 
-to receive messages by explicitly pulling from the queue. The callback model shown in this sample 
-is the recommended method because the receive loop implemented by the SDK library transparently handles 
-common issues like occasional network issues or transient errors, and also allows for parallel 
-message handling on multiple worker threads. 
+Refer to the main [README](../README.md) document for setup instructions. 
 
+## What is Auto Forwarding?
 
-## Prerequisites
+The Auto-Forwarding feature enables you to chain the a Topic Subscription or a
+Queue to destination Queue or Topic that is part of the same Service Bus
+namespace. When the feature is enabled, Service Bus automatically moves any
+messages arriving in the source Queue or Subscription into the destination Queue
+or Topic. 
 
-Please refer to the [overview README](../../readme.md) for prerequisites and setting up the samples 
-environment, including creating a Service Bus cloud namespace. 
+Auto-Forwarding allows for a range of powerful routing patterns inside Service
+Bus, including decoupling of send and receive locations, fan-in, fan-out, and
+application-defined partitioning.  
 
-## Build and run
+[Read more about auto-forwarding in the documentation.][1]
 
-The sample can be built independently with 
+## Sample code
 
-```bash
-mvn clean package 
+The sample generates 2 messages: M1, and M2. M1 is sent to a source topic
+with one subscription, from which it is forwarded to a destination queue. M2 is
+sent to the destination queue directly. 
+
+The setup template creates the topology for this example as shown here. Note
+that the topic whose subscription auto-forwards into the target queue is made
+dependent on the target queue, so that the queue is created first. The
+connection between the two entitries is made with the ```forwardTo```property of
+the subscription pointing to the target queue. 
+
+``` JSON
+{
+   "apiVersion": "[variables('apiVersion')]",
+   "name": "AutoForwardSourceTopic",
+   "type": "topics",
+   "dependsOn": [
+     "[concat('Microsoft.ServiceBus/namespaces/', 
+            parameters('serviceBusNamespaceName'))]",
+     "AutoForwardTargetQueue",
+   ],
+   "properties": {},
+   "resources": [
+     {
+       "apiVersion": "[variables('apiVersion')]",
+       "name": "Forwarder",
+       "type": "subscriptions",
+       "dependsOn": [ "AutoForwardSourceTopic" ],
+       "properties": {
+         "forwardTo": "AutoForwardTargetQueue"
+       },
+       "resources": []
+     }
+   ]
+},
+{
+   "apiVersion": "[variables('apiVersion')]",
+   "name": "AutoForwardTargetQueue",
+   "type": "queues",
+   "dependsOn": [
+     "[concat('Microsoft.ServiceBus/namespaces/', 
+            parameters('serviceBusNamespaceName'))]",
+   ],
+   "properties": {},
+   "resources": []
+        }
+      ]
+    }
 ```
 
-and then run with (or just from VS Code or another Java IDE)
 
-```bash
-java -jar ./target/azure-servicebus-samples-queueclientquickstart-1.0.0-jar-with-dependencies.jar
-```
+The sample is documented inline in the [AutoForward.java](.\src\main\java\com\microsoft\azure\servicebus\samples\autoforward\AutoForward.java) file.
 
-The sample accepts two arguments that can either be supplied on the command line or via environment
-variables. The setup script discussed in the overview readme sets the environment variables for you.
-
-* -c (env: SB_SAMPLES_CONNECTIONSTRING) - Service Bus connection string with credentials or 
-                                          token granting send and listen rights for the namespace
-* -q (env: SB_SAMPLES_QUEUENAME) - Name of an existing queue within the namespace
-
-## Sample Code Explained
-
-For a discussion of the sample code, review the inline comments in [QueueClientQuickstart.java](./src/main/java/com/microsoft/azure/servicebus/samples/queueclientquickstart/QueueClientQuickstart.java)
+[1]: https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-auto-forwarding

@@ -1,41 +1,21 @@
-# Queue Client Quickstart
+# Prefetch
+This sample illustrates the the "prefetch" feature of the Service Bus client.
 
-This sample demonstrates how to use Azure Service Bus Queues with the Azure Service Bus SDK for Java.
+The sample is specifically crafted to demonstrate the throughput difference
+between receiving messages with prefetch turned on and prefetch turned off. The
+default setting is for prefetch to be turned off. 
 
-You will learn how to set up a QueueClient, send messages, and receive those messages into a callback 
-handler. The [MessageReceiverQuickstart](../MessageReceiverQuickstart) sample demonstrates how 
-to receive messages by explicitly pulling from the queue. The callback model shown in this sample 
-is the recommended method because the receive loop implemented by the SDK library transparently handles 
-common issues like occasional network issues or transient errors, and also allows for parallel 
-message handling on multiple worker threads. 
+Refer to the main [README](../README.md) document for setup instructions.
 
+[Read more about the prefetch feature in the documentation.][1]
 
-## Prerequisites
+## Sample Code 
 
-Please refer to the [overview README](../../readme.md) for prerequisites and setting up the samples 
-environment, including creating a Service Bus cloud namespace. 
+The sample performs two send and receive sequences, once with prefetch turned on
+and once with prefetch turned off. You will observe that the variant with
+prefetch turned on yields higher throughput, and therefore a shorter execution
+time. 
 
-## Build and run
+The sample is further documented inline in the [Prefetch.java](.\src\main\java\com\microsoft\azure\servicebus\samples\prefetch\Prefetch.java) file.
 
-The sample can be built independently with 
-
-```bash
-mvn clean package 
-```
-
-and then run with (or just from VS Code or another Java IDE)
-
-```bash
-java -jar ./target/azure-servicebus-samples-queueclientquickstart-1.0.0-jar-with-dependencies.jar
-```
-
-The sample accepts two arguments that can either be supplied on the command line or via environment
-variables. The setup script discussed in the overview readme sets the environment variables for you.
-
-* -c (env: SB_SAMPLES_CONNECTIONSTRING) - Service Bus connection string with credentials or 
-                                          token granting send and listen rights for the namespace
-* -q (env: SB_SAMPLES_QUEUENAME) - Name of an existing queue within the namespace
-
-## Sample Code Explained
-
-For a discussion of the sample code, review the inline comments in [QueueClientQuickstart.java](./src/main/java/com/microsoft/azure/servicebus/samples/queueclientquickstart/QueueClientQuickstart.java)
+[1]: https://docs.microsoft.com/azure/service-bus-messaging/service-bus-prefetch
