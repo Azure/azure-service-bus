@@ -6,6 +6,9 @@
     
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="readme.md" />
+  </ItemGroup>
+  <ItemGroup>
     <Compile Include="..\common\Main.cs" Link="Main.cs" />
   </ItemGroup>
   <ItemGroup>

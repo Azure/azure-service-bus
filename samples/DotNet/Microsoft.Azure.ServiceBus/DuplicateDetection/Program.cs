@@ -26,19 +26,23 @@ namespace DuplicateDetection
     {
         public async Task Run(string connectionString)
         {
+            // first send the two messages
             await Send(connectionString);
+            // then retrieve the messages
             await Receive(connectionString);
         }
 
         static async Task Send(string connectionString)
         {
-            // Create communication objects to send and receive on the queue
+            // Create a sender over the previously configured duplicate-detection
+            // enabled queue.
             var sender = new MessageSender(connectionString, DupdetectQueueName);
 
-
+            // Create the message-id 
             string messageId = Guid.NewGuid().ToString();
-            // Send messages to queue
+            
             Console.WriteLine("\tSending messages to {0} ...", sender.Path);
+            // send the first message using the message-id
             var message = new Message
             {
                 MessageId = messageId,
@@ -47,6 +51,7 @@ namespace DuplicateDetection
             await sender.SendAsync(message);
             Console.WriteLine("\t=> Sent a message with messageId {0}", message.MessageId);
 
+            // send the second message using the message-id
             var message2 = new Message
             {
                 MessageId = messageId,
@@ -58,22 +63,26 @@ namespace DuplicateDetection
         }
         static async Task Receive(string connectionString)
         {
+            // create receiver over the duplicate-detection enabled queue
             var receiver = new MessageReceiver(connectionString, DupdetectQueueName, ReceiveMode.PeekLock);
 
-            // Receive messages from queue
+            
             var receivedMessageId = "";
 
             Console.WriteLine("\n\tWaiting up to 5 seconds for messages from {0} ...", receiver.Path);
             while (true)
             {
+                // receive a message
                 var receivedMessage = await receiver.ReceiveAsync(TimeSpan.FromSeconds(5));
-
                 if (receivedMessage == null)
                 {
+                    // if the message is null, the queue was empty
                     break;
                 }
+                // complete the received message
                 Console.WriteLine("\t<= Received a message with messageId {0}", receivedMessage.MessageId);
                 await receiver.CompleteAsync(receivedMessage.SystemProperties.LockToken);
+
                 if (receivedMessageId.Equals(receivedMessage.MessageId, StringComparison.OrdinalIgnoreCase))
                 {
                     throw new Exception("Received a duplicate messsage");
@@ -84,6 +93,8 @@ namespace DuplicateDetection
 
             await receiver.CloseAsync();
         }
+
+
        public static int Main(string[] args)
         {
             try

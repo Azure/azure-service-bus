@@ -28,7 +28,30 @@ namespace TimeToLive
 
     public class Program : MessagingSamples.Sample
     {
-      
+
+        public async Task Run(string connectionString)
+        {
+            var cts = new CancellationTokenSource();
+
+            var sender = new MessageSender(connectionString, BasicQueueName);
+
+            var sendTask = this.SendMessagesAsync(sender);
+            var receiveTask = this.ReceiveMessagesAsync(connectionString, BasicQueueName, cts.Token);
+            var fixupTask = this.PickUpAndFixDeadletters(connectionString, BasicQueueName, sender, cts.Token);
+
+            await Task.WhenAll(
+                // wait for a key being pressed or for 10 seconds to elapse
+                Task.WhenAny(
+                    Task.Run(() => Console.ReadKey()),
+                    Task.Delay(TimeSpan.FromSeconds(10))
+                ).ContinueWith((t) => cts.Cancel()),
+                // wait for the remaining tasks
+                sendTask,
+                receiveTask,
+                fixupTask);
+        }
+
+
         async Task SendMessagesAsync(MessageSender sender)
         {
             dynamic data = new[]
@@ -168,26 +191,7 @@ namespace TimeToLive
             return Task.CompletedTask;
         }
 
-        public async Task Run(string connectionString)
-        {
-            var cts = new CancellationTokenSource();
-
-            var sender = new MessageSender(connectionString, BasicQueueName);
-
-            var sendTask = this.SendMessagesAsync(sender);
-            var receiveTask = this.ReceiveMessagesAsync(connectionString, BasicQueueName, cts.Token);
-            var fixupTask = this.PickUpAndFixDeadletters(connectionString, BasicQueueName, sender, cts.Token);
-            
-            await Task.WhenAll(
-                Task.WhenAny(
-                    Task.Run(() => Console.ReadKey()),
-                    Task.Delay(TimeSpan.FromSeconds(10))
-                ).ContinueWith((t) => cts.Cancel()), 
-                sendTask, 
-                receiveTask, 
-                fixupTask);
-        }
-
+      
        public static int Main(string[] args)
         {
             try

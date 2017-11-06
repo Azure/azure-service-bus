@@ -1,70 +1,54 @@
 # Duplicate Detection
 
-This sample illustrates the "duplicate detection" feature of the Service Bus client.
+This sample illustrates the "duplicate detection" feature of Azure Service Bus.
 
-The sample is specifically crafted to demonstrate the effect of duplicate detection when
-enabled on a queue or topic. The default setting is for duplicate detection to be turned off. 
+The sample is specifically crafted to demonstrate the effect of duplicate
+detection when enabled on a queue or topic. The default setting is for duplicate
+detection to be turned off. 
+
+For setup instructions, please refer back to the main [README](../README.md) file.
 
 ## What is duplicate detection?
 
-Enabling duplicate detection will keep track of the ```MessageId``` of all messages sent into 
-a queue or topic during a defined time window. If any new message is sent that carries a 
-```MessageId``` that has already been logged during the time window, the message will be reported
-as being accepted (the send operation succeeds), but the newly sent message will be instantly 
+Enabling duplicate detection will keep track of the ```MessageId``` of all
+messages sent into a queue or topic [during a defined time window][1]. 
+
+If any new message is sent that carries a ```MessageId``` that has already been
+logged during the time window, the message will be reported as being accepted
+(the send operation succeeds), but the newly sent message will be instantly
 ignored and dropped. No other parts of the message are considered.
 
-[Read more about duplicate detection in the documentation.](https://docs.microsoft.com/azure/service-bus-messaging/duplicate-detection)
-
-## Prerequisites and Setup
-
-Refer to the main [README](../README.md) document for setup instructions. All samples share and require the same setup
-before they can be run.
+[Read more about duplicate detection in the documentation.][2]
 
 ## Sample Code 
 
-The sample is documented inline in the [Program.cs](Program.cs) C# file.
+The sample sends two messages that have the same ```MessageId``` and shows that
+only one of those messages is being enqueued and retrievable, if the queue has
+the duplicate-detection flag set. 
 
-The sample really just sends two messages that have the same MessageId set:  
+The setup template creates the queue for this example by setting the
+```requiresDuplicateDetection``` flag, which enables the feature, and it sets
+the ```duplicateDetectionHistoryTimeWindow``` to 10 minutes.
 
-``` C#
-    // Send messages to queue
-    Console.WriteLine("\tSending messages to {0} ...", queueName);
-    var message = new Message
-    {
-        MessageId = "ABC123",
-        TimeToLive = TimeSpan.FromMinutes(1)
-    };
-    await sender.SendAsync(message);
-    Console.WriteLine("\t=> Sent a message with messageId {0}", message.MessageId);
 
-    var message2 = new Message
-    {
-        MessageId = "ABC123",
-        TimeToLive = TimeSpan.FromMinutes(1)
-    };
-    await sender.SendAsync(message2);
+``` JSON
+{
+    "apiVersion": "[variables('apiVersion')]",
+    "name": "DupdetectQueue",
+    "type": "queues",
+    "dependsOn": [
+        "[concat('Microsoft.ServiceBus/namespaces/', 
+            parameters('serviceBusNamespaceName'))]",
+    ],
+    "properties": {
+	   "requiresDuplicateDetection": true,
+       "duplicateDetectionHistoryTimeWindow" :  "T10M"
+    },
+    "resources": []
+},
 ```
 
-Following that is a simple loop that receives messages until the queue is empty:
+The sample is further documented inline in the [Program.cs](Program.cs) C# file.
 
-``` C#
-    while (true)
-    {
-        var receivedMessage = await receiver.ReceiveAsync(TimeSpan.FromSeconds(10));
-
-        if (receivedMessage == null)
-        {
-            break;
-        }
-        Console.WriteLine("\t<= Received a message with messageId {0}", receivedMessage.MessageId);
-        await receivedreceiveClient.CompleteAsync(message.SystemProperties.LockToken);
-        if (receivedMessageId.Equals(receivedMessage.MessageId, StringComparison.OrdinalIgnoreCase))
-        {
-            Console.WriteLine("\t\tRECEIVED a DUPLICATE MESSAGE");
-        }
-
-        receivedMessageId = receivedMessage.MessageId;
-    }
-``` 
-
-When you execute the sample you will find that the second message is not being received. As expected.
+[1]: https://docs.microsoft.com/azure/service-bus-messaging/duplicate-detection#enable-duplicate-detection
+[2]: https://docs.microsoft.com/azure/service-bus-messaging/duplicate-detection

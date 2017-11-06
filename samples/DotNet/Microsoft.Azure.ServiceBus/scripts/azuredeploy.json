@@ -12,7 +12,7 @@
   "variables": {
     "apiVersion": "2017-04-01"
   },
-  "resources": [
+  "resources": 
     {
       "apiVersion": "[variables('apiVersion')]",
       "name": "[parameters('serviceBusNamespaceName')]",
@@ -125,7 +125,8 @@
             "Manage"
           ],
           "properties": {
-            "requiresDuplicateDetection": true
+            "requiresDuplicateDetection": true,
+            "duplicateDetectionHistoryTimeWindow" :  "T10M"
           },
           "resources": []
         },

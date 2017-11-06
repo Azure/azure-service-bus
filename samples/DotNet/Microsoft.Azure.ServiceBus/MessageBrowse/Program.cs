@@ -28,15 +28,16 @@ namespace MessageBrowse
     {
         public async Task Run(string connectionString)
         {
+            // send a set of messages
             await this.SendMessagesAsync(connectionString, BasicQueueName);
+            // broswe those messages 
             await this.PeekMessagesAsync(connectionString, BasicQueueName);
         }
 
         async Task SendMessagesAsync(string connectionString, string queueName)
         {
             var sender = new MessageSender(connectionString,queueName);
-
-
+            
             Console.WriteLine("Sending messages to Queue...");
 
             dynamic data = new[]
@@ -53,7 +54,7 @@ namespace MessageBrowse
                 new {name = "Kopernikus", firstName = "Nikolaus"}
             };
 
-
+            // send a message for each entry in the above array
             for (int i = 0; i < data.Length; i++)
             {
                 var message = new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data[i])))
@@ -83,10 +84,12 @@ namespace MessageBrowse
             {
                 try
                 {
-                    //receive messages from Queue
+                    // Browse messages from queue
                     var message = await receiver.PeekAsync();
+                    // If the returned message value is null, we have reached the bottom of the log
                     if (message != null)
                     {
+                        // print the message
                         var body = Encoding.UTF8.GetString(message.Body);
                         lock (Console.Out)
                         {
@@ -108,7 +111,7 @@ namespace MessageBrowse
                     }
                     else
                     {
-                        //no more messages in the queue
+                        // We have reached the end of the log.
                         break;
                     }
                 }
