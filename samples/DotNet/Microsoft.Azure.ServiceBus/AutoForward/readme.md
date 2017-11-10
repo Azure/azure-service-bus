@@ -71,6 +71,6 @@ the subscription pointing to the target queue.
 ```
 
 
-The sample is documented inline in the [Program.cs](Program.cs) C# file.
+The sample is documented further inline in the [Program.cs](Program.cs) C# file.
 
 [1]: https://docs.microsoft.com/en-us/azure/service-bus-messaging/service-bus-auto-forwarding

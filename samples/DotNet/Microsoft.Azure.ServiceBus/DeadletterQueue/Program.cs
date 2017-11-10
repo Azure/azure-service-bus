@@ -27,6 +27,8 @@ namespace DeadletterQueue
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
+    // This sample shows how to move messages to the Dead-letter queue, how to retrieve
+    // messages from it, and resubmit corrected message back into the main queue. 
     public class Program : MessagingSamples.Sample
     {
 
@@ -184,8 +186,8 @@ namespace DeadletterQueue
             receiver.RegisterMessageHandler(
                 async (message, cancellationToken1) =>
                 {
-                    //TODO
-                    
+                    // If the message holds JSON data and the label is set to "Scientist", 
+                    // we accept the message and print it.
                     if (message.Label != null &&
                         message.ContentType != null &&
                         message.Label.Equals("Scientist", StringComparison.InvariantCultureIgnoreCase) &&
@@ -215,6 +217,7 @@ namespace DeadletterQueue
                     }
                     else
                     {
+                        // if the messages doesn't fit the criteria above, we deadletter it
                         await receiver.DeadLetterAsync(message.SystemProperties.LockToken);//"ProcessingError", "Don't know what to do with this message");
                     }
                 },
@@ -223,10 +226,11 @@ namespace DeadletterQueue
             return doneReceiving.Task;
         }
 
-              Task PickUpAndFixDeadletters(string connectionString, string queueName, MessageSender resubmitSender, CancellationToken cancellationToken)
+        Task PickUpAndFixDeadletters(string connectionString, string queueName, MessageSender resubmitSender, CancellationToken cancellationToken)
         {
             var doneReceiving = new TaskCompletionSource<bool>();
 
+            // here, we create a receiver on the Deadletter queue
             var dlqReceiver = new MessageReceiver(connectionString, EntityNameHelper.FormatDeadLetterPath(queueName), ReceiveMode.PeekLock);
 
             // close the receiver and factory when the CancellationToken fires 
@@ -241,7 +245,11 @@ namespace DeadletterQueue
             dlqReceiver.RegisterMessageHandler(
                 async (message, cancellationToken1) =>
                 {
+                    // first, we create a clone of the picked up message
+                    // that we can resubmit. 
                     var resubmitMessage = message.Clone();
+                    // if the cloned message has an "error" we know the main loop
+                    // can't handle, let's fix the message
                     if (resubmitMessage.Label != null && resubmitMessage.Label.Equals("Physicist"))
                     {
                         lock (Console.Out)
@@ -254,9 +262,12 @@ namespace DeadletterQueue
                                 message.Label);
                             Console.ResetColor();
                         }
+                        // set the label to "Scientist"
                         resubmitMessage.Label = "Scientist";
+                        // and re-enqueue the cloned message
                         await resubmitSender.SendAsync(resubmitMessage);
                     }
+                    // finally complete the original message and remove it from the DLQ
                     await dlqReceiver.CompleteAsync(message.SystemProperties.LockToken);
                 },
                 new MessageHandlerOptions((e) => LogMessageHandlerException(e)) { AutoComplete = false, MaxConcurrentCalls = 1 });

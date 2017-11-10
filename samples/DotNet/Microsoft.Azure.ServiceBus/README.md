@@ -58,11 +58,6 @@ Run the Powershell script from the scripts directory with
 Most samples use shared [entry-point boilerplate code](common/Main.cs) that loads the configuration and then launches the sample's 
 **Program.Run()** instance methods. 
 
-Except for the samples that explicitly demonstrate security capabilities, all samples are invoked with an externally issued SAS token 
-rather than a connection string or a raw SAS key. The security model design of Service Bus generally prefers clients to handle tokens 
-rather than keys, because tokens can be constrained to a particular scope and can be issued to expire at a certain time. 
-More about SAS and tokens can be found [here](https://azure.microsoft.com/documentation/articles/service-bus-shared-access-signature-authentication/).               
-
 All samples use the asynchronous, task-based programming model of the .NET Framework and therefore the *xAsync* overloads of the 
 respective Service Bus API methods. Since nearly all Service Bus operations result in network I/O, using the asynchronous programming
 model is strongly encouraged at all times as it yields significantly more efficient execution at runtime.      

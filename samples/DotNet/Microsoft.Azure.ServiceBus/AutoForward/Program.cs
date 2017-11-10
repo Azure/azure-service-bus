@@ -23,22 +23,32 @@ namespace AutoForward
     using System.Text;
     using System.Threading.Tasks;
 
+    // This sample demonstrates how to automatically forward messages from a queue,
+    // subscription, or deadletter queue into another queue or topic. 
+    // The sample assumes prior setup of a topology of Service Bus entities 
+    // as described in the accompanying README file.
     public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
             Console.WriteLine("\nSending messages\n");
 
+            // Create sender and send message M1 into the source topic
             var topicSender = new MessageSender(connectionString, "AutoForwardSourceTopic");
             await topicSender.SendAsync(CreateMessage("M1"));
 
+            // Create sender and send message M2 directly into the target queue
             var queueSender = new MessageSender(connectionString, "AutoForwardTargetQueue");
-            await queueSender.SendAsync(CreateMessage("M1"));
+            await queueSender.SendAsync(CreateMessage("M2"));
 
+            // Create the receiver on the target queue
             Console.WriteLine("\nReceiving messages\n");
             var targetQueueReceiver = new MessageReceiver(connectionString, "AutoForwardTargetQueue");
             for (int i = 0; i < 2; i++)
             {
+                // We are expecting twp messages to arrive into the target queue. 
+                // 1) Message M2 has been sent directly
+                // 2) Message M1 has been auto-forwarded from a subscription on the source topic
                 var message = await targetQueueReceiver.ReceiveAsync(TimeSpan.FromSeconds(10));
                 if (message != null)
                 {

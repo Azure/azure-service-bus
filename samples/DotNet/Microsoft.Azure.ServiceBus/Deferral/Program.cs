@@ -27,20 +27,28 @@ namespace Deferral
     using Microsoft.Azure.ServiceBus.Core;
     using Newtonsoft.Json;
 
+    // This sample illustrates and explains the use of the 
+    // Deferral feature in Service Bus
     public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)
         {
+            // set up a task that sends messages
             var sendTask = this.SendMessagesAsync(connectionString, BasicQueueName);
+            // set up a task that receives those messages
             var receiveTask = this.ReceiveMessagesAsync(connectionString, BasicQueueName);
 
+            // wait until both tasks are done
             await Task.WhenAll(sendTask, receiveTask);
         }
 
         async Task SendMessagesAsync(string connectionString, string queueName)
         {
+            // First, we send a set of messages into the queue.
+            // The messages represent an ordered set of workflow steps,
+            // but we simulate that those messages are enqueued out
+            // of the expected handling order for some reason
             var sender = new MessageSender(connectionString, queueName);
-
 
             Console.WriteLine("Sending messages to Queue...");
 
@@ -65,6 +73,8 @@ namespace Deferral
                     TimeToLive = TimeSpan.FromMinutes(2)
                 };
 
+                // the way we shuffle the message order is to introduce
+                // a tiny random delay before each of the messages is sent
                 tasks.Add(Task.Delay(rnd.Next(30)).ContinueWith(
                       async (t) =>
                       {
@@ -77,11 +87,13 @@ namespace Deferral
                           }
                       }));
             }
+            // report completion when all the send tasks are complete 
             await Task.WhenAll(tasks);
         }
 
         async Task ReceiveMessagesAsync(string connectionString, string queueName)
         {
+            // create a receiver to pick up the messages from the queue
             var receiver = new MessageReceiver(connectionString, queueName, ReceiveMode.PeekLock);
 
             Console.WriteLine("Receiving message from Queue...");
@@ -93,7 +105,7 @@ namespace Deferral
             {
                 try
                 {
-                    //receive messages from Queue
+                    //receive a message
                     var message = await receiver.ReceiveAsync(TimeSpan.FromSeconds(5));
                     if (message != null)
                     {
@@ -105,8 +117,11 @@ namespace Deferral
                             var body = message.Body;
 
                             dynamic recipeStep = JsonConvert.DeserializeObject(Encoding.UTF8.GetString(body));
+                            // now let's check whether the step we received is the 
+                            // step we expect at this stage of the workflow
                             if (recipeStep.step == lastProcessedRecipeStep + 1)
                             {
+                                // if so, print it
                                 lock (Console.Out)
                                 {
                                     Console.ForegroundColor = ConsoleColor.Cyan;
@@ -128,12 +143,17 @@ namespace Deferral
                             }
                             else
                             {
+                                // if this is not the step we expected, we defer the message, 
+                                // meaning that we leave it in the queue but take it out of 
+                                // the delivery order. We put it aside. To retrieve it later,
+                                // we remeber its sequence number
                                 deferredSteps.Add((int)recipeStep.step, (long)message.SystemProperties.SequenceNumber);
                                 await receiver.DeferAsync(message.SystemProperties.LockToken);
                             }
                         }
                         else
                         {
+                            // we dead-letter the message if we don't know what to do with it.
                             await receiver.DeadLetterAsync(message.SystemProperties.LockToken); //, "ProcessingError", "Don't know what to do with this message");
                         }
                     }
@@ -153,10 +173,16 @@ namespace Deferral
                 }
             }
 
+            // Now that the queue is drained for the time being, we take a look at the 
+            // deferred steps. The implementation here is rather naive for better legibility. 
+            // You might prefer a strategy where the deferredSteps array is (repeatedly) 
+            // consulted right after a step has been completed and before a new message is retrieved.
             while (deferredSteps.Count > 0)
             {
                 long step;
-
+                
+                // if we have a step put away that follows the currently 
+                // processed one, fetch it and process it.
                 if (deferredSteps.TryGetValue(lastProcessedRecipeStep + 1, out step))
                 {
                     var message = await receiver.ReceiveDeferredMessageAsync(step);

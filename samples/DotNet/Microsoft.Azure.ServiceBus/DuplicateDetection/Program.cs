@@ -22,6 +22,8 @@ namespace DuplicateDetection
     using System;
     using System.Threading.Tasks;
 
+    // This sample illustrates the "duplicate detection" feature 
+    // of Azure Service Bus.
     public class Program : MessagingSamples.Sample
     {
         public async Task Run(string connectionString)

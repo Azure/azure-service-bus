@@ -1,7 +1,7 @@
 # Deferral
 
 This sample illustrates and explains the use of the Deferral feature in Service
-Bus  
+Bus.  
 
 # What is Deferral
 
