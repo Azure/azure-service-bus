@@ -9,10 +9,10 @@
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
-   <build>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+    <build>
         <directory>${project.basedir}/target</directory>
         <outputDirectory>${project.build.directory}/classes</outputDirectory>
         <finalName>${project.artifactId}-${project.version}</finalName>
@@ -22,11 +22,20 @@
     </build>
 
     <modules>
-      <module>azure-servicebus/QueueClientQuickstart</module>
-      <module>azure-servicebus/TopicClientQuickstart</module>
-      <module>azure-servicebus/MessageReceiverQuickstart</module>
-      <module>azure-servicebus/ManagingTopicRules</module>
-      <module>qpid-jms-client/JmsQueueQuickstart</module>
+        <module>azure-servicebus/ScheduledMessages</module>
+        <module>azure-servicebus/DuplicateDetection</module>
+        <module>azure-servicebus/AutoForward</module>
+        <module>azure-servicebus/Prefetch</module>
+        <module>azure-servicebus/ReceiveLoop</module>
+        <module>azure-servicebus/MessageBrowse</module>
+        <module>azure-servicebus/DeadletterQueue</module>
+        <module>azure-servicebus/QueuesGettingStarted</module>
+        <module>azure-servicebus/TopicsGettingStarted</module>
+        <module>azure-servicebus/TopicFilters</module>
+        <module>azure-servicebus/TimeToLive</module>
+        <module>azure-servicebus/PartitionedQueues</module>
+        <module>qpid-jms-client/JmsQueueQuickstart</module>
+        <module>qpid-jms-client/JmsTopicQuickstart</module>
     </modules>
 
 </project>
