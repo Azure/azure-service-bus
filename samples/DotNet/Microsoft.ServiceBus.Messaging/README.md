@@ -124,7 +124,7 @@ model is strongly encouraged at all times as it yields significantly more effici
 * **Durable Senders** - The [DurableSender](./DurableSender) sample shows how to make client applications robust against frequent
   network link failures.
 * **Geo Replication** - The [GeoReplication](./GeoReplication) sample illustrates how to route messages through two distinct 
-  entities, possibly located in different namespaces in differentr datacenters, to limit the application's availability risk.      
+  entities, possibly located in different namespaces in different datacenters, to limit the application's availability risk.      
   
 ### Session and Workflow Management Features
 
