@@ -1,9 +1,10 @@
 ﻿// Copyright (c) Microsoft. All rights reserved.
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
-namespace BasicSendReceiveUsingQueueClient
+namespace DeadLetterQueueMessageReceiver
 {
     using Microsoft.Azure.ServiceBus;
+    using Microsoft.Azure.ServiceBus.Core;
     using System;
     using System.Text;
     using System.Threading;
@@ -14,8 +15,8 @@ namespace BasicSendReceiveUsingQueueClient
         // Connection String for the namespace can be obtained from the Azure portal under the 
         // 'Shared Access policies' section.
         const string ServiceBusConnectionString = "{ServiceBus connection string}";
-        const string QueueName = "{Queue Name}";
-        static IQueueClient queueClient;
+        const string EntityPath = "{Queue Name or Subscription Path}";
+        static IMessageReceiver deadLetterReceiver;
 
         static void Main(string[] args)
         {
@@ -24,25 +25,22 @@ namespace BasicSendReceiveUsingQueueClient
 
         static async Task MainAsync()
         {
-            const int numberOfMessages = 10;
-            queueClient = new QueueClient(ServiceBusConnectionString, QueueName);
+            //This sample uses the EntityNameHelper.FormatDeadLetterPath method for getting the DLQ path for a given queue name/subscription path. A mesage receiver can then be configured using this DLQ path.
+            deadLetterReceiver = new MessageReceiver(ServiceBusConnectionString, EntityNameHelper.FormatDeadLetterPath(EntityPath), ReceiveMode.PeekLock);
 
-            Console.WriteLine("======================================================");
-            Console.WriteLine("Press any key to exit after receiving all the messages.");
-            Console.WriteLine("======================================================");
-
-            // Register QueueClient's MessageHandler and receive messages in a loop
-            RegisterOnMessageHandlerAndReceiveMessages();
-
-            // Send Messages
-            await SendMessagesAsync(numberOfMessages);
+            Console.WriteLine("==========================================================================");
+            Console.WriteLine("Press any key to exit after processing all the dead letter queue messages.");
+            Console.WriteLine("==========================================================================");
+            
+            // Register QueueClient's DLQ MessageHandler 
+            RegisterDeadLetterQueueMessageHandler();
                         
             Console.ReadKey();
-
-            await queueClient.CloseAsync();
+            
+            await deadLetterReceiver.CloseAsync();
         }
-
-        static void RegisterOnMessageHandlerAndReceiveMessages()
+        
+        static void RegisterDeadLetterQueueMessageHandler()
         {
             // Configure the MessageHandler Options in terms of exception handling, number of concurrent messages to deliver etc.
             var messageHandlerOptions = new MessageHandlerOptions(ExceptionReceivedHandler)
@@ -57,20 +55,26 @@ namespace BasicSendReceiveUsingQueueClient
             };
 
             // Register the function that will process messages
-            queueClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
-        }
-        
-        static async Task ProcessMessagesAsync(Message message, CancellationToken token)
+            deadLetterReceiver.RegisterMessageHandler(ProcessDeadLetterQueueMessagesAsync, messageHandlerOptions);
+        }        
+
+        static async Task ProcessDeadLetterQueueMessagesAsync(Message message, CancellationToken token)
         {
             // Process the message
-            Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
+            // This could include retries or logging for further troubleshooting
+            Console.WriteLine($"Received DLQ message: SequenceNumber:{message.SystemProperties} Body:{Encoding.UTF8.GetString(message.Body)}");
+
+            if (message.UserProperties.ContainsKey("DeadLetterReason"))
+                Console.WriteLine("\t DeadLetterReason: {0}", message.UserProperties["DeadLetterReason"]);
+            if (message.UserProperties.ContainsKey("DeadLetterErrorDescription"))
+                Console.WriteLine("\t DeadLetterErrorDescription: {0}", message.UserProperties["DeadLetterErrorDescription"]);
 
             // Complete the message so that it is not received again.
-            // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode (which is default).
-            await queueClient.CompleteAsync(message.SystemProperties.LockToken);
+            // This can be done only if the deadLetterReceiver is created in ReceiveMode.PeekLock mode (which is default).
+            await deadLetterReceiver.CompleteAsync(message.SystemProperties.LockToken);
 
-            // Note: Use the cancellationToken passed as necessary to determine if the queueClient has already been closed.
-            // If queueClient has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls 
+            // Note: Use the cancellationToken passed as necessary to determine if the deadLetterReceiver has already been closed.
+            // If deadLetterReceiver has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls 
             // to avoid unnecessary exceptions.
         }
 
@@ -84,29 +88,6 @@ namespace BasicSendReceiveUsingQueueClient
             Console.WriteLine($"- Entity Path: {context.EntityPath}");
             Console.WriteLine($"- Executing Action: {context.Action}");
             return Task.CompletedTask;
-        }
-
-        static async Task SendMessagesAsync(int numberOfMessagesToSend)
-        {
-            try
-            {
-                for (var i = 0; i < numberOfMessagesToSend; i++)
-                {
-                    // Create a new message to send to the queue
-                    string messageBody = $"Message {i}";
-                    var message = new Message(Encoding.UTF8.GetBytes(messageBody));
-
-                    // Write the body of the message to the console
-                    Console.WriteLine($"Sending message: {messageBody}");
-
-                    // Send the message to the queue
-                    await queueClient.SendAsync(message);
-                }
-            }
-            catch (Exception exception)
-            {
-                Console.WriteLine($"{DateTime.Now} :: Exception: {exception.Message}");
-            }
         }
     }
 }
