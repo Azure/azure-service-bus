@@ -15,14 +15,14 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace PrioritySubscriptions
 {
     using System;
     using System.Threading.Tasks;
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
 
-    public class Program : IDynamicSample
+    public class Program : MessagingSamples.Sample
     {
         const string TopicName = "PrioritySubscriptionsTopic";
 
@@ -37,40 +37,16 @@ namespace MessagingSamples
             ConsoleColor.White
         };
 
-        public async Task Run(string namespaceAddress, string manageToken)
+        public async Task Run(string connectionString)
         {
             // Create the Topic / Subscription entities 
-            var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(manageToken);
-            var namespaceManager = new NamespaceManager(namespaceAddress, tokenProvider);
             var topicDescription = new TopicDescription(TopicName);
-
-            // Delete the topic if it already exists before creation. 
-            if (await namespaceManager.TopicExistsAsync(topicDescription.Path))
-            {
-                await namespaceManager.DeleteTopicAsync(topicDescription.Path);
-            }
-            await namespaceManager.CreateTopicAsync(topicDescription);
-            await Task.WhenAll(
-                // this sub receives messages for Priority = 1
-                namespaceManager.CreateSubscriptionAsync(
-                    new SubscriptionDescription(TopicName, "Priority1Subscription"),
-                    new RuleDescription(new SqlFilter("Priority = 1"))),
-                // this sub receives messages for Priority = 2
-                namespaceManager.CreateSubscriptionAsync(
-                    new SubscriptionDescription(TopicName, "Priority2Subscription"),
-                    new RuleDescription(new SqlFilter("Priority = 2"))),
-                // this sub receives messages for Priority Less than 2
-                namespaceManager.CreateSubscriptionAsync(
-                    new SubscriptionDescription(TopicName, "PriorityLessThan2Subscription"),
-                    new RuleDescription(new SqlFilter("Priority > 2")))
-                );
-
 
             // Start senders and receivers:
             Console.WriteLine("\nLaunching senders and receivers...");
 
             //send messages to topic            
-            var messagingFactory = MessagingFactory.Create(namespaceAddress, tokenProvider);
+            var messagingFactory = MessagingFactory.CreateFromConnectionString(connectionString);
 
             var topicClient = messagingFactory.CreateTopicClient(TopicName);
 
@@ -100,8 +76,7 @@ namespace MessagingSamples
 
 
             // All messages sent
-            Console.WriteLine("\nSender complete. Press ENTER");
-            Console.ReadLine();
+            Console.WriteLine("\nSender complete.");
 
             // start receive
             Console.WriteLine("Receiving messages by priority ...");
@@ -125,7 +100,7 @@ namespace MessagingSamples
                     // Please see the README.md file regarding this loop and 
                     // the handling strategy below. 
                     var message = await subClient1.ReceiveAsync(TimeSpan.Zero) ??
-                                  (await subClient2.ReceiveAsync(TimeSpan.Zero) ?? 
+                                  (await subClient2.ReceiveAsync(TimeSpan.Zero) ??
                                    await subClient3.ReceiveAsync(TimeSpan.Zero));
 
                     if (message != null)
@@ -147,11 +122,7 @@ namespace MessagingSamples
                 }
             }
 
-            Console.WriteLine("\nReceiver complete. press ENTER");
-            Console.ReadLine();
-
-            // Cleanup:
-            namespaceManager.DeleteTopic(TopicName);
+            Console.WriteLine("\nReceiver complete. ");
         }
 
         public void OutputMessageInfo(string action, BrokeredMessage message, string additionalText = "")
@@ -163,6 +134,21 @@ namespace MessagingSamples
                 Console.WriteLine("{0}{1} - Priority {2}. {3}", action, message.MessageId, message.Properties["Priority"], additionalText);
                 Console.ResetColor();
             }
+        }
+
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

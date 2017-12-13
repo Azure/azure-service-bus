@@ -50,6 +50,11 @@ local.properties
 .scala_dependencies
 .worksheet
 
+
+### IDEA
+.project
+*.iml 
+
 ### VisualStudioCode ###
 .vscode/*
 !.vscode/settings.json

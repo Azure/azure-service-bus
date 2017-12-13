@@ -15,38 +15,25 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace GeoSenderActiveReplication
 {
     using System;
     using System.Threading.Tasks;
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
 
-    public class Program : IDualBasicQueueSampleWithKeys
+    public class Program : MessagingSamples.Sample
     {
-        public async Task Run(
-            string namespaceAddress,
-            string basicQueueName,
-            string basicQueue2Name,
-            string sendKeyName,
-            string sendKey,
-            string receiveKeyName,
-            string receiveKey)
+        public async Task Run(string connectionString)
         {
-            var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendKeyName, sendKey);
-
-            var primaryFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings {TokenProvider = tokenProvider, TransportType = TransportType.Amqp});
-            var secondaryFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings {TokenProvider = tokenProvider, TransportType = TransportType.Amqp});
+            var primaryFactory = MessagingFactory.CreateFromConnectionString(connectionString);
+            var secondaryFactory = MessagingFactory.CreateFromConnectionString(connectionString); ;
 
             try
             {
                 // Create a primary and secondary queue client.
-                var primaryQueueClient = primaryFactory.CreateQueueClient(basicQueueName);
-                var secondaryQueueClient = secondaryFactory.CreateQueueClient(basicQueue2Name);
+                var primaryQueueClient = primaryFactory.CreateQueueClient(BasicQueueName);
+                var secondaryQueueClient = secondaryFactory.CreateQueueClient(BasicQueue2Name);
                 Console.WriteLine("\nSending messages to primary and secondary queues...\n");
 
                 for (var i = 1; i <= 5; i++)
@@ -97,9 +84,6 @@ namespace MessagingSamples
                         throw new Exception("Send Failure");
                     }
                 }
-
-                Console.WriteLine("\nAfter running the entire sample, press ENTER to clean up and exit.");
-                Console.ReadLine();
             }
             catch (Exception e)
             {
@@ -112,6 +96,20 @@ namespace MessagingSamples
                 primaryFactory?.Close();
                 secondaryFactory?.Close();
             }
+        }
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

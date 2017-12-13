@@ -15,39 +15,26 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace GeoSenderPassiveReplication
 {
     using System;
     using System.Threading.Tasks;
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
 
-    public class Program : IDualBasicQueueSampleWithKeys
+    public class Program : MessagingSamples.Sample
     {
         readonly object swapMutex = new object();
         QueueClient activeQueueClient;
         QueueClient backupQueueClient;
 
-        public async Task Run(
-            string namespaceAddress,
-            string basicQueueName,
-            string basicQueue2Name,
-            string sendKeyName,
-            string sendKey,
-            string receiveKeyName,
-            string receiveKey)
+        public async Task Run(string connectionString)
         {
-            var tokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendKeyName, sendKey);
+            var primaryFactory = MessagingFactory.CreateFromConnectionString(connectionString);
+            var secondaryFactory = MessagingFactory.CreateFromConnectionString(connectionString);
 
-            var primaryFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings {TokenProvider = tokenProvider, TransportType = TransportType.Amqp});
-            var secondaryFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings {TokenProvider = tokenProvider, TransportType = TransportType.Amqp});
-
-            this.activeQueueClient = primaryFactory.CreateQueueClient(basicQueueName);
-            this.backupQueueClient = secondaryFactory.CreateQueueClient(basicQueue2Name);
+            this.activeQueueClient = primaryFactory.CreateQueueClient(BasicQueueName);
+            this.backupQueueClient = secondaryFactory.CreateQueueClient(BasicQueue2Name);
 
             try
             {
@@ -83,9 +70,6 @@ namespace MessagingSamples
                         Console.WriteLine("Unable to send to primary or secondary queue: Exception {0}", e);
                     }
                 }
-
-                Console.WriteLine("\nPress ENTER to clean up and exit.");
-                Console.ReadLine();
             }
             catch (Exception e)
             {
@@ -129,6 +113,21 @@ namespace MessagingSamples
                 }
             }
             while (true);
+        }
+
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

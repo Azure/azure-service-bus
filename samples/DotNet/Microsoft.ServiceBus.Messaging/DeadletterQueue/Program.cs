@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace DeadletterQueue
 {
     using System;
     using System.IO;
@@ -26,44 +26,33 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : IBasicQueueSendReceiveSample
+    public class Program : MessagingSamples.Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string sendToken, string receiveToken)
+        public async Task Run(string connectionString)
         {
             Console.WriteLine("Press any key to exit the scenario");
 
             var cts = new CancellationTokenSource();
 
-            var senderFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)
-                });
-            senderFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
-
-            var receiverFactory = MessagingFactory.Create(
-              namespaceAddress,
-              new MessagingFactorySettings
-              {
-                  TransportType = TransportType.Amqp,
-                  TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken)
-              });
-            receiverFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
-
-            var sender = await senderFactory.CreateMessageSenderAsync(queueName);
+            var messagingFactory = MessagingFactory.CreateFromConnectionString(connectionString);
+            messagingFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
+            
+            var sender = await messagingFactory.CreateMessageSenderAsync(BasicQueueName);
             
             // MaxDeliveryCount scenario
             await this.SendMessagesAsync(sender, 1);
-            await this.ExceedMaxDelivery(receiverFactory, queueName);
+            await this.ExceedMaxDelivery(messagingFactory, BasicQueueName);
 
             // Fixup scenario
             var sendTask = this.SendMessagesAsync(sender, int.MaxValue);
-            var receiveTask = this.ReceiveMessagesAsync(receiverFactory, queueName, cts.Token);
-            var fixupTask = this.PickUpAndFixDeadletters(receiverFactory, queueName, sender, cts.Token);
+            var receiveTask = this.ReceiveMessagesAsync(messagingFactory, BasicQueueName, cts.Token);
+            var fixupTask = this.PickUpAndFixDeadletters(messagingFactory, BasicQueueName, sender, cts.Token);
 
-            Console.ReadKey();
+            await Task.WhenAny(
+                Task.Run(() => Console.ReadKey()),
+                Task.Delay(TimeSpan.FromSeconds(10))
+            );
+
             cts.Cancel();
 
             await Task.WhenAll(sendTask, receiveTask);
@@ -238,6 +227,19 @@ namespace MessagingSamples
 
             await doneReceiving.Task;
         }
-
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
+        }
     }
 }

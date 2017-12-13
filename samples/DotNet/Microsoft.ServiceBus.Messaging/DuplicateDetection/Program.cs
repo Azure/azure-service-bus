@@ -15,31 +15,33 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace DuplicateDetection
 {
     using System;
     using System.Threading.Tasks;
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
 
-    class Program : IDupdetectQueueSendReceiveSample
+    public class Program : MessagingSamples.Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string sendToken, string receiveToken)
+        public async Task Run(string connectionString)
+        {
+            await Send(connectionString);
+            await Receive(connectionString);
+        }
+
+        static async Task Send(string connectionString)
         {
             // Create communication objects to send and receive on the queue
-            var senderMessagingFactory =
-                await MessagingFactory.CreateAsync(namespaceAddress, TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken));
-            var sender = await senderMessagingFactory.CreateMessageSenderAsync(queueName);
-
-            var receiverMessagingFactory =
-                await MessagingFactory.CreateAsync(namespaceAddress, TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken));
-            var receiver = await receiverMessagingFactory.CreateMessageReceiverAsync(queueName, ReceiveMode.PeekLock);
+            var senderMessagingFactory = MessagingFactory.CreateFromConnectionString(connectionString);
+            var sender = await senderMessagingFactory.CreateMessageSenderAsync(DupdetectQueueName);
+            string messageId = Guid.NewGuid().ToString();
 
             // Send messages to queue
-            Console.WriteLine("\tSending messages to {0} ...", queueName);
+            Console.WriteLine("\tSending messages to {0} ...", DupdetectQueueName);
             var message = new BrokeredMessage
             {
-                MessageId = "ABC123",
+                MessageId = messageId,
                 TimeToLive = TimeSpan.FromMinutes(1)
             };
             await sender.SendAsync(message);
@@ -47,16 +49,22 @@ namespace MessagingSamples
 
             var message2 = new BrokeredMessage
             {
-                MessageId = "ABC123",
+                MessageId = messageId,
                 TimeToLive = TimeSpan.FromMinutes(1)
             };
             await sender.SendAsync(message2);
             Console.WriteLine("\t=> Sent a duplicate message with messageId {0}", message.MessageId);
+            await sender.CloseAsync();
+        }
+        static async Task Receive(string connectionString)
+        {
+            var receiverMessagingFactory = MessagingFactory.CreateFromConnectionString(connectionString);
+            var receiver = await receiverMessagingFactory.CreateMessageReceiverAsync(DupdetectQueueName, ReceiveMode.PeekLock);
 
             // Receive messages from queue
             var receivedMessageId = "";
 
-            Console.WriteLine("\n\tWaiting for messages from {0} ...", queueName);
+            Console.WriteLine("\n\tWaiting for messages from {0} ...", DupdetectQueueName);
             while (true)
             {
                 var receivedMessage = await receiver.ReceiveAsync(TimeSpan.FromSeconds(10));
@@ -75,10 +83,25 @@ namespace MessagingSamples
                 receivedMessageId = receivedMessage.MessageId;
             }
 
-            Console.WriteLine("\tDone receiving messages from {0}", queueName);
+            Console.WriteLine("\tDone receiving messages from {0}", DupdetectQueueName);
 
             await receiver.CloseAsync();
-            await sender.CloseAsync();
+
+        }
+
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

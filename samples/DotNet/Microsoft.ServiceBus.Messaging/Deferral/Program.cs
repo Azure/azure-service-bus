@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace Deferral
 {
     using System;
     using System.Collections.Generic;
@@ -27,29 +27,21 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : IBasicQueueSendReceiveSample
+    public class Program : MessagingSamples.Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string sendToken, string receiveToken)
+        public async Task Run(string connectionString)
         {
             Console.WriteLine("Press any key to exit the scenario");
 
-            var sendTask = this.SendMessagesAsync(namespaceAddress, queueName, sendToken);
-            var receiveTask = this.ReceiveMessagesAsync(namespaceAddress, queueName, receiveToken);
+            var sendTask = this.SendMessagesAsync(connectionString, BasicQueueName);
+            var receiveTask = this.ReceiveMessagesAsync(connectionString, BasicQueueName);
 
             await Task.WhenAll(sendTask, receiveTask);
-
-            Console.ReadKey();
         }
 
-        async Task SendMessagesAsync(string namespaceAddress, string queueName, string sendToken)
+        async Task SendMessagesAsync(string connectionString, string queueName)
         {
-            var senderFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)
-                });
+            var senderFactory = MessagingFactory.CreateFromConnectionString(connectionString);
             senderFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
 
             var sender = await senderFactory.CreateMessageSenderAsync(queueName);
@@ -93,15 +85,9 @@ namespace MessagingSamples
             await Task.WhenAll(tasks);
         }
 
-        async Task ReceiveMessagesAsync(string namespaceAddress, string queueName, string receiveToken)
+        async Task ReceiveMessagesAsync(string connectionString, string queueName)
         {
-            var receiverFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.NetMessaging, // deferral not yet supported on AMQP 
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken)
-                });
+            var receiverFactory = MessagingFactory.CreateFromConnectionString(connectionString);
             receiverFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
 
             var receiver = await receiverFactory.CreateMessageReceiverAsync(queueName, ReceiveMode.PeekLock);
@@ -208,6 +194,22 @@ namespace MessagingSamples
 
             await receiver.CloseAsync();
             await receiverFactory.CloseAsync();
+        }
+
+
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }
