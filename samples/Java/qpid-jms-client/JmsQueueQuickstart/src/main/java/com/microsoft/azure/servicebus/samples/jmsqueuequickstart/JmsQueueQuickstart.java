@@ -3,21 +3,16 @@
 
 package com.microsoft.azure.servicebus.samples.jmsqueuequickstart;
 
-import com.microsoft.azure.servicebus.*;
 import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 import org.apache.commons.cli.*;
 import org.apache.log4j.*;
-import org.apache.qpid.jms.JmsMessageConsumer;
-import org.apache.qpid.jms.JmsSession;
 
 import javax.jms.*;
-import javax.jms.Message;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-import java.time.Duration;
 import java.util.Hashtable;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 /**
  * This sample demonstrates how to send messages from a JMS Queue producer into
@@ -26,10 +21,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class JmsQueueQuickstart {
 
-    // Azure Service Bus connection string. 
-    private static String connectionString = System.getenv("SB_SAMPLES_CONNECTIONSTRING");
-    // Name of a queue in the Servcie Bus namespace
-    private static String queueName = System.getenv("SB_SAMPLES_QUEUENAME");
     // Number of messages to send
     private static int totalSend = 10;
     //Tracking counter for how many messages have been received; used as termination condition
@@ -37,14 +28,9 @@ public class JmsQueueQuickstart {
     // log4j logger 
     private static Logger logger = Logger.getRootLogger();
 
-    public static void main(String[] args) throws Exception {
+    public void run(String connectionString) throws Exception {
 
-        // check whetehr we have all inputs to proceed
-        if (!parseCommandLine(args)) {
-            return;
-        }
-        
-        // The connection string builder is the only part of the azure-servicebus SDK library 
+        // The connection string builder is the only part of the azure-servicebus SDK library
         // we use in this JMS sample and for the purpose of robustly parsing the Service Bus 
         // connection string. 
         ConnectionStringBuilder csb = new ConnectionStringBuilder(connectionString);
@@ -52,7 +38,7 @@ public class JmsQueueQuickstart {
         // set up JNDI context
         Hashtable<String, String> hashtable = new Hashtable<>();
         hashtable.put("connectionfactory.SBCF", "amqps://" + csb.getEndpoint().getHost() + "?amqp.idleTimeout=120000&amqp.traceFrames=true");
-        hashtable.put("queue.QUEUE", queueName);
+        hashtable.put("queue.QUEUE", "BasicQueue");
         hashtable.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
         Context context = new InitialContext(hashtable);
         ConnectionFactory cf = (ConnectionFactory) context.lookup("SBCF");
@@ -61,7 +47,7 @@ public class JmsQueueQuickstart {
         Destination queue = (Destination) context.lookup("QUEUE");
 
         // we create a scope here so we can use the same set of local variables cleanly 
-        // again to show the receive side seperately with minimal clutter
+        // again to show the receive side separately with minimal clutter
         {
             // Create Connection
             Connection connection = cf.createConnection(csb.getSasKeyName(), csb.getSasKey());
@@ -76,7 +62,7 @@ public class JmsQueueQuickstart {
                 BytesMessage message = session.createBytesMessage();
                 message.writeBytes(String.valueOf(i).getBytes());
                 producer.send(message);
-                logger.info(String.format("Sent message %d.", i + 1));
+                System.out.printf("Sent message %d.\n", i + 1);
             }
 
             producer.close();
@@ -97,9 +83,9 @@ public class JmsQueueQuickstart {
             consumer.setMessageListener(message -> {
                 try {
                     // receives message is passed to callback
-                    logger.info(String.format("Received message %d with sq#: %s", 
+                    System.out.printf("Received message %d with sq#: %s\n",
                             totalReceived.incrementAndGet(), // increments the tracking counter
-                            message.getJMSMessageID()));
+                            message.getJMSMessageID());
                     message.acknowledge();
                 } catch (Exception e) {
                     logger.error(e);
@@ -116,28 +102,55 @@ public class JmsQueueQuickstart {
             connection.close();
         }
 
-        logger.info("Received all messages, exiting the sample.");
-        logger.info("Closing queue client.");
+        System.out.printf("Received all messages, exiting the sample.\n");
+        System.out.printf("Closing queue client.\n");
     }
 
-    static boolean parseCommandLine(String[] args) throws Exception {
-        Options options = new Options();
-        options.addOption(new Option("c", true, "Connection string"));
-        options.addOption(new Option("q", true, "Queue name"));
-        CommandLineParser clp = new DefaultParser();
-        CommandLine cl = clp.parse(options, args);
-        if (cl.getOptionValue("c") != null) {
-            connectionString = cl.getOptionValue("c");
-        }
-        if (cl.hasOption("q")) {
-            queueName = cl.getOptionValue("q");
-        }
+    public static void main(String[] args) {
 
-        if (connectionString == null || queueName == null) {
-            HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("run jar with", "", options, "", true);
-            return false;
+        System.exit(runApp(args, (connectionString) -> {
+            JmsQueueQuickstart app = new JmsQueueQuickstart();
+            try {
+                app.run(connectionString);
+                return 0;
+            } catch (Exception e) {
+                System.out.printf("%s", e.toString());
+                return 1;
+            }
+        }));
+    }
+
+    static final String SB_SAMPLES_CONNECTIONSTRING = "SB_SAMPLES_CONNECTIONSTRING";
+
+    public static int runApp(String[] args, Function<String, Integer> run) {
+        try {
+
+            String connectionString = null;
+
+            // parse connection string from command line
+            Options options = new Options();
+            options.addOption(new Option("c", true, "Connection string"));
+            CommandLineParser clp = new DefaultParser();
+            CommandLine cl = clp.parse(options, args);
+            if (cl.getOptionValue("c") != null) {
+                connectionString = cl.getOptionValue("c");
+            }
+
+            // get overrides from the environment
+            String env = System.getenv(SB_SAMPLES_CONNECTIONSTRING);
+            if (env != null) {
+                connectionString = env;
+            }
+
+            if (connectionString == null) {
+                HelpFormatter formatter = new HelpFormatter();
+                formatter.printHelp("run jar with", "", options, "", true);
+                return 2;
+            }
+            return run.apply(connectionString);
+        } catch (Exception e) {
+            System.out.printf("%s", e.toString());
+            return 3;
         }
-        return true;
     }
 }

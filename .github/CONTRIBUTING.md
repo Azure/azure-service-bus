@@ -26,6 +26,10 @@ If you encounter any service side bugs, please file an issue [here](https://gith
 
 To suggest a new feature or changes that could be made, file an issue the same way you would for a bug, but remove the provided template and replace it with information about your suggestion.
 
+### Reply times
+
+The Service Bus team tries to at least reply to issues as fast as possible but please expect 5-7 business days.
+
 ### Pull Requests
 
 You can find all of the pull requests that have been opened in the [Pull Request](https://github.com/Azure/azure-service-bus/pulls) section of the repository.
