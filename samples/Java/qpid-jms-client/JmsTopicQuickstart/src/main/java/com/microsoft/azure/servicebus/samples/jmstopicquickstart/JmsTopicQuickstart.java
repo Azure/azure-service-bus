@@ -10,47 +10,39 @@ import org.apache.log4j.*;
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import javax.naming.NamingException;
 import java.util.Hashtable;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 
 /**
  * This sample demonstrates how to send messages from a JMS Topic producer into
- * an Azure Service Bus Topic, and receive the message from a Service Bus topic 
- * subscription using a message consumer that treats the subscription as a 
- * JMS Queue. 
+ * an Azure Service Bus Topic, and receive the message from a Service Bus topic
+ * subscription using a message consumer that treats the subscription as a
+ * JMS Queue.
  */
 public class JmsTopicQuickstart {
 
-    // Azure Service Bus connection string. 
-    private static String connectionString = System.getenv("SB_SAMPLES_CONNECTIONSTRING");
-    // Name of an existing topic in the Service Bus namespace
-    private static String topicName = System.getenv("SB_SAMPLES_TOPICNAME");
-    // Name of an existing subscription on that topic
-    private static String subscriptionName = System.getenv("SB_SAMPLES_SUBSCRIPTIONNAME");
-    // number of messages to send 
+    // number of messages to send
     private static int totalSend = 10;
-    // tracking counter for how many messages have been received; used as termination condition
-    private static AtomicInteger totalReceived = new AtomicInteger(0);
-    // log4j logger 
+    // log4j logger
     private static Logger logger = Logger.getRootLogger();
 
-    public static void main(String[] args) throws Exception {
+    public void run(String connectionString) throws Exception {
 
-        // verify whether we have all input required to run
-        if (!parseCommandLine(args)) {
-            return;
-        }
 
         // The connection string builder is the only part of the azure-servicebus SDK library 
         // we use in this JMS sample and for the purpose of robustly parsing the Service Bus 
         // connection string. 
         ConnectionStringBuilder csb = new ConnectionStringBuilder(connectionString);
-        
+
         // set up the JNDI context 
         Hashtable<String, String> hashtable = new Hashtable<>();
         hashtable.put("connectionfactory.SBCF", "amqps://" + csb.getEndpoint().getHost() + "?amqp.idleTimeout=120000&amqp.traceFrames=true");
-        hashtable.put("topic.TOPIC", topicName);
-        hashtable.put("queue.SUBSCRIPTION", topicName + "/Subscriptions/" + subscriptionName);
+        hashtable.put("topic.TOPIC", "BasicTopic");
+        hashtable.put("queue.SUBSCRIPTION1", "BasicTopic/Subscriptions/Subscription1");
+        hashtable.put("queue.SUBSCRIPTION2", "BasicTopic/Subscriptions/Subscription2");
+        hashtable.put("queue.SUBSCRIPTION3", "BasicTopic/Subscriptions/Subscription3");
         hashtable.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
         Context context = new InitialContext(hashtable);
 
@@ -58,7 +50,7 @@ public class JmsTopicQuickstart {
 
         // Look up the topic
         Destination topic = (Destination) context.lookup("TOPIC");
-               
+
         // we create a scope here so we can use the same set of local variables cleanly 
         // again to show the receive side seperately with minimal clutter
         {
@@ -76,7 +68,7 @@ public class JmsTopicQuickstart {
                 BytesMessage message = session.createBytesMessage();
                 message.writeBytes(String.valueOf(i).getBytes());
                 producer.send(message);
-                logger.info(String.format("Sent message %d.", i + 1));
+                System.out.printf("Sent message %d.\n", i + 1);
             }
 
             producer.close();
@@ -86,63 +78,94 @@ public class JmsTopicQuickstart {
         }
 
         // Look up the subscription (pretending it's a queue)
-        Destination subscription = (Destination) context.lookup("SUBSCRIPTION");
-        {
-            // Create Connection
-            Connection connection = cf.createConnection(csb.getSasKeyName(), csb.getSasKey());
-            connection.start();
-            // Create Session, no transaction, client ack
-            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-            // Create consumer
-            MessageConsumer consumer = session.createConsumer(subscription);
-            // Set callback listener. Gets called for each received message.
-            consumer.setMessageListener(message -> {
-                try {
-                    logger.info(String.format("Received message %d with sq#: %s", 
-                            totalReceived.incrementAndGet(),  // increments the counter
-                            message.getJMSMessageID()));
-                    message.acknowledge();
-                } catch (Exception e) {
-                    logger.error(e);
-                }
-            });
+        receiveFromSubscription(csb, context, cf, "SUBSCRIPTION1");
+        receiveFromSubscription(csb, context, cf, "SUBSCRIPTION2");
+        receiveFromSubscription(csb, context, cf, "SUBSCRIPTION3");
 
-            // wait on the main thread until all sent messages have been received
-            while (totalReceived.get() < totalSend) {
-                Thread.sleep(1000);
-            }
-            consumer.close();
-            session.close();
-            connection.stop();
-            connection.close();
-        }
-
-        logger.info("Received all messages, exiting the sample.");
-        logger.info("Closing queue client.");
+        System.out.printf("Received all messages, exiting the sample.\n");
+        System.out.printf("Closing queue client.\n");
     }
 
-    static boolean parseCommandLine(String[] args) throws Exception {
-        Options options = new Options();
-        options.addOption(new Option("c", true, "Connection string"));
-        options.addOption(new Option("t", true, "Topic name"));
-        options.addOption(new Option("s", true, "Subscription name"));
-        CommandLineParser clp = new DefaultParser();
-        CommandLine cl = clp.parse(options, args);
-        if (cl.getOptionValue("c") != null) {
-            connectionString = cl.getOptionValue("c");
-        }
-        if (cl.hasOption("t")) {
-            topicName = cl.getOptionValue("t");
-        }
-        if (cl.hasOption("s")) {
-            subscriptionName = cl.getOptionValue("s");
-        }
+    private void receiveFromSubscription(ConnectionStringBuilder csb, Context context, ConnectionFactory cf, String name)
+            throws NamingException, JMSException, InterruptedException {
+        AtomicInteger totalReceived = new AtomicInteger(0);
+        System.out.printf("Subscription %s: \n", name);
 
-        if (connectionString == null || topicName == null || subscriptionName == null) {
-            HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("run jar with", "", options, "", true);
-            return false;
+        Destination subscription = (Destination) context.lookup(name);
+        // Create Connection
+        Connection connection = cf.createConnection(csb.getSasKeyName(), csb.getSasKey());
+        connection.start();
+        // Create Session, no transaction, client ack
+        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        // Create consumer
+        MessageConsumer consumer = session.createConsumer(subscription);
+        // Set callback listener. Gets called for each received message.
+        consumer.setMessageListener(message -> {
+            try {
+                System.out.printf("Received message %d with sq#: %s\n",
+                        totalReceived.incrementAndGet(),  // increments the counter
+                        message.getJMSMessageID());
+                message.acknowledge();
+            } catch (Exception e) {
+                System.out.printf("%s", e.toString());
+            }
+        });
+
+        // wait on the main thread until all sent messages have been received
+        while (totalReceived.get() < totalSend) {
+            Thread.sleep(1000);
         }
-        return true;
+        consumer.close();
+        session.close();
+        connection.stop();
+        connection.close();
+    }
+
+    public static void main(String[] args) {
+
+        System.exit(runApp(args, (connectionString) -> {
+            JmsTopicQuickstart app = new JmsTopicQuickstart();
+            try {
+                app.run(connectionString);
+                return 0;
+            } catch (Exception e) {
+                System.out.printf("%s", e.toString());
+                return 1;
+            }
+        }));
+    }
+
+    static final String SB_SAMPLES_CONNECTIONSTRING = "SB_SAMPLES_CONNECTIONSTRING";
+
+    public static int runApp(String[] args, Function<String, Integer> run) {
+        try {
+
+            String connectionString = null;
+
+            // parse connection string from command line
+            Options options = new Options();
+            options.addOption(new Option("c", true, "Connection string"));
+            CommandLineParser clp = new DefaultParser();
+            CommandLine cl = clp.parse(options, args);
+            if (cl.getOptionValue("c") != null) {
+                connectionString = cl.getOptionValue("c");
+            }
+
+            // get overrides from the environment
+            String env = System.getenv(SB_SAMPLES_CONNECTIONSTRING);
+            if (env != null) {
+                connectionString = env;
+            }
+
+            if (connectionString == null) {
+                HelpFormatter formatter = new HelpFormatter();
+                formatter.printHelp("run jar with", "", options, "", true);
+                return 2;
+            }
+            return run.apply(connectionString);
+        } catch (Exception e) {
+            System.out.printf("%s", e.toString());
+            return 3;
+        }
     }
 }
