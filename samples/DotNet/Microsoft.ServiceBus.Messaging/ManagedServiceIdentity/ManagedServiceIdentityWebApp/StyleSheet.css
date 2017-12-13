@@ -1,0 +1,13 @@
+﻿label {
+    width: 100px;
+    display: inline-block;
+}
+
+text {
+    width: 300px;
+    display: block;
+}
+
+input[type="submit"] {
+    width: 75px;    
+}
