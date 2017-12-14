@@ -31,7 +31,7 @@ namespace ManagedServiceIdentityWebApp {
         protected global::System.Web.UI.WebControls.TextBox txtNamespace;
         
         /// <summary>
-        /// txtEventHub control.
+        /// txtQueueName control.
         /// </summary>
         /// <remarks>
         /// Auto-generated field.

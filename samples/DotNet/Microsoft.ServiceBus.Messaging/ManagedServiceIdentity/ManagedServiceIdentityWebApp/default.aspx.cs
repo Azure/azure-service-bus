@@ -1,13 +1,7 @@
 ﻿using Microsoft.ServiceBus;
 using Microsoft.ServiceBus.Messaging;
-using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
-using System.Web;
-using System.Web.UI;
-using System.Web.UI.WebControls;
 
 namespace ManagedServiceIdentityWebApp
 {
@@ -17,7 +11,7 @@ namespace ManagedServiceIdentityWebApp
         {
             MessagingFactorySettings messagingFactorySettings = new MessagingFactorySettings
             {
-                //TokenProvider = TokenProvider.CreateManagedServiceIdentityTokenProvider(ServiceAudience.ServiceBusAudience),
+                TokenProvider = TokenProvider.CreateManagedServiceIdentityTokenProvider(ServiceAudience.ServieBusAudience),
                 TransportType = TransportType.Amqp
             };
 
@@ -37,7 +31,7 @@ namespace ManagedServiceIdentityWebApp
         {
             MessagingFactorySettings messagingFactorySettings = new MessagingFactorySettings
             {
-                //TokenProvider = TokenProvider.CreateManagedServiceIdentityTokenProvider(ServiceAudience.ServiceBusAudience),
+                TokenProvider = TokenProvider.CreateManagedServiceIdentityTokenProvider(ServiceAudience.ServieBusAudience),
                 TransportType = TransportType.Amqp
             };
 
