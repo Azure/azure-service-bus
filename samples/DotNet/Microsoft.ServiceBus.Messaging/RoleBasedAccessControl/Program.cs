@@ -21,35 +21,156 @@ namespace MessagingSamples
     using System.IO;
     using System.Text;
     using System.Threading.Tasks;
+    using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
     using System.Configuration;
+    using System.Security.Cryptography.X509Certificates;
+    using System.Collections.Generic;
+    using Microsoft.IdentityModel.Clients.ActiveDirectory;
 
-    public class Program : IDynamicSample
+    public class Program
     {
         QueueClient sendClient;
         QueueClient receiveClient;
 
-        static readonly string TenantId = ConfigurationManager.AppSettings["tenantId"];
-        static readonly string ClientId = ConfigurationManager.AppSettings["clientId"];
-        static readonly string ServiceBusNamespace = ConfigurationManager.AppSettings["serviceBusNamespaceFQDN"];
-        static readonly string ServiceBusName = ConfigurationManager.AppSettings["serviceBusName"];
+        static readonly string TenantId = "72f988bf-86f1-41af-91ab-2d7cd011db47"; // ConfigurationManager.AppSettings["tenantId"];
+        static readonly string ClientId = "9d8a1db1-6268-44f8-b53e-849754fb54c4"; // ConfigurationManager.AppSettings["clientId"];
+        static readonly string ServiceBusNamespace = "sbrbactest.servicebus.windows.net"; // ConfigurationManager.AppSettings["serviceBusNamespaceFQDN"];
+        static readonly string QueueName = "test"; //  ConfigurationManager.AppSettings["queueName"];
 
-        public async Task Run(string queueName, string connectionString)
+        public async Task Run()
         {
-            Console.WriteLine("Press any key to exit the scenario");
+            Console.WriteLine("Pick a scenario to run:");
+            Console.WriteLine("1) ManagedServiceIdentity (must run in an Azure VM or Web Job)");
+            Console.WriteLine("2) Interactive User Login");
+            Console.WriteLine("3) Service Principal");
+            Console.WriteLine("4) Client credential X.509 certificate");
 
-
-
-            await SendReceive(queueName, connectionString);
+            int option;
+            var sc = Console.ReadLine();
+            if (int.TryParse(sc, out option))
+            {
+                switch (option)
+                {
+                    case 1:
+                        await ManagedServiceIdentityScenario();
+                        break;
+                    case 2:
+                        await UserInteractiveLoginScenario();
+                        break;
+                    case 3:
+                        await UserPasswordCredentialScenario();
+                        break;
+                    case 4:
+                        await ClientCredentialsCertScenario();
+                        break;
+                }
+            }
         }
 
-        private async Task SendReceive(string queueName, string connectionString)
+        async Task ManagedServiceIdentityScenario()
         {
-            this.receiveClient = QueueClient.CreateFromConnectionString(connectionString, queueName, ReceiveMode.PeekLock);
+            MessagingFactorySettings messagingFactorySettings = new MessagingFactorySettings
+            {
+                TokenProvider = TokenProvider.CreateManagedServiceIdentityTokenProvider(ServiceAudience.EventHubsAudience),
+                TransportType = TransportType.Amqp
+            };
+
+            await SendReceive(messagingFactorySettings);
+        }
+
+        async Task UserInteractiveLoginScenario()
+        {
+            MessagingFactorySettings messagingFactorySettings = new MessagingFactorySettings
+            {
+                TokenProvider = TokenProvider.CreateAadTokenProvider(
+                    new AuthenticationContext($"https://login.windows.net/{TenantId}"),
+                    ClientId,
+                    new Uri("http://servicebus.microsoft.com"),
+                    new PlatformParameters(PromptBehavior.SelectAccount),
+                    ServiceAudience.ServieBusAudience
+                ),
+                TransportType = TransportType.Amqp
+            };
+
+            await SendReceive(messagingFactorySettings);
+        }
+
+        async Task UserPasswordCredentialScenario()
+        {
+            UserPasswordCredential userPasswordCredential = new UserPasswordCredential(
+                ConfigurationManager.AppSettings["userName"],
+                ConfigurationManager.AppSettings["password"]
+                );
+            MessagingFactorySettings messagingFactorySettings = new MessagingFactorySettings
+            {
+                TokenProvider = TokenProvider.CreateAadTokenProvider(
+                    new AuthenticationContext($"https://login.windows.net/{TenantId}"),
+                    ClientId,
+                    userPasswordCredential,
+                    ServiceAudience.ServieBusAudience
+                ),
+                TransportType = TransportType.Amqp
+            };
+
+            await SendReceive(messagingFactorySettings);
+        }
+        
+        async Task ClientCredentialsCertScenario()
+        {
+            ClientCredential clientCredential = new ClientCredential(ClientId, ConfigurationManager.AppSettings["clientSecret"]);
+            MessagingFactorySettings messagingFactorySettings = new MessagingFactorySettings
+            {
+                TokenProvider = TokenProvider.CreateAadTokenProvider(
+                    new AuthenticationContext($"https://login.windows.net/{TenantId}"),
+                    clientCredential,
+                    ServiceAudience.ServieBusAudience
+                ),
+                TransportType = TransportType.Amqp
+            };
+
+            await SendReceive(messagingFactorySettings);
+        }
+
+        X509Certificate2 GetCertificate()
+        {
+            List<StoreLocation> locations = new List<StoreLocation>
+                {
+                    StoreLocation.CurrentUser,
+                    StoreLocation.LocalMachine
+                };
+
+            foreach (var location in locations)
+            {
+                X509Store store = new X509Store(StoreName.My, location);
+                try
+                {
+                    store.Open(OpenFlags.ReadOnly | OpenFlags.OpenExistingOnly);
+                    X509Certificate2Collection certificates = store.Certificates.Find(
+                        X509FindType.FindByThumbprint, ConfigurationManager.AppSettings["thumbPrint"], true);
+                    if (certificates.Count >= 1)
+                    {
+                        return certificates[0];
+                    }
+                }
+                finally
+                {
+                    store.Close();
+                }
+            }
+
+            throw new ArgumentException($"A Certificate with Thumbprint '{ConfigurationManager.AppSettings["thumbPrint"]}' could not be located.");
+        }
+
+        async Task SendReceive(MessagingFactorySettings messagingFactorySettings)
+        {
+            MessagingFactory mf = MessagingFactory.Create($"sb://{ServiceBusNamespace}/", messagingFactorySettings);
+
+            this.receiveClient = mf.CreateQueueClient(QueueName, ReceiveMode.PeekLock);
             this.InitializeReceiver();
 
-            this.sendClient = QueueClient.CreateFromConnectionString(connectionString, queueName);
+            this.sendClient = mf.CreateQueueClient(QueueName);
             var sendTask = this.SendMessagesAsync();
 
             Console.ReadKey();
@@ -137,6 +258,20 @@ namespace MessagingSamples
                 new OnMessageOptions { AutoComplete = false, MaxConcurrentCalls = 1 });
         }
 
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.Run().GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
+        }
 
 
     }
