@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace Sessions
 {
     using System;
     using System.IO;
@@ -26,34 +26,33 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : ISessionQueueSendReceiveSample
+    public class Program : MessagingSamples.Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string sendToken, string receiveToken)
+        public async Task Run(string connectionString)
         {
             Console.WriteLine("Press any key to exit the scenario");
 
             CancellationTokenSource cts = new CancellationTokenSource();
 
             await Task.WhenAll(
-                this.SendMessagesAsync(Guid.NewGuid().ToString(), namespaceAddress, queueName, sendToken),
-                this.SendMessagesAsync(Guid.NewGuid().ToString(), namespaceAddress, queueName, sendToken),
-                this.SendMessagesAsync(Guid.NewGuid().ToString(), namespaceAddress, queueName, sendToken),
-                this.SendMessagesAsync(Guid.NewGuid().ToString(), namespaceAddress, queueName, sendToken));
+                this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, SessionQueueName),
+                this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, SessionQueueName),
+                this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, SessionQueueName),
+                this.SendMessagesAsync(Guid.NewGuid().ToString(), connectionString, SessionQueueName));
 
-            this.InitializeReceiver(namespaceAddress, queueName, receiveToken, cts.Token);
-            Console.ReadKey();
+            this.InitializeReceiver(connectionString, SessionQueueName, cts.Token);
+
+            await Task.WhenAny(
+                Task.Run(() => Console.ReadKey()),
+                Task.Delay(TimeSpan.FromSeconds(10))
+            );
+
             cts.Cancel();
         }
 
-        async Task SendMessagesAsync(string sessionId, string namespaceAddress, string queueName, string sendToken)
+        async Task SendMessagesAsync(string sessionId, string connectionString, string queueName)
         {
-            var senderFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)
-                });
+            var senderFactory = MessagingFactory.CreateFromConnectionString(connectionString);
 
             var sender = await senderFactory.CreateMessageSenderAsync(queueName);
 
@@ -86,15 +85,9 @@ namespace MessagingSamples
             }
         }
 
-        void InitializeReceiver(string namespaceAddress, string queueName, string receiveToken, CancellationToken ct)
+        void InitializeReceiver(string connectionString, string queueName, CancellationToken ct)
         {
-            var receiverFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.NetMessaging, // deferral not yet supported on AMQP 
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken)
-                });
+            var receiverFactory = MessagingFactory.CreateFromConnectionString(connectionString);
 
             ct.Register(() => receiverFactory.Close());
 
@@ -157,6 +150,22 @@ namespace MessagingSamples
             {
                 // nothing to do
             }
-        }        
+        }
+
+
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
+        }
     }
 }

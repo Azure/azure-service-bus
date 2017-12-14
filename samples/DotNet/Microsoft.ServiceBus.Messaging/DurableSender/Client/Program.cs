@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace DurableSenderClient
 {
     using System;
     using System.Diagnostics;
@@ -23,17 +23,18 @@ namespace MessagingSamples
     using System.Transactions;
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
+    using DurableSenderLibrary;
 
-    class Program : IDupdetectQueueSendReceiveSample
+    public class Program : MessagingSamples.Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string sendToken, string receiveToken)
+        public async Task Run(string connectionString)
         {
             Trace.Listeners.Add(new ConsoleTraceListener());
 
-            var sendFactory = MessagingFactory.Create(namespaceAddress, TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken));
+            var sendFactory = MessagingFactory.CreateFromConnectionString(connectionString);
 
             // Create a durable sender.
-            var durableSender = new DurableSender(sendFactory, queueName);
+            var durableSender = new DurableSender(sendFactory, DupdetectQueueName);
 
             /*
             ** Send messages.
@@ -86,8 +87,8 @@ namespace MessagingSamples
             ** Receive messages.
             */
 
-            var receiveFactory = MessagingFactory.Create(namespaceAddress, TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken));
-            var receiver = receiveFactory.CreateQueueClient(queueName, ReceiveMode.ReceiveAndDelete);
+            var receiveFactory = MessagingFactory.CreateFromConnectionString(connectionString);
+            var receiver = receiveFactory.CreateQueueClient(DupdetectQueueName, ReceiveMode.ReceiveAndDelete);
             for (var i = 1; i <= 4; i++)
             {
                 try
@@ -103,13 +104,6 @@ namespace MessagingSamples
                     Console.WriteLine("Receiver: " + ex.Message);
                 }
             }
-
-            /*
-            ** Cleanup
-            */
-
-            Console.WriteLine("\nPress ENTER to exit\n");
-            Console.ReadLine();
 
             durableSender.Dispose();
             receiver.Close();
@@ -143,6 +137,21 @@ namespace MessagingSamples
                 Console.WriteLine("   Property: " + p.Key + " = " + p.Value);
             }
             Console.ForegroundColor = ConsoleColor.Gray;
+        }
+
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

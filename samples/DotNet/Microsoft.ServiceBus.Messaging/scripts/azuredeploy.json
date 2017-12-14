@@ -22,7 +22,7 @@
       "resources": [
         {
           "type": "AuthorizationRules",
-          "name": "samplesend",
+          "name": "Send",
           "apiVersion": "[variables('apiVersion')]",
           "scale": null,
           "properties": {
@@ -34,7 +34,7 @@
         },
         {
           "type": "AuthorizationRules",
-          "name": "samplelisten",
+          "name": "Listen",
           "apiVersion": "[variables('apiVersion')]",
           "scale": null,
           "properties": {
@@ -46,7 +46,7 @@
         },
         {
           "type": "AuthorizationRules",
-          "name": "samplesendlisten",
+          "name": "SendListen",
           "apiVersion": "[variables('apiVersion')]",
           "scale": null,
           "properties": {
@@ -58,7 +58,7 @@
         },
         {
           "type": "AuthorizationRules",
-          "name": "samplemanage",
+          "name": "Manage",
           "apiVersion": "[variables('apiVersion')]",
           "scale": null,
           "properties": {
@@ -74,10 +74,10 @@
           "type": "queues",
           "dependsOn": [
             "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
-            "samplesend",
-            "samplelisten",
-            "samplesendlisten",
-            "samplemanage"
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
           ],
           "properties": {},
           "resources": []
@@ -88,10 +88,10 @@
           "type": "queues",
           "dependsOn": [
             "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
-            "samplesend",
-            "samplelisten",
-            "samplesendlisten",
-            "samplemanage"
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
           ],
           "properties": {},
           "resources": []
@@ -102,10 +102,10 @@
           "type": "queues",
           "dependsOn": [
             "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
-            "samplesend",
-            "samplelisten",
-            "samplesendlisten",
-            "samplemanage"
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
           ],
           "properties": {
             "requiresSession": true,
@@ -119,10 +119,10 @@
           "type": "queues",
           "dependsOn": [
             "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
-            "samplesend",
-            "samplelisten",
-            "samplesendlisten",
-            "samplemanage"
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
           ],
           "properties": {
             "requiresDuplicateDetection": true
@@ -135,10 +135,10 @@
           "type": "queues",
           "dependsOn": [
             "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
-            "samplesend",
-            "samplelisten",
-            "samplesendlisten",
-            "samplemanage"
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
           ],
           "properties": {
             "enablePartitioning": true
@@ -151,10 +151,10 @@
           "type": "topics",
           "dependsOn": [
             "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
-            "samplesend",
-            "samplelisten",
-            "samplesendlisten",
-            "samplemanage"
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
           ],
           "properties": {},
           "resources": [
@@ -190,10 +190,10 @@
           "type": "topics",
           "dependsOn": [
             "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
-            "samplesend",
-            "samplelisten",
-            "samplesendlisten",
-            "samplemanage"
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
           ],
           "properties": {},
           "resources": [
@@ -229,10 +229,10 @@
           "type": "topics",
           "dependsOn": [
             "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
-            "samplesend",
-            "samplelisten",
-            "samplesendlisten",
-            "samplemanage"
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
           ],
           "properties": {
             "requiresDuplicateDetection": true
@@ -270,10 +270,10 @@
           "type": "topics",
           "dependsOn": [
             "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
-            "samplesend",
-            "samplelisten",
-            "samplesendlisten",
-            "samplemanage"
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
           ],
           "properties": {
             "enableFilteringMessagesBeforePublishing": true
@@ -311,10 +311,10 @@
           "type": "topics",
           "dependsOn": [
             "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
-            "samplesend",
-            "samplelisten",
-            "samplesendlisten",
-            "samplemanage"
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
           ],
           "properties": {
             "supportOrdering": false,
@@ -346,6 +346,236 @@
               "resources": []
             }
           ]
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "PrioritySubscriptionsTopic",
+          "type": "topics",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
+          ],
+          "properties": {},
+          "resources": [
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Priority1Subscription",
+              "type": "subscriptions",
+              "dependsOn": [ "PrioritySubscriptionsTopic" ],
+              "properties": {},
+              "resources": [
+                {
+                  "apiVersion": "[variables('apiVersion')]",
+                  "name": "rule1",
+                  "type": "rules",
+                  "dependsOn": [ "Priority1Subscription" ],
+                  "properties": {
+                    "filterType": "SqlFilter",
+                    "sqlFilter": {
+                      "sqlExpression": "Priority = 1",
+                      "requiresPreprocessing": false
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Priority2Subscription",
+              "type": "subscriptions",
+              "dependsOn": [ "PrioritySubscriptionsTopic" ],
+              "properties": {},
+              "resources": [
+                {
+                  "apiVersion": "[variables('apiVersion')]",
+                  "name": "rule1",
+                  "type": "rules",
+                  "dependsOn": [ "Priority2Subscription" ],
+                  "properties": {
+                    "filterType": "SqlFilter",
+                    "sqlFilter": {
+                      "sqlExpression": "Priority = 2",
+                      "requiresPreprocessing": false
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "PriorityGreaterThan2Subscription",
+              "type": "subscriptions",
+              "dependsOn": [ "PrioritySubscriptionsTopic" ],
+              "properties": {
+              },
+              "resources": [
+                {
+                  "apiVersion": "[variables('apiVersion')]",
+                  "name": "rule1",
+                  "type": "rules",
+                  "dependsOn": [ "PriorityGreaterThan2Subscription" ],
+                  "properties": {
+                    "filterType": "SqlFilter",
+                    "sqlFilter": {
+                      "sqlExpression": "Priority > 2",
+                      "requiresPreprocessing": false
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "TopicFilterSampleTopic",
+          "type": "topics",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
+          ],
+          "properties": {},
+          "resources": [
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "AllOrders",
+              "type": "subscriptions",
+              "dependsOn": [ "TopicFilterSampleTopic" ],
+              "properties": {},
+              "resources": [
+                {
+                  "apiVersion": "[variables('apiVersion')]",
+                  "name": "rule1",
+                  "type": "rules",
+                  "dependsOn": [ "AllOrders" ],
+                  "properties": {
+                    "filterType": "SqlFilter",
+                    "sqlFilter": {
+                      "sqlExpression": "1=1",
+                      "requiresPreprocessing": false
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "ColorBlueSize10Orders",
+              "type": "subscriptions",
+              "dependsOn": [ "TopicFilterSampleTopic" ],
+              "properties": {},
+              "resources": [
+                {
+                  "apiVersion": "[variables('apiVersion')]",
+                  "name": "rule1",
+                  "type": "rules",
+                  "dependsOn": [ "ColorBlueSize10Orders" ],
+                  "properties": {
+                    "filterType": "SqlFilter",
+                    "sqlFilter": {
+                      "sqlExpression": "color = 'blue' AND quantity = 10",
+                      "requiresPreprocessing": false
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "ColorRed",
+              "type": "subscriptions",
+              "dependsOn": [ "TopicFilterSampleTopic" ],
+              "properties": {
+              },
+              "resources": [
+                {
+                  "apiVersion": "[variables('apiVersion')]",
+                  "name": "rule1",
+                  "type": "rules",
+                  "dependsOn": [ "ColorRed" ],
+                  "properties": {
+                    "filterType": "SqlFilter",
+                    "sqlFilter": {
+                      "sqlExpression": "color = 'red'",
+                      "requiresPreprocessing": false
+                    },
+                    "action": {
+                      "sqlExpression": "SET quantity = quantity / 2; REMOVE priority; SET sys.CorrelationId = 'low';"
+                    }
+                  }
+                }
+              ]
+            },
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "HighPriorityOrders",
+              "type": "subscriptions",
+              "dependsOn": [ "TopicFilterSampleTopic" ],
+              "properties": {
+              },
+              "resources": [
+                {
+                  "apiVersion": "[variables('apiVersion')]",
+                  "name": "rule1",
+                  "type": "rules",
+                  "dependsOn": [ "HighPriorityOrders" ],
+                  "properties": {
+                    "filterType": "CorrelationFilter",
+                    "correlationFilter": {
+                      "label": "red",
+                      "correlationId": "high"
+                    }
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "AutoForwardSourceTopic",
+          "type": "topics",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "AutoForwardTargetQueue",
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
+          ],
+          "properties": {},
+          "resources": [
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "Forwarder",
+              "type": "subscriptions",
+              "dependsOn": [ "AutoForwardSourceTopic" ],
+              "properties": {
+                "forwardTo": "AutoForwardTargetQueue"
+              },
+              "resources": []
+            }
+          ]
+        },
+        {
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "AutoForwardTargetQueue",
+          "type": "queues",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+            "Send",
+            "Listen",
+            "SendListen",
+            "Manage"
+          ],
+          "properties": {},
+          "resources": []
         }
       ]
     }
@@ -357,19 +587,19 @@
     },
     "sendConnectionString": {
       "type": "string",
-      "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'samplesend'),variables('apiVersion')).primaryConnectionString]"
+      "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'Send'),variables('apiVersion')).primaryConnectionString]"
     },
     "listenConnectionString": {
       "type": "string",
-      "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'samplelisten'),variables('apiVersion')).primaryConnectionString]"
+      "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'Listen'),variables('apiVersion')).primaryConnectionString]"
     },
     "sendListenConnectionString": {
       "type": "string",
-      "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'samplesendlisten'),variables('apiVersion')).primaryConnectionString]"
+      "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'SendListen'),variables('apiVersion')).primaryConnectionString]"
     },
     "manageConnectionString": {
       "type": "string",
-      "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'samplemanage'),variables('apiVersion')).primaryConnectionString]"
+      "value": "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'Manage'),variables('apiVersion')).primaryConnectionString]"
 
     }
   }

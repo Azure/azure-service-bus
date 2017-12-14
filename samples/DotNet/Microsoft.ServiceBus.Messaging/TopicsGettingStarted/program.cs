@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace TopicsGettingStarted
 {
     using System;
     using System.IO;
@@ -24,20 +24,20 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : IBasicTopicConnectionStringSample
+    public class Program : MessagingSamples.Sample
     {
         TopicClient sendClient;
         SubscriptionClient subscription1Client;
         SubscriptionClient subscription2Client;
         SubscriptionClient subscription3Client;
 
-        public async Task Run(string topicName, string connectionString)
+        public async Task Run(string connectionString)
         {
-            this.sendClient = TopicClient.CreateFromConnectionString(connectionString, topicName);
+            this.sendClient = TopicClient.CreateFromConnectionString(connectionString, BasicTopicName);
 
-            this.subscription1Client = SubscriptionClient.CreateFromConnectionString(connectionString, topicName, "Subscription1");
-            this.subscription2Client = SubscriptionClient.CreateFromConnectionString(connectionString, topicName, "Subscription2");
-            this.subscription3Client = SubscriptionClient.CreateFromConnectionString(connectionString, topicName, "Subscription3");
+            this.subscription1Client = SubscriptionClient.CreateFromConnectionString(connectionString, BasicTopicName, "Subscription1");
+            this.subscription2Client = SubscriptionClient.CreateFromConnectionString(connectionString, BasicTopicName, "Subscription2");
+            this.subscription3Client = SubscriptionClient.CreateFromConnectionString(connectionString, BasicTopicName, "Subscription3");
 
             this.InitializeReceiver(this.subscription1Client, ConsoleColor.Cyan);
             this.InitializeReceiver(this.subscription2Client, ConsoleColor.Green);
@@ -45,8 +45,10 @@ namespace MessagingSamples
 
             await this.SendMessagesAsync();
 
-            Console.WriteLine("\nEnd of scenario, press any key to exit.");
-            Console.ReadKey();
+            await Task.WhenAny(
+                Task.Run(() => Console.ReadKey()),
+                Task.Delay(TimeSpan.FromSeconds(10))
+            );
 
             await this.subscription1Client.CloseAsync();
             await this.subscription2Client.CloseAsync();
@@ -127,5 +129,19 @@ namespace MessagingSamples
                 new OnMessageOptions { AutoComplete = false, MaxConcurrentCalls = 1 });
         }
 
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
+        }
     }
 }

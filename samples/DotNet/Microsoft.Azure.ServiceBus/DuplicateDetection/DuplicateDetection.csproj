@@ -1,0 +1,22 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>MessagingSamples</RootNamespace>
+    <AssemblyName>DuplicateDetection</AssemblyName>
+    <TargetFrameworks>net462;netcoreapp2.0</TargetFrameworks>
+    
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="readme.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\common\Main.cs" Link="Main.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Azure.ServiceBus" Version="2.0.0" />
+    <PackageReference Include="System.Diagnostics.Debug" Version="4.3.0" />
+    <PackageReference Include="System.Linq" Version="4.3.0" />
+    <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.1" />
+  </ItemGroup>
+</Project>

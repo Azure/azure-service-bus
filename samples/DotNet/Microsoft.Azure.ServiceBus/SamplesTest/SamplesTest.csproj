@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.3.0" />
+    <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.1" />
+    <PackageReference Include="xunit" Version="2.3.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+    <DotNetCliToolReference Include="dotnet-xunit" Version="2.3.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\AutoForward\AutoForward.csproj" />
+    <ProjectReference Include="..\DeadletterQueue\DeadletterQueue.csproj" />
+    <ProjectReference Include="..\Deferral\Deferral.csproj" />
+    <ProjectReference Include="..\DuplicateDetection\DuplicateDetection.csproj" />
+    <ProjectReference Include="..\GeoReplication\Receiver\GeoReceiver.csproj" />
+    <ProjectReference Include="..\GeoReplication\SenderActiveReplication\SenderActiveReplication.csproj" />
+    <ProjectReference Include="..\GeoReplication\SenderPassiveReplication\SenderPassiveReplication.csproj" />
+    <ProjectReference Include="..\MessageBrowse\MessageBrowse.csproj" />
+    <ProjectReference Include="..\PartitionedQueues\PartitionedQueues.csproj" />
+    <ProjectReference Include="..\Prefetch\Prefetch.csproj" />
+    <ProjectReference Include="..\PrioritySubscriptions\PrioritySubscriptions.csproj" />
+    <ProjectReference Include="..\QueuesGettingStarted\QueuesGettingStarted.csproj" />
+    <ProjectReference Include="..\ReceiveLoop\ReceiveLoop.csproj" />
+    <ProjectReference Include="..\SendersReceiversWithQueues\SendersReceiversWithQueues.csproj" />
+    <ProjectReference Include="..\SendersReceiversWithTopics\SendersReceiversWithTopics.csproj" />
+    <ProjectReference Include="..\SessionState\SessionState.csproj" />
+    <ProjectReference Include="..\Sessions\Sessions.csproj" />
+    <ProjectReference Include="..\TimeToLive\TimeToLive.csproj" />
+    <ProjectReference Include="..\TopicFilters\TopicFilters.csproj" />
+    <ProjectReference Include="..\TopicsGettingStarted\TopicsGettingStarted.csproj" />
+  </ItemGroup>
+
+</Project>

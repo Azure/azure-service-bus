@@ -15,36 +15,38 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace NetMessagingBindingClient
 {
     using System;
     using System.ServiceModel;
     using System.Threading.Tasks;
     using Microsoft.ServiceBus;
+    using NetMessagingBindingService;
 
-    public class Program : IBasicQueueSendSample
+    public class Program : MessagingSamples.Sample
     {
         static readonly Random random = new Random();
 
-        public async Task Run(string namespaceAddress, string queueName, string sendToken)
+        public async Task Run(string connectionString)
         {
             try
             {
                 // Send messages to queue which does not require session
                 Console.Title = "Client";
 
+                var sbb = new ServiceBusConnectionStringBuilder(connectionString);
                 // Create sender to Order Service
                 using (var factory = new ChannelFactory<IOnewayServiceChannel>("client"))
                 {
                     factory.Endpoint.Address = new EndpointAddress(
-                        new Uri(new Uri(namespaceAddress), queueName));
+                        new Uri(sbb.GetAbsoluteRuntimeEndpoints()[0], BasicQueueName));
                     factory.Endpoint.EndpointBehaviors.Add(
-                        new TransportClientEndpointBehavior(TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)));
+                        new TransportClientEndpointBehavior(TokenProvider.CreateSharedAccessSignatureTokenProvider(sbb.SharedAccessKeyName, sbb.SharedAccessKey)));
 
                     using (var clientChannel = factory.CreateChannel())
                     {
                         int numberOfMessages = random.Next(10, 30);
-                        Console.WriteLine("Sending {0} messages to {1}...", numberOfMessages, queueName);
+                        Console.WriteLine("Sending {0} messages to {1}...", numberOfMessages, BasicQueueName);
                         
                         // Send messages to queue
                         for (var i = 0; i < numberOfMessages; i++)
@@ -63,11 +65,25 @@ namespace MessagingSamples
             catch (Exception exception)
             {
                 Console.WriteLine("Exception occurred: {0}", exception);
+                throw;
             }
 
             Console.WriteLine("\nSender complete.");
-            Console.WriteLine("\nPress [Enter] to exit.");
-            Console.ReadLine();
+        }
+
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }

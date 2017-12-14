@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace PartitionedQueues
 {
     using System;
     using System.IO;
@@ -26,32 +26,30 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : IPartitionedQueueSendReceiveSample
+    public class Program : MessagingSamples.Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string sendToken, string receiveToken)
+        public async Task Run(string connectionString)
         {
             Console.WriteLine("Press any key to exit the scenario");
 
             var cts = new CancellationTokenSource();
 
-           await this.SendMessagesAsync(namespaceAddress, queueName, sendToken);
-           var receiveTask = this.ReceiveMessagesAsync(namespaceAddress, queueName, receiveToken, cts.Token);
-           
-            Console.ReadKey();
+           await this.SendMessagesAsync(connectionString, PartitionedQueueName);
+           var receiveTask = this.ReceiveMessagesAsync(connectionString, PartitionedQueueName, cts.Token);
+
+            await Task.WhenAny(
+                Task.Run(() => Console.ReadKey()),
+                Task.Delay(TimeSpan.FromSeconds(10))
+            );
+
             cts.Cancel();
 
             await receiveTask;
         }
 
-        async Task SendMessagesAsync(string namespaceAddress, string queueName, string sendToken)
+        async Task SendMessagesAsync(string connectionString, string queueName)
         {
-            var senderFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)
-                });
+            var senderFactory = MessagingFactory.CreateFromConnectionString(connectionString);
             senderFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
 
             var sender = await senderFactory.CreateMessageSenderAsync(queueName);
@@ -93,16 +91,10 @@ namespace MessagingSamples
             }
         }
 
-        async Task ReceiveMessagesAsync(string namespaceAddress, string queueName, string receiveToken, CancellationToken cancellationToken)
+        async Task ReceiveMessagesAsync(string connectionString, string queueName, CancellationToken cancellationToken)
         {
             var doneReceiving = new TaskCompletionSource<bool>();
-            var receiverFactory = MessagingFactory.Create(
-                namespaceAddress,
-                new MessagingFactorySettings
-                {
-                    TransportType = TransportType.Amqp,
-                    TokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(receiveToken)
-                });
+            var receiverFactory = MessagingFactory.CreateFromConnectionString(connectionString);
             receiverFactory.RetryPolicy = new RetryExponential(TimeSpan.FromSeconds(1), TimeSpan.FromMinutes(5), 10);
 
             var receiver = await receiverFactory.CreateMessageReceiverAsync(queueName, ReceiveMode.PeekLock);
@@ -154,6 +146,21 @@ namespace MessagingSamples
                 new OnMessageOptions {AutoComplete = false, MaxConcurrentCalls = 1});
 
             await doneReceiving.Task;
+        }
+
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
 
     }

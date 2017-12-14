@@ -1,13 +1,26 @@
-# Azure Service Bus samples
+# Azure Service Bus Samples
 
-## .NET
+<p align="center">
+  <img src="../service-bus.png" alt="Microsoft Azure Service Bus" width="100"/>
+</p>
 
-### Microsoft.Azure.ServiceBus
-Any samples within the `Microsoft.Azure.ServiceBus` folder target the newer .NET Standard library. Each of the sample page carries a description of the scenario covered in the sample
-under the `What will be accomplished` section.
+## .NET Standard
 
-### Microsoft.ServiceBus.Messaging
-Any samples within the `Microsoft.ServiceBus.Messaging` folder, reference the older `WindowsAzure.ServiceBus` NuGet package. These samples were moved from [this previous repository](https://github.com/Azure-Samples/azure-servicebus-messaging-samples). See the readme [here](./DotNet/Microsoft.ServiceBus.Messaging/README.md) for more details. 
+The samples in the
+[Microsoft.Azure.ServiceBus](DotNet/Microsoft.Azure.ServiceBus) folder target
+the .NET Standard client package. New applications should use this package over
+the previous client. 
+
+## .NET Framework
+
+The samples in the
+[Microsoft.ServiceBus.Messaging](DotNet/Microsoft.ServiceBus.Messaging) folder
+target the .NET Framework `WindowsAzure.ServiceBus` NuGet package, which is
+maintained for backwards compatibility.
 
 ## Java
-Any samples within the `Java` folder target the new [Azure-ServiceBus-Java](https://github.com/Azure/azure-service-bus-java) library. See the readme [here](https://github.com/Azure/azure-service-bus/blob/master/samples/Java/readme.md) for more details on the scenario covered in the samples.
+
+The samples within the [Java](Java) folder target the
+[azure-service-bus-java](https://github.com/Azure/azure-service-bus-java)
+package and the [Apache Qpid JMS 2.0](https://qpid.apache.org/components/jms/)
+client. 

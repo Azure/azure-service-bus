@@ -15,78 +15,28 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace AutoForward
 {
     using System;
     using System.Threading.Tasks;
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
 
-    class Program : IDynamicSample
+    public class Program : MessagingSamples.Sample
     {
-        string sharedAccessRuleKey;
-
-        public async Task Run(string namespaceAddress, string manageToken)
+        public async Task Run(string connectionString)
         {
-            Console.WriteLine("\nCreating topology\n");
-            this.sharedAccessRuleKey = SharedAccessAuthorizationRule.GenerateRandomKey();
-            var namespaceManageTokenProvider = TokenProvider.CreateSharedAccessSignatureTokenProvider(manageToken);
-
-            // Create namespace manager and create destination queue with a SAS rule that allows sending to that queue.
-            var namespaceManager = new NamespaceManager(namespaceAddress, namespaceManageTokenProvider);
-
-            var targetQueue = new QueueDescription("TargetQueue")
-            {
-                Authorization = { new SharedAccessAuthorizationRule("SendKey", this.sharedAccessRuleKey, new[] { AccessRights.Send }) },
-            };
-
-            targetQueue = (await namespaceManager.QueueExistsAsync(targetQueue.Path))
-                ? await namespaceManager.UpdateQueueAsync(targetQueue)
-                : await namespaceManager.CreateQueueAsync(targetQueue);
-
-            var topic = new TopicDescription("SourceTopic")
-            {
-                Authorization = { new SharedAccessAuthorizationRule("SendKey", this.sharedAccessRuleKey, new[] { AccessRights.Send }) }
-            };
-            topic = (await namespaceManager.TopicExistsAsync(topic.Path))
-                ? await namespaceManager.UpdateTopicAsync(topic)
-                : await namespaceManager.CreateTopicAsync(topic);
-            var forwardingSubscription = namespaceManager.CreateSubscription(
-                new SubscriptionDescription(topic.Path, "Sub1")
-                {
-                    ForwardTo = targetQueue.Path
-                });
-
-            var forwardingQueue = new QueueDescription("SourceQueue")
-            {
-                ForwardTo = targetQueue.Path,
-                Authorization =
-                {
-                    new SharedAccessAuthorizationRule(
-                        "SendKey",
-                        this.sharedAccessRuleKey,
-                        new[] {AccessRights.Send})
-                }
-            };
-            forwardingQueue = (await namespaceManager.QueueExistsAsync(forwardingQueue.Path))
-                ? await namespaceManager.UpdateQueueAsync(forwardingQueue)
-                : await namespaceManager.CreateQueueAsync(forwardingQueue);
-
-
             Console.WriteLine("\nSending messages\n");
 
-            var topicFactory = MessagingFactory.Create(namespaceAddress, TokenProvider.CreateSharedAccessSignatureTokenProvider("SendKey", this.sharedAccessRuleKey));
-            var topicSender = await topicFactory.CreateMessageSenderAsync(topic.Path);
+            var messagingFactory = MessagingFactory.CreateFromConnectionString(connectionString);
+            var topicSender = await messagingFactory.CreateMessageSenderAsync("AutoForwardSourceTopic");
             await topicSender.SendAsync(CreateMessage("M1"));
 
-            var queueFactory = MessagingFactory.Create(namespaceAddress, TokenProvider.CreateSharedAccessSignatureTokenProvider("SendKey", this.sharedAccessRuleKey));
-            var queueSender = await queueFactory.CreateMessageSenderAsync(forwardingQueue.Path);
+            var queueSender = await messagingFactory.CreateMessageSenderAsync("AutoForwardTargetQueue");
             await queueSender.SendAsync(CreateMessage("M1"));
 
-
-            var messagingFactory = MessagingFactory.Create(namespaceAddress, namespaceManageTokenProvider);
-            var targetQueueReceiver = messagingFactory.CreateQueueClient(targetQueue.Path);
-            while (true)
+            var targetQueueReceiver = messagingFactory.CreateQueueClient("AutoForwardTargetQueue");
+            for (int i = 0; i < 2; i++)
             {
                 var message = await targetQueueReceiver.ReceiveAsync(TimeSpan.FromSeconds(10));
                 if (message != null)
@@ -96,18 +46,11 @@ namespace MessagingSamples
                 }
                 else
                 {
-                    break;
+                    throw new Exception("Expected message not received.");
                 }
             }
             await targetQueueReceiver.CloseAsync();
-
-            Console.WriteLine("\nPress ENTER to delete topics and exit\n");
-            Console.ReadLine();
             messagingFactory.Close();
-            Task.WaitAll(
-                namespaceManager.DeleteQueueAsync(targetQueue.Path),
-                namespaceManager.DeleteQueueAsync(forwardingQueue.Path),
-                namespaceManager.DeleteTopicAsync(topic.Path));
         }
 
         async Task PrintReceivedMessage(BrokeredMessage receivedMessage)
@@ -132,6 +75,20 @@ namespace MessagingSamples
             msg.TimeToLive = TimeSpan.FromSeconds(90);
             return msg;
         }
-        
+
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
+        }
     }
 }

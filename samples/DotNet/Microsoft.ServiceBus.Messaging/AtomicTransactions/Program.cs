@@ -15,7 +15,7 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace AtomicTransactions
 {
     using System;
     using System.Collections.Generic;
@@ -28,7 +28,7 @@ namespace MessagingSamples
     using Microsoft.ServiceBus.Messaging;
     using Newtonsoft.Json;
 
-    public class Program : IDynamicSampleWithKeys
+    public class Program : MessagingSamples.Sample
     {
         const string SagaQueuePathPrefix = "sagas/1";
         const string BookRentalCarQueueName = SagaQueuePathPrefix + "/Ta";
@@ -41,14 +41,7 @@ namespace MessagingSamples
         const string SagaInputQueueName = SagaQueuePathPrefix + "/input";
         static int pendingTransactions;
 
-        public async Task Run(
-            string namespaceAddress,
-            string manageKeyName,
-            string manageKey,
-            string sendKeyName,
-            string sendKey,
-            string receiveKeyName,
-            string receiveKey)
+        public async Task Run(Dictionary<string, string> settings)
         {
             // we're going to create a topology for sagas of sequential transactions in this 
             // sample. For each transactional saga step we will have a dedicated input queue. 
@@ -72,26 +65,18 @@ namespace MessagingSamples
             // The remaining paths are set up as we initialize the Saga work and conpensation 
             // tasks in RunSaga.
 
-            var namespaceManager = new NamespaceManager(
-                namespaceAddress,
-                TokenProvider.CreateSharedAccessSignatureTokenProvider(manageKeyName, manageKey));
-
+            var namespaceManager = NamespaceManager.CreateFromConnectionString(settings["SB_SAMPLES_MANAGE_CONNECTIONSTRING"]);
+            
             var queues = await this.SetupSagaTopologyAsync(namespaceManager);
-            await RunScenarioAsync(namespaceAddress, manageKeyName, manageKey);
+            await RunScenarioAsync(settings["SB_SAMPLES_CONNECTIONSTRING"]);
             await this.CleanupSagaTopologyAsync(namespaceManager, queues);
         }
 
-        static async Task RunScenarioAsync(string namespaceAddress, string manageKeyName, string manageKey)
+        static async Task RunScenarioAsync(string connectionString)
         {
-            var workersMessagingFactory = await MessagingFactory.CreateAsync(
-                namespaceAddress,
-                TokenProvider.CreateSharedAccessSignatureTokenProvider(manageKeyName, manageKey)); // make the token
-            var receiverMessagingFactory = await MessagingFactory.CreateAsync(
-                namespaceAddress,
-                TokenProvider.CreateSharedAccessSignatureTokenProvider(manageKeyName, manageKey)); // make the token
-            var senderMessagingFactory = await MessagingFactory.CreateAsync(
-                namespaceAddress,
-                TokenProvider.CreateSharedAccessSignatureTokenProvider(manageKeyName, manageKey)); // make the token
+            var workersMessagingFactory =  MessagingFactory.CreateFromConnectionString(connectionString);
+            var receiverMessagingFactory = MessagingFactory.CreateFromConnectionString(connectionString);
+            var senderMessagingFactory = MessagingFactory.CreateFromConnectionString(connectionString);
 
             var resultsReceiver = await RunResultsReceiver(receiverMessagingFactory);
 
@@ -100,7 +85,11 @@ namespace MessagingSamples
 
             await SendBookingRequests(senderMessagingFactory);
 
-            Console.ReadKey();
+            await Task.WhenAny(
+                Task.Run(() => Console.ReadKey()),
+                Task.Delay(TimeSpan.FromSeconds(10))
+            );
+
             sagaTerminator.Cancel();
             await saga.Task;
 
@@ -294,6 +283,21 @@ namespace MessagingSamples
                     Interlocked.Decrement(ref pendingTransactions));
                 Console.ResetColor();
             }
+        }
+
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }
