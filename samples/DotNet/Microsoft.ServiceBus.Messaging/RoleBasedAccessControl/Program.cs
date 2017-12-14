@@ -34,14 +34,14 @@ namespace MessagingSamples
         QueueClient sendClient;
         QueueClient receiveClient;
 
-        static readonly string TenantId = "72f988bf-86f1-41af-91ab-2d7cd011db47"; // ConfigurationManager.AppSettings["tenantId"];
-        static readonly string ClientId = "9d8a1db1-6268-44f8-b53e-849754fb54c4"; // ConfigurationManager.AppSettings["clientId"];
-        static readonly string ServiceBusNamespace = "sbrbactest.servicebus.windows.net"; // ConfigurationManager.AppSettings["serviceBusNamespaceFQDN"];
-        static readonly string QueueName = "test"; //  ConfigurationManager.AppSettings["queueName"];
+        static readonly string TenantId = ConfigurationManager.AppSettings["tenantId"];
+        static readonly string ClientId = ConfigurationManager.AppSettings["clientId"];
+        static readonly string ServiceBusNamespace = ConfigurationManager.AppSettings["serviceBusNamespaceFQDN"];
+        static readonly string QueueName = ConfigurationManager.AppSettings["queueName"];
 
         public async Task Run()
         {
-            Console.WriteLine("Pick a scenario to run:");
+            Console.WriteLine("Pick a scenario to run and hit ENTER:");
             Console.WriteLine("1) ManagedServiceIdentity (must run in an Azure VM or Web Job)");
             Console.WriteLine("2) Interactive User Login");
             Console.WriteLine("3) Service Principal");
