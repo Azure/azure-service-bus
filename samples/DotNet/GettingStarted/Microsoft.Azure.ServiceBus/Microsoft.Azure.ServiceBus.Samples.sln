@@ -1,0 +1,52 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.16
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BasicSendReceiveUsingQueueClient", "BasicSendReceiveUsingQueueClient\BasicSendReceiveUsingQueueClient.csproj", "{C7403021-8C99-4FD2-AD6D-943F1ABB439F}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SendReceiveUsingMessageSenderReceiver", "SendReceiveUsingMessageSenderReceiver\SendReceiveUsingMessageSenderReceiver.csproj", "{45D687AA-081B-4D4E-82C3-58A2BD5F02A8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BasicSessionSendReceiveUsingQueueClient", "BasicSessionSendReceiveUsingQueueClient\BasicSessionSendReceiveUsingQueueClient.csproj", "{3F7B9F6A-0B84-4B4E-A68F-77D4E35EDD57}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SessionSendReceiveUsingSessionClient", "SessionSendReceiveUsingSessionClient\SessionSendReceiveUsingSessionClient.csproj", "{C61629D8-2605-4554-8747-9503572E2B2D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BasicSendReceiveUsingTopicSubscriptionClient", "BasicSendReceiveUsingTopicSubscriptionClient\BasicSendReceiveUsingTopicSubscriptionClient.csproj", "{BAA95098-988E-48A1-B8B5-5367B7B2A667}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TopicSubscriptionWithRuleOperationsSample", "TopicSubscriptionWithRuleOperationsSample\TopicSubscriptionWithRuleOperationsSample.csproj", "{BCFACFBC-0DFE-4444-8682-AEFA98D1E398}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C7403021-8C99-4FD2-AD6D-943F1ABB439F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C7403021-8C99-4FD2-AD6D-943F1ABB439F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C7403021-8C99-4FD2-AD6D-943F1ABB439F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C7403021-8C99-4FD2-AD6D-943F1ABB439F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45D687AA-081B-4D4E-82C3-58A2BD5F02A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45D687AA-081B-4D4E-82C3-58A2BD5F02A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45D687AA-081B-4D4E-82C3-58A2BD5F02A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45D687AA-081B-4D4E-82C3-58A2BD5F02A8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3F7B9F6A-0B84-4B4E-A68F-77D4E35EDD57}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3F7B9F6A-0B84-4B4E-A68F-77D4E35EDD57}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3F7B9F6A-0B84-4B4E-A68F-77D4E35EDD57}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3F7B9F6A-0B84-4B4E-A68F-77D4E35EDD57}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C61629D8-2605-4554-8747-9503572E2B2D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C61629D8-2605-4554-8747-9503572E2B2D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C61629D8-2605-4554-8747-9503572E2B2D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C61629D8-2605-4554-8747-9503572E2B2D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BAA95098-988E-48A1-B8B5-5367B7B2A667}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BAA95098-988E-48A1-B8B5-5367B7B2A667}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BAA95098-988E-48A1-B8B5-5367B7B2A667}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BAA95098-988E-48A1-B8B5-5367B7B2A667}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCFACFBC-0DFE-4444-8682-AEFA98D1E398}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCFACFBC-0DFE-4444-8682-AEFA98D1E398}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCFACFBC-0DFE-4444-8682-AEFA98D1E398}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCFACFBC-0DFE-4444-8682-AEFA98D1E398}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
