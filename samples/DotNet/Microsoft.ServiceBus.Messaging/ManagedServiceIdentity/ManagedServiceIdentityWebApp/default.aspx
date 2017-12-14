@@ -1,4 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="default.aspx.cs" Inherits="ManagedServiceIdentityWebApp.Default" %>
+﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="default.aspx.cs" Inherits="ManagedServiceIdentityWebApp._Default" %>
 
 <!DOCTYPE html>
 
@@ -11,7 +11,7 @@
     <form id="form1" runat="server">
         <div style="white-space: pre">
             <div>
-                <label>Service Bus Namespace</label><asp:TextBox ID="txtNamespace" runat="server" Text="" />
+                <label>Service Bus Endpoint FQDN</label><asp:TextBox ID="txtNamespace" runat="server" Text="" />
             </div>
             <div>
                 <label>Queue Name</label><asp:TextBox ID="txtQueueName" runat="server" Text="BasicQueue"/>

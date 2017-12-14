@@ -10,7 +10,7 @@
 namespace ManagedServiceIdentityWebApp {
     
     
-    public partial class Default {
+    public partial class _Default {
         
         /// <summary>
         /// form1 control.

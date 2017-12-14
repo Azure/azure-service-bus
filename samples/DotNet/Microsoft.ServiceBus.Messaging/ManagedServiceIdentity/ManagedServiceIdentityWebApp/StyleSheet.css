@@ -1,5 +1,5 @@
 ﻿label {
-    width: 100px;
+    width: 200px;
     display: inline-block;
 }
 
@@ -10,4 +10,8 @@ text {
 
 input[type="submit"] {
     width: 75px;    
+}
+
+input[type="text"] {
+    width: 400px;
 }
