@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26730.12
+VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "QueuesGettingStarted", "QueuesGettingStarted", "{AD9316D9-4A79-460F-BD28-EA5631CDA045}"
 	ProjectSection(SolutionItems) = preProject
@@ -13,9 +13,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TopicsGettingStarted", "Top
 		TopicsGettingStarted\README.md = TopicsGettingStarted\README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueuesGettingStarted", "QueuesGettingStarted\QueuesGettingStarted.csproj", "{247F0154-3F6B-409B-BEBA-1BF9302D3B9E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueuesGettingStarted", "QueuesGettingStarted\QueuesGettingStarted.csproj", "{247F0154-3F6B-409B-BEBA-1BF9302D3B9E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TopicsGettingStarted", "TopicsGettingStarted\TopicsGettingStarted.csproj", "{3668A064-BE7B-474A-8A31-23C3ED47A6B4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TopicsGettingStarted", "TopicsGettingStarted\TopicsGettingStarted.csproj", "{3668A064-BE7B-474A-8A31-23C3ED47A6B4}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Getting Started", "Getting Started", "{435DD431-1259-4576-802C-781277C51C3C}"
 EndProject
@@ -120,31 +120,29 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SessionState", "SessionStat
 		SessionState\README.md = SessionState\README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DuplicateDetection", "DuplicateDetection\DuplicateDetection.csproj", "{C0705BFD-2855-4753-83FA-0CB17C3AE5E6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DuplicateDetection", "DuplicateDetection\DuplicateDetection.csproj", "{C0705BFD-2855-4753-83FA-0CB17C3AE5E6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MessageBrowse", "MessageBrowse\MessageBrowse.csproj", "{8CF40328-1E20-4913-94DC-043B6DB9A65E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MessageBrowse", "MessageBrowse\MessageBrowse.csproj", "{8CF40328-1E20-4913-94DC-043B6DB9A65E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Prefetch", "Prefetch\Prefetch.csproj", "{1DC9882B-135C-462F-914B-AB004309E1FC}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Prefetch", "Prefetch\Prefetch.csproj", "{1DC9882B-135C-462F-914B-AB004309E1FC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReceiveLoop", "ReceiveLoop\ReceiveLoop.csproj", "{D5A260CB-5FED-40DB-9511-7A68CCFEA72E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ReceiveLoop", "ReceiveLoop\ReceiveLoop.csproj", "{D5A260CB-5FED-40DB-9511-7A68CCFEA72E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SendersReceiversWithQueues", "SendersReceiversWithQueues\SendersReceiversWithQueues.csproj", "{285D8176-9724-4BFB-9336-58F2FB3B8512}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SendersReceiversWithQueues", "SendersReceiversWithQueues\SendersReceiversWithQueues.csproj", "{285D8176-9724-4BFB-9336-58F2FB3B8512}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SendersReceiversWithTopics", "SendersReceiversWithTopics\SendersReceiversWithTopics.csproj", "{C5AEC266-F2AB-403C-9F76-39A84614A367}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SendersReceiversWithTopics", "SendersReceiversWithTopics\SendersReceiversWithTopics.csproj", "{C5AEC266-F2AB-403C-9F76-39A84614A367}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AtomicTransactions", "AtomicTransactions\AtomicTransactions.csproj", "{28AEF962-E1B0-4003-8AAE-E876593F9CBB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AtomicTransactions", "AtomicTransactions\AtomicTransactions.csproj", "{28AEF962-E1B0-4003-8AAE-E876593F9CBB}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeadletterQueue", "DeadletterQueue\DeadletterQueue.csproj", "{BF708E97-B645-4A05-A477-3EF298A29EFB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeadletterQueue", "DeadletterQueue\DeadletterQueue.csproj", "{BF708E97-B645-4A05-A477-3EF298A29EFB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DurableSenderLibrary", "DurableSenderLibrary", "{616293D5-E8F3-4E9B-9224-31BCC7E0A091}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DurableSenderClient", "DurableSenderClient", "{D6CA5007-6F3B-4025-9EEC-FD06DCE9D428}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DurableSenderLibrary", "DurableSender\DurableSenderLibrary\DurableSenderLibrary.csproj", "{B45E7BA3-5FBE-44DB-A260-FDC513191584}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DurableSenderLibrary", "DurableSender\DurableSenderLibrary\DurableSenderLibrary.csproj", "{B45E7BA3-5FBE-44DB-A260-FDC513191584}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "DurableSender\Client\Client.csproj", "{F6139F7C-1D6F-4BBF-8610-03D53F2C976D}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TimeToLive", "TimeToLive\TimeToLive.csproj", "{BEF5C066-FE0E-42C0-AE44-747C996D9E63}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TimeToLive", "TimeToLive\TimeToLive.csproj", "{BEF5C066-FE0E-42C0-AE44-747C996D9E63}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GeoReceiver", "GeoReceiver", "{F982DD81-2057-44DF-A7C5-1AD7EE105EDC}"
 EndProject
@@ -152,23 +150,23 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GeoSenderActiveReplication"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GeoSenderPassiveReplication", "GeoSenderPassiveReplication", "{7D20196E-6FD7-42C2-94EF-9614484F1C8C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Receiver", "GeoReplication\Receiver\Receiver.csproj", "{3212E2FD-B7DF-47DA-92E2-CF9AF50EEC27}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GeoReceiver", "GeoReplication\Receiver\GeoReceiver.csproj", "{3212E2FD-B7DF-47DA-92E2-CF9AF50EEC27}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SenderActiveReplication", "GeoReplication\SenderActiveReplication\SenderActiveReplication.csproj", "{84DD54F3-B686-4000-8289-C4D9C46CAB61}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SenderActiveReplication", "GeoReplication\SenderActiveReplication\SenderActiveReplication.csproj", "{84DD54F3-B686-4000-8289-C4D9C46CAB61}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SenderPassiveReplication", "GeoReplication\SenderPassiveReplication\SenderPassiveReplication.csproj", "{60FB9368-6354-4251-9A80-D7293A759051}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SenderPassiveReplication", "GeoReplication\SenderPassiveReplication\SenderPassiveReplication.csproj", "{60FB9368-6354-4251-9A80-D7293A759051}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PartitionedQueues", "PartitionedQueues\PartitionedQueues.csproj", "{F6A41A8D-77CD-47F0-B564-BCFDC09F639C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PartitionedQueues", "PartitionedQueues\PartitionedQueues.csproj", "{F6A41A8D-77CD-47F0-B564-BCFDC09F639C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Deferral", "Deferral\Deferral.csproj", "{8A443B78-BAEC-417D-9F5C-189B291A5610}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Deferral", "Deferral\Deferral.csproj", "{8A443B78-BAEC-417D-9F5C-189B291A5610}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sessions", "Sessions\Sessions.csproj", "{0074A069-85EB-4061-970E-3D4FBCB82362}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sessions", "Sessions\Sessions.csproj", "{0074A069-85EB-4061-970E-3D4FBCB82362}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SessionState", "SessionState\SessionState.csproj", "{AF028627-BE19-452B-AF0F-3B0D124BE01D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SessionState", "SessionState\SessionState.csproj", "{AF028627-BE19-452B-AF0F-3B0D124BE01D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PrioritySubscriptions", "PrioritySubscriptions\PrioritySubscriptions.csproj", "{9A59D775-B108-47B6-826A-584EFFED29BA}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PrioritySubscriptions", "PrioritySubscriptions\PrioritySubscriptions.csproj", "{9A59D775-B108-47B6-826A-584EFFED29BA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TopicFilters", "TopicFilters\TopicFilters.csproj", "{C9D5ECB8-7F92-45E0-9CE4-6A3CE614F4B8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TopicFilters", "TopicFilters\TopicFilters.csproj", "{C9D5ECB8-7F92-45E0-9CE4-6A3CE614F4B8}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NetMessagingBindingClient", "NetMessagingBindingClient", "{8E49E7D5-5B9E-421A-831C-6B5B80A30FD8}"
 EndProject
@@ -178,20 +176,20 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NetMessagingSessionClient",
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "NetMessagingSessionService", "NetMessagingSessionService", "{257BFB98-6725-4A20-88B5-39EE0688FADE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "NetMessagingBinding\Client\Client.csproj", "{9F78C49A-31BF-48C1-9A51-046C1D068F81}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetMessagingBindingClient", "NetMessagingBinding\Client\NetMessagingBindingClient.csproj", "{9F78C49A-31BF-48C1-9A51-046C1D068F81}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Service", "NetMessagingBinding\Service\Service.csproj", "{AE7AF0E7-5365-446E-A7ED-7C2DB65760FF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetMessagingBindingService", "NetMessagingBinding\Service\NetMessagingBindingService.csproj", "{AE7AF0E7-5365-446E-A7ED-7C2DB65760FF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderClient", "NetMessagingSession\Client\OrderClient.csproj", "{A6F717CF-C81F-406E-9B18-F2930FFB4F39}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetMessagingSessionClient", "NetMessagingSession\Client\NetMessagingSessionClient.csproj", "{A6F717CF-C81F-406E-9B18-F2930FFB4F39}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OrderService", "NetMessagingSession\OrderService\OrderService.csproj", "{7DE43754-26D3-4FB3-B699-47E51BE6D33B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NetMessagingSessionService", "NetMessagingSession\OrderService\NetMessagingSessionService.csproj", "{7DE43754-26D3-4FB3-B699-47E51BE6D33B}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Autoforward", "Autoforward", "{613E7D9B-A1F8-423D-AAB1-B2F3526122D3}"
 	ProjectSection(SolutionItems) = preProject
 		AutoForward\readme.md = AutoForward\readme.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AutoForward", "AutoForward\AutoForward.csproj", "{C9B6BEF6-7566-4A52-A79A-DC22F758A657}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AutoForward", "AutoForward\AutoForward.csproj", "{C9B6BEF6-7566-4A52-A79A-DC22F758A657}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{3D14E83D-61CA-4328-9334-5A51EFCA5F7D}"
 	ProjectSection(SolutionItems) = preProject
@@ -200,6 +198,12 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		scripts\sampleenv.ps1 = scripts\sampleenv.ps1
 		scripts\sampleenv.sh = scripts\sampleenv.sh
 	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DurableSenderClient", "DurableSender\Client\DurableSenderClient.csproj", "{DE140815-5E06-4310-A52D-44BB2B40248D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{591117AE-C87A-41C3-BA40-6749FB92D59D}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SamplesTest", "SamplesTest\SamplesTest.csproj", "{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -342,14 +346,6 @@ Global
 		{B45E7BA3-5FBE-44DB-A260-FDC513191584}.Release|AnyCPU.Build.0 = Release|Any CPU
 		{B45E7BA3-5FBE-44DB-A260-FDC513191584}.Release|x86.ActiveCfg = Release|Any CPU
 		{B45E7BA3-5FBE-44DB-A260-FDC513191584}.Release|x86.Build.0 = Release|Any CPU
-		{F6139F7C-1D6F-4BBF-8610-03D53F2C976D}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{F6139F7C-1D6F-4BBF-8610-03D53F2C976D}.Debug|AnyCPU.ActiveCfg = Debug|x86
-		{F6139F7C-1D6F-4BBF-8610-03D53F2C976D}.Debug|x86.ActiveCfg = Debug|x86
-		{F6139F7C-1D6F-4BBF-8610-03D53F2C976D}.Debug|x86.Build.0 = Debug|x86
-		{F6139F7C-1D6F-4BBF-8610-03D53F2C976D}.Release|Any CPU.ActiveCfg = Release|x86
-		{F6139F7C-1D6F-4BBF-8610-03D53F2C976D}.Release|AnyCPU.ActiveCfg = Release|x86
-		{F6139F7C-1D6F-4BBF-8610-03D53F2C976D}.Release|x86.ActiveCfg = Release|x86
-		{F6139F7C-1D6F-4BBF-8610-03D53F2C976D}.Release|x86.Build.0 = Release|x86
 		{BEF5C066-FE0E-42C0-AE44-747C996D9E63}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BEF5C066-FE0E-42C0-AE44-747C996D9E63}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BEF5C066-FE0E-42C0-AE44-747C996D9E63}.Debug|AnyCPU.ActiveCfg = Debug|Any CPU
@@ -386,14 +382,18 @@ Global
 		{84DD54F3-B686-4000-8289-C4D9C46CAB61}.Release|AnyCPU.Build.0 = Release|Any CPU
 		{84DD54F3-B686-4000-8289-C4D9C46CAB61}.Release|x86.ActiveCfg = Release|Any CPU
 		{84DD54F3-B686-4000-8289-C4D9C46CAB61}.Release|x86.Build.0 = Release|Any CPU
-		{60FB9368-6354-4251-9A80-D7293A759051}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{60FB9368-6354-4251-9A80-D7293A759051}.Debug|AnyCPU.ActiveCfg = Debug|x86
-		{60FB9368-6354-4251-9A80-D7293A759051}.Debug|x86.ActiveCfg = Debug|x86
-		{60FB9368-6354-4251-9A80-D7293A759051}.Debug|x86.Build.0 = Debug|x86
-		{60FB9368-6354-4251-9A80-D7293A759051}.Release|Any CPU.ActiveCfg = Release|x86
-		{60FB9368-6354-4251-9A80-D7293A759051}.Release|AnyCPU.ActiveCfg = Release|x86
-		{60FB9368-6354-4251-9A80-D7293A759051}.Release|x86.ActiveCfg = Release|x86
-		{60FB9368-6354-4251-9A80-D7293A759051}.Release|x86.Build.0 = Release|x86
+		{60FB9368-6354-4251-9A80-D7293A759051}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{60FB9368-6354-4251-9A80-D7293A759051}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{60FB9368-6354-4251-9A80-D7293A759051}.Debug|AnyCPU.ActiveCfg = Debug|Any CPU
+		{60FB9368-6354-4251-9A80-D7293A759051}.Debug|AnyCPU.Build.0 = Debug|Any CPU
+		{60FB9368-6354-4251-9A80-D7293A759051}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{60FB9368-6354-4251-9A80-D7293A759051}.Debug|x86.Build.0 = Debug|Any CPU
+		{60FB9368-6354-4251-9A80-D7293A759051}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{60FB9368-6354-4251-9A80-D7293A759051}.Release|Any CPU.Build.0 = Release|Any CPU
+		{60FB9368-6354-4251-9A80-D7293A759051}.Release|AnyCPU.ActiveCfg = Release|Any CPU
+		{60FB9368-6354-4251-9A80-D7293A759051}.Release|AnyCPU.Build.0 = Release|Any CPU
+		{60FB9368-6354-4251-9A80-D7293A759051}.Release|x86.ActiveCfg = Release|Any CPU
+		{60FB9368-6354-4251-9A80-D7293A759051}.Release|x86.Build.0 = Release|Any CPU
 		{F6A41A8D-77CD-47F0-B564-BCFDC09F639C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{F6A41A8D-77CD-47F0-B564-BCFDC09F639C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F6A41A8D-77CD-47F0-B564-BCFDC09F639C}.Debug|AnyCPU.ActiveCfg = Debug|Any CPU
@@ -514,14 +514,42 @@ Global
 		{7DE43754-26D3-4FB3-B699-47E51BE6D33B}.Release|AnyCPU.Build.0 = Release|Any CPU
 		{7DE43754-26D3-4FB3-B699-47E51BE6D33B}.Release|x86.ActiveCfg = Release|Any CPU
 		{7DE43754-26D3-4FB3-B699-47E51BE6D33B}.Release|x86.Build.0 = Release|Any CPU
-		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Debug|Any CPU.ActiveCfg = Debug|x86
-		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Debug|AnyCPU.ActiveCfg = Debug|x86
-		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Debug|x86.ActiveCfg = Debug|x86
-		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Debug|x86.Build.0 = Debug|x86
-		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Release|Any CPU.ActiveCfg = Release|x86
-		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Release|AnyCPU.ActiveCfg = Release|x86
-		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Release|x86.ActiveCfg = Release|x86
-		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Release|x86.Build.0 = Release|x86
+		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Debug|AnyCPU.ActiveCfg = Debug|Any CPU
+		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Debug|AnyCPU.Build.0 = Debug|Any CPU
+		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Debug|x86.Build.0 = Debug|Any CPU
+		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Release|AnyCPU.ActiveCfg = Release|Any CPU
+		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Release|AnyCPU.Build.0 = Release|Any CPU
+		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Release|x86.ActiveCfg = Release|Any CPU
+		{C9B6BEF6-7566-4A52-A79A-DC22F758A657}.Release|x86.Build.0 = Release|Any CPU
+		{DE140815-5E06-4310-A52D-44BB2B40248D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{DE140815-5E06-4310-A52D-44BB2B40248D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{DE140815-5E06-4310-A52D-44BB2B40248D}.Debug|AnyCPU.ActiveCfg = Debug|Any CPU
+		{DE140815-5E06-4310-A52D-44BB2B40248D}.Debug|AnyCPU.Build.0 = Debug|Any CPU
+		{DE140815-5E06-4310-A52D-44BB2B40248D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{DE140815-5E06-4310-A52D-44BB2B40248D}.Debug|x86.Build.0 = Debug|Any CPU
+		{DE140815-5E06-4310-A52D-44BB2B40248D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{DE140815-5E06-4310-A52D-44BB2B40248D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{DE140815-5E06-4310-A52D-44BB2B40248D}.Release|AnyCPU.ActiveCfg = Release|Any CPU
+		{DE140815-5E06-4310-A52D-44BB2B40248D}.Release|AnyCPU.Build.0 = Release|Any CPU
+		{DE140815-5E06-4310-A52D-44BB2B40248D}.Release|x86.ActiveCfg = Release|Any CPU
+		{DE140815-5E06-4310-A52D-44BB2B40248D}.Release|x86.Build.0 = Release|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Debug|AnyCPU.ActiveCfg = Debug|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Debug|AnyCPU.Build.0 = Debug|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Debug|x86.Build.0 = Debug|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Release|AnyCPU.ActiveCfg = Release|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Release|AnyCPU.Build.0 = Release|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Release|x86.ActiveCfg = Release|Any CPU
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -561,7 +589,6 @@ Global
 		{616293D5-E8F3-4E9B-9224-31BCC7E0A091} = {7F6A8E8D-D7CA-404B-BA42-F0E97828F17A}
 		{D6CA5007-6F3B-4025-9EEC-FD06DCE9D428} = {7F6A8E8D-D7CA-404B-BA42-F0E97828F17A}
 		{B45E7BA3-5FBE-44DB-A260-FDC513191584} = {616293D5-E8F3-4E9B-9224-31BCC7E0A091}
-		{F6139F7C-1D6F-4BBF-8610-03D53F2C976D} = {D6CA5007-6F3B-4025-9EEC-FD06DCE9D428}
 		{BEF5C066-FE0E-42C0-AE44-747C996D9E63} = {F4255037-8311-4207-8C39-B8A625CB5B95}
 		{F982DD81-2057-44DF-A7C5-1AD7EE105EDC} = {59B83FEE-4C0C-426B-B9E1-25670FC24365}
 		{01DE1FC3-AA87-4974-BA63-02E9733ED986} = {59B83FEE-4C0C-426B-B9E1-25670FC24365}
@@ -585,6 +612,8 @@ Global
 		{7DE43754-26D3-4FB3-B699-47E51BE6D33B} = {257BFB98-6725-4A20-88B5-39EE0688FADE}
 		{613E7D9B-A1F8-423D-AAB1-B2F3526122D3} = {0473E8D7-F4E9-44E8-A400-CDFFFF3738C1}
 		{C9B6BEF6-7566-4A52-A79A-DC22F758A657} = {613E7D9B-A1F8-423D-AAB1-B2F3526122D3}
+		{DE140815-5E06-4310-A52D-44BB2B40248D} = {D6CA5007-6F3B-4025-9EEC-FD06DCE9D428}
+		{438AB29C-66FB-4C14-8D4C-7F3A80F40F6C} = {591117AE-C87A-41C3-BA40-6749FB92D59D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AAAEE60A-5604-415A-960A-AC84B4D84927}

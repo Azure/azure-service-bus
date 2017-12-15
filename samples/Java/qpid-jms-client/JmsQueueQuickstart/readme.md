@@ -7,7 +7,9 @@ JMS client is maintained by the Apache Foundation's Qpid Proton project.
 Using Azure Service Bus queues through the JMS API provides basic send and receive capabilities and is 
 a convenient choice when porting applications from other message brokers with JMS compliant APIs.
 
-For cloud-native applications and applications that want to take advantage of more advanced Service Bus capabilities, the native Service Bus API provides deeper and more direct access.
+For cloud-native applications and applications that want to take advantage of more advanced Service Bus 
+capabilities, the native Service Bus API provides deeper and more direct access to the service 
+capabilities. 
 
 Azure Service Bus splits the control plane from the data plane and therefore does not support several of
 JMS's dynamic topology functions:

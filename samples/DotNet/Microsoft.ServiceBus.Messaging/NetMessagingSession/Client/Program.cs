@@ -15,28 +15,30 @@
 //   See the Apache License, Version 2.0 for the specific language
 //   governing permissions and limitations under the License. 
 
-namespace MessagingSamples
+namespace NetMessagingSessionClient
 {
     using System;
     using System.ServiceModel;
     using System.Threading.Tasks;
     using Microsoft.ServiceBus;
     using Microsoft.ServiceBus.Messaging;
+    using NetMessagingSessionService;
 
-    public class Program : ISessionQueueSendSample
+    public class Program : MessagingSamples.Sample
     {
-        public async Task Run(string namespaceAddress, string queueName, string sendToken)
+        public async Task Run(string connectionString)
         {
+            var sbb = new ServiceBusConnectionStringBuilder(connectionString);
+
             try
             {
-
                 // Create sender to Sequence Service
                 using (var sendChannelFactory = new ChannelFactory<ISequenceServiceChannel>("sequenceSendClient"))
                 {
                     sendChannelFactory.Endpoint.Address = new EndpointAddress(
-                        new Uri(new Uri(namespaceAddress), queueName));
+                        new Uri(sbb.GetAbsoluteRuntimeEndpoints()[0], SessionQueueName));
                     sendChannelFactory.Endpoint.EndpointBehaviors.Add(
-                        new TransportClientEndpointBehavior(TokenProvider.CreateSharedAccessSignatureTokenProvider(sendToken)));
+                       new TransportClientEndpointBehavior(TokenProvider.CreateSharedAccessSignatureTokenProvider(sbb.SharedAccessKeyName, sbb.SharedAccessKey)));
 
                     using (var clientChannel = sendChannelFactory.CreateChannel())
                     {
@@ -84,10 +86,21 @@ namespace MessagingSamples
             {
                 Console.WriteLine("Exception occurred: {0}", exception);
             }
+        }
 
-            Console.WriteLine("\nSender complete.");
-            Console.WriteLine("\nPress [Enter] to exit.");
-            Console.ReadLine();
+        public static int Main(string[] args)
+        {
+            try
+            {
+                var app = new Program();
+                app.RunSample(args, app.Run);
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString());
+                return 1;
+            }
+            return 0;
         }
     }
 }
