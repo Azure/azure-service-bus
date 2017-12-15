@@ -13,6 +13,7 @@
     <PackageReference Include="Microsoft.Azure.Services.AppAuthentication" version="1.1.0-preview" />
     <PackageReference Include="Microsoft.IdentityModel.Clients.ActiveDirectory" version="3.17.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" version="4.0.4.403061554" />
+    <PackageReference Include="WindowsAzure.ServiceBus" Version="4.2.0-preview" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="Microsoft.ServiceBus">
