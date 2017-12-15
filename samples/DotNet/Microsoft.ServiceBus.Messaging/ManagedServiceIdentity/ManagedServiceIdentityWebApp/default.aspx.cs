@@ -13,7 +13,7 @@ namespace ManagedServiceIdentityWebApp
             // the MSI token provider for Service Bus and use of the AMQP protocol:
             MessagingFactorySettings messagingFactorySettings = new MessagingFactorySettings
             {
-                TokenProvider = TokenProvider.CreateManagedServiceIdentityTokenProvider(ServiceAudience.ServieBusAudience),
+                TokenProvider = TokenProvider.CreateManagedServiceIdentityTokenProvider(ServiceAudience.ServiceBusAudience),
                 TransportType = TransportType.Amqp
             };
 
@@ -39,7 +39,7 @@ namespace ManagedServiceIdentityWebApp
             // the MSI token provider for Service Bus and use of the AMQP protocol:
             MessagingFactorySettings messagingFactorySettings = new MessagingFactorySettings
             {
-                TokenProvider = TokenProvider.CreateManagedServiceIdentityTokenProvider(ServiceAudience.ServieBusAudience),
+                TokenProvider = TokenProvider.CreateManagedServiceIdentityTokenProvider(ServiceAudience.ServiceBusAudience),
                 TransportType = TransportType.Amqp
             };
 
