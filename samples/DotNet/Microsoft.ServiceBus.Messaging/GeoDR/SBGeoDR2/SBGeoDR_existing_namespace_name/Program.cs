@@ -22,6 +22,7 @@ namespace SBGeoDR2
         static readonly string geoDRPrimaryNS = ConfigurationManager.AppSettings["geoDRPrimaryNS"];
         static readonly string geoDRSecondaryNS = ConfigurationManager.AppSettings["geoDRSecondaryNS"];
         static readonly string alias = ConfigurationManager.AppSettings["alias"];
+        static readonly string alternateName = ConfigurationManager.AppSettings["alternatePrimaryName"];
 
         static void Main(string[] args)
         {
@@ -30,9 +31,8 @@ namespace SBGeoDR2
             Console.WriteLine ("Choose an action:");
             Console.WriteLine ("[A] Create or update namespaces, pair them and create a few entities");
             Console.WriteLine ("[B] Failover");
-            Console.WriteLine ("[C] Break pairing");
-            Console.WriteLine ("[D] Delete Alias in case of break pairing was executed and no failover happened.");
-            Console.WriteLine ("[E] Delete Alias after Failover.");
+            Console.WriteLine ("[C] Break pairing");            
+            Console.WriteLine ("[D] Delete Alias after Failover.");
 
             Char key = Console.ReadKey(true).KeyChar;
             String keyPressed = key.ToString().ToUpper();            
@@ -49,9 +49,6 @@ namespace SBGeoDR2
                     BreakPairing().GetAwaiter().GetResult();
                     break;
                 case "D":
-                    DeleteAliasPrim().GetAwaiter().GetResult();
-                    break;
-                case "E":
                     DeleteAliasSec().GetAwaiter().GetResult();
                     break;
                 default:
@@ -106,7 +103,8 @@ namespace SBGeoDR2
                 resourceGroupName,
                 geoDRPrimaryNS,
                 alias,
-                new ArmDisasterRecovery { PartnerNamespace = namespace2.Id })
+                new ArmDisasterRecovery { PartnerNamespace = namespace2.Id, AlternateName = alternateName }) 
+                // Note: The additional, optional parameter AlternateName is resposible for using the namespace name as alias and renaming the primary namespace.
                 .ConfigureAwait(false);
 
             while (drStatus.ProvisioningState != ProvisioningStateDR.Succeeded)
