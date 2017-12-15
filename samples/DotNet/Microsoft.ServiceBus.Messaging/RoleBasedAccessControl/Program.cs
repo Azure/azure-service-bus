@@ -44,7 +44,7 @@ namespace MessagingSamples
             Console.WriteLine("Pick a scenario to run and hit ENTER:");
             Console.WriteLine("1) ManagedServiceIdentity (must run in an Azure VM or Web Job)");
             Console.WriteLine("2) Interactive User Login");
-            Console.WriteLine("3) Service Principal");
+            Console.WriteLine("3) Username and password Login");
             Console.WriteLine("4) Client credential X.509 certificate");
 
             int option;
@@ -87,7 +87,7 @@ namespace MessagingSamples
                 TokenProvider = TokenProvider.CreateAadTokenProvider(
                     new AuthenticationContext($"https://login.windows.net/{TenantId}"),
                     ClientId,
-                    new Uri("http://servicebus.microsoft.com"),
+                    new Uri(ConfigurationManager.AppSettings["redirectURI"]),
                     new PlatformParameters(PromptBehavior.SelectAccount),
                     ServiceAudience.ServieBusAudience
                 ),
@@ -268,6 +268,7 @@ namespace MessagingSamples
             catch (Exception e)
             {
                 Console.WriteLine(e.ToString());
+                Console.ReadLine();
                 return 1;
             }
             return 0;

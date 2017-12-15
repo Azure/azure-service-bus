@@ -14,7 +14,7 @@
                 <label>Service Bus Endpoint FQDN</label><asp:TextBox ID="txtNamespace" runat="server" Text="" />
             </div>
             <div>
-                <label>Queue Name</label><asp:TextBox ID="txtQueueName" runat="server" Text="BasicQueue"/>
+                <label>Queue Name</label><asp:TextBox ID="txtQueueName" runat="server" Text=""/>
             </div>
             <div>
                 <label>Data to Send </label> <asp:TextBox ID="txtData" runat="server" TextMode="MultiLine" Width="500px"/>
