@@ -13,7 +13,7 @@ This sample consists of three parts:
 
 1. The main scenario showing management (Setup, failover, remove pairing) of new or existing namespaces sample can be found [here](https://github.com/Azure/azure-service-bus/tree/master/samples/DotNet/Microsoft.ServiceBus.Messaging/GeoDR/SBGeoDR2/SBGeoDR2)
 2. The scenario in which you want to use an existing namespace name as alias can be found [here](https://github.com/Azure/azure-service-bus/tree/master/samples/DotNet/Microsoft.ServiceBus.Messaging/GeoDR/SBGeoDR2/SBGeoDR_existing_namespace_name). Make sure to thoroughly look through the comments as this diverges slightly from the main scenario. Examine both, App.config and Program.cs. ***Note:*** If you do not failover but just do break pairing, there is no need to execute delete alias as namespace name and alias are the same. If you do failover you would need to delete the alias if you would want to use the namespace outside of a DR setup.
-3. A sample on how to access the alias connection string which can be found [here](https://github.com/Azure/azure-service-bus/tree/master/samples/DotNet/Microsoft.ServiceBus.Messaging/GeoDR/TestGeoDR).
+3. A sample on how to access the alias connection string which can be found [here](https://github.com/Azure/azure-service-bus/tree/master/samples/DotNet/Microsoft.ServiceBus.Messaging/GeoDR/TestGeoDR/ConsoleApp1).
 
 ## Getting Started
 ### Prerequisites
