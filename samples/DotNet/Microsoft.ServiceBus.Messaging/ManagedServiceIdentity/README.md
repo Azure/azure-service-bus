@@ -1,3 +1,3 @@
 # Managed Service Identity sample #
 
-For more information on Managed Service Identity (MSI) and how to run this sample follow [this](https://docs.microsoft.com/en-us/azure/event-hubs/service-bus-managed-service-identity) link.
+For more information about Managed Service Identity (MSI), follow [this link](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-managed-service-identity).
