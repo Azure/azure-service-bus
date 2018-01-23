@@ -10,6 +10,8 @@ const string TopicName = "{Topic Name}";
 const string SubscriptionName = "{Subscription Name}";
 ```
 
+Subscription should have a default rule to receive any messages.
+
 Once you replace the above values run the following from a command prompt:
    
 ```
