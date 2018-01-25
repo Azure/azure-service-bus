@@ -30,6 +30,10 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
             topicClient = new TopicClient(ServiceBusConnectionString, TopicName);
             subscriptionClient = new SubscriptionClient(ServiceBusConnectionString, TopicName, SubscriptionName);
 
+            // Ensure default rule exists
+            await subscriptionClient.RemoveRuleAsync(RuleDescription.DefaultRuleName);
+            await subscriptionClient.AddRuleAsync(new RuleDescription(RuleDescription.DefaultRuleName, new TrueFilter()));
+
             Console.WriteLine("======================================================");
             Console.WriteLine("Press any key to exit after receiving all the messages.");
             Console.WriteLine("======================================================");

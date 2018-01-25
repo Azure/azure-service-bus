@@ -40,6 +40,9 @@ namespace TopicSubscriptionWithRuleOperationsSample
             correlationFilterSubscriptionClient = new SubscriptionClient(ServiceBusConnectionString, TopicName, correlationFilterSubscriptionName);
 
             // First Subscription is already created with default rule. Leave as is.
+            Console.WriteLine($"SubscriptionName: {allMessagesSubscriptionName}, Removing and re-adding Default Rule");
+            await allMessagessubscriptionClient.RemoveRuleAsync(RuleDescription.DefaultRuleName);
+            await allMessagessubscriptionClient.AddRuleAsync(new RuleDescription(RuleDescription.DefaultRuleName, new TrueFilter()));
 
             // 2nd Subscription: Add SqlFilter on Subscription 2
             // Delete Default Rule.
