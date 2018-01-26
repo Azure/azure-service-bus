@@ -17,7 +17,7 @@ the Azure portal to get immediate help) and it provides unfiltered and easy acce
 
 * **Getting Started with Queues** - The [QueuesGettingStarted](./azure-servicebus/QueuesGettingStarted) sample illustrates the basic send and receive gestures 
   for interacting with a previously provisioned Service Bus Queue. Most other samples in this repository are derivatives of this basic sample. 
-* **Getting Started with Topics** - The [TopicsGettingStarted](./azure-servicebus.TopicsGettingStarted) sample illustrates the basic gestures for sending
+* **Getting Started with Topics** - The [TopicsGettingStarted](./azure-servicebus/TopicsGettingStarted) sample illustrates the basic gestures for sending
   messages into Topics and receiving them from Subscriptions.
 
 ### Message Handling
