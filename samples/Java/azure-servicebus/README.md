@@ -1,8 +1,72 @@
-# Azure Service Bus .NET Framework samples
+# Java Samples for Azure Service Bus
 
-This repository contains the official set of samples for the Azure Service Bus service (Standard and Premium), illustrating all core 
-features of Service Bus Queues and Service Bus Topics.  This samples all use the `WindowsAzure.ServiceBus` NuGet package for
-the full .NET Framework.
+This is the official set of Java samples for Azure Service Bus. The samples demonstrate basics 
+such as sending and receiving operations in the "quick starts", and more advanced scenarios in 
+the feature-oriented samples. All samples are simple command line applications with minimal extra 
+ceremony. 
+
+The Java samples are split into two distinct sets. One set is built with the native Azure Service Bus 
+SDK (azure-servicebus), the other set is built with the Apache Qpid JMS (Java Message Service) AMQP client.
+
+## Azure Service Bus API 
+
+The native Azure Service Bus SDK is fully supported by Microsoft (says: you can file service requests through 
+the Azure portal to get immediate help) and it provides unfiltered and easy access to all Service Bus features. 
+
+### Getting Started
+
+* **Getting Started with Queues** - The [QueuesGettingStarted](./azure-servicebus/QueuesGettingStarted) sample illustrates the basic send and receive gestures 
+  for interacting with a previously provisioned Service Bus Queue. Most other samples in this repository are derivatives of this basic sample. 
+* **Getting Started with Topics** - The [TopicsGettingStarted](./azure-servicebus/TopicsGettingStarted) sample illustrates the basic gestures for sending
+  messages into Topics and receiving them from Subscriptions.
+
+### Message Handling
+
+* **Receive Loop** - [ReceiveLoop](./azure-servicebus/ReceiveLoop) shows how to use an explicit receive loop with a queues instead of the 
+   recommended, callback-based OnMessage(Async) API used in the "getting started" sample.
+* **Message Prefetching** - The [Prefetch](./azure-servicebus/Prefetch) sample shows the difference between having "prefetch" turned on or off for the receiver. 
+  Prefetch is a background receive operation that acquires messages into a buffer before the application itself calls *Receive* and therefore 
+  optimizes and often accelerates the message flow.
+* **Duplicate Detection** - The sample for [DuplicateDetection](./azure-servicebus/DuplicateDetection) illustrates how Service Bus suppresses the secound and all 
+  further messages sent with an identical *MessageId* when sent during a defined duplicate detection time window when the *RequiresDuplicateDetection*
+  flag is turned on for a Queue or Topic.
+* **Message Browsing** - [MessageBrowse](./azure-servicebus/MessageBrowse) shows how to enumerate all messages residing in a Queue or Subscription without receiving
+  or locking them. This method also allows finding deferred and scheduled messages.
+* **Auto Forward** - [AutoForward](./azure-servicebus/AutoForward) illustrates how and why to use automatic forwarding between entities in Service Bus.
+  
+### Topics and Subscriptions
+
+* **Topic Filters** - The [TopicFilters](./azure-servicebus/TopicFilters) sample illustrates how to create and configure filters on Topic Subscriptions.
+  
+### Partitioned Entities
+
+* **Partitioned Queues** - [PartitionedQueues](./azure-servicebus/PartitionedQueues) are largely identical in handling to "regular" Queues (and are the default 
+  option when creating new Queues via teh Azure Portal), but are more resilient against slowdowns in the backend storage system. 
+  This sample illustrates some special considerations to keep in mind for partitioned queues.   
+
+### Error and Transaction Handling
+
+* **Deadletter Queues** - The [DeadletterQueue](./azure-servicebus/DeadletterQueue) sample shows how to use the deadletter queue for setting aside 
+  messages that cannot be processed, and how to receive from the deadletter queue to inspect, repair, and resubmit such messages.
+* **Time To Live** - The [TimeToLive](./azure-servicebus/TimeToLive) example shows the basic functionality of the TimeToLive option for messages as
+  well as handling of the deadletter queue where messages can optionally be stored by the system as they expire.
+  
+
+## Apache Qpid JMS
+
+The Qpid JMS client is a third party open source component managed by the Apache Qpid project. It 
+is compatible with Service Bus via its AMQP 1.0 proptocol support and can be used as an 
+"lowest common denominator" alternative when the JMS API has been chosen for an existing application
+that is being moved onto Azure Service Bus. Mind that JMS 2.0 gestures that change the namespace topology, 
+like creating durable subscriptions or temporary queues, are not supported with Azure Service Bus via 
+JMS at this time. 
+
+### Getting Started
+
+* **Getting Started with Queues** - The [JmsQueueQuickstart](./qpid-jms-client/JmsQueueQuickstart)  sample illustrates the basic send and receive gestures 
+  for interacting with a previously provisioned Service Bus Queue. Most other samples in this repository are derivatives of this basic sample. 
+* **Getting Started with Topics** - The [JmsTopicQuickstart](./qpid-jms-client/JmsTopicQuickstart) sample illustrates the basic gestures for sending
+  messages into Topics and receiving them from Subscriptions.
 
 # Setup 
 
@@ -14,7 +78,7 @@ and a simple basic topology of a few exemplary queues, topics, and subscriptions
 with an Azure Service Bus "Standard" namespace, just click the button below and follow the further instructions 
 on the Azure Portal:
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fclemensv%2Fazure-service-bus%2Fmaster%2Fsamples%2FDotNet%2FMicrosoft.ServiceBus.Messaging%2Fscripts%2Fazuredeploy.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fclemensv%2Fazure-service-bus%2Fmaster%2Fsamples%2FJava%2Fscripts%2Fazuredeploy.json" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
@@ -25,6 +89,20 @@ large [Service Bus Premium namespace](https://docs.microsoft.com/azure/service-b
 with 4 Messaging Units for several days.
 
 You can also deploy the resource manager template from the command line:
+
+## Setup using the Azure CLI
+
+With the Azure CLI, [you first create a named resource group](https://docs.microsoft.com/en-us/azure/azure-resource-manager/xplat-cli-azure-resource-manager) in an Azure region, selected by the *--location* argument, and then [deploy the template into the resource group](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-template-deploy-cli). The template file 
+with the Service Bus topology for these samples is located in the *scripts* subdirectory. The namespace name argument becomes the leftmost portion of the fully qualifed domain name of your Service Bus namespace (e.g. *{name}.servicebus.windows.net* or *{name}.servicebus.cloudapi.de*) and must therefore be globally unique. There will be error feedback if you pick a name that already exists.
+
+```azurecli
+az group create --name {rg-name} --location "Central US"
+az group deployment create --name {deployment-name} \
+                           --resource-group {rg-name} \
+                           --template-file scripts/azuredeploy.json \
+                           --parameters serviceBusNamespaceName={service-bus-namespace-name}
+```
+
 
 ## Setup using PowerShell
 
@@ -39,13 +117,25 @@ New-AzureRmResourceGroupDeployment \
       -serviceBusNamespaceName {service-bus-namespace-name} 
 ```
 
+# Building and exploring the samples
+
+All samples are individual Maven projects. JDK 1.8 or higher is required. There is a top-level Maven project
+umbrella that allows to build all samples in one go, but you can also build the projects singly. Each 
+project yields a console application packaged into a JAR along with all required dependencies, so that you
+don't have to fiddle around with the Java classpath. 
+
 ## Exploring and running the samples
 
-To make running the samples straightforward, there is a Powershell ([Azure PS](https://docs.microsoft.com/azure/azure-resource-manager/powershell-azure-resource-manager)) script 
-in *scripts* that will obtain the namespace connection string from your current Azure subscription, assume the entity names configured in the deployed templates, 
-and export those into a configuration file in your user directory, eliminating the need to pass arguments on the command line.
+The samples are preconfigured for use with [Visual Studio Code](https://code.visualstudio.com/) and the [Red Hat 
+Java language support](https://marketplace.visualstudio.com/items?itemName=redhat.java) and [Java debugging](https://marketplace.visualstudio.com/items?itemName=donjayamanne.javadebugger) extensions. 
+You can either open the Java sample root directory or the individual sample directories. 
 
-The Powershell script is *scripts/setupenv.ps1*. It needs to be called with the name of the Resource Group and the Service Bus namespace name as ordinal arguments. 
+All samples have similar command line usage and accept a Service Bus connection string via option *-c {connection-string}*, and the names of the Service Bus entities they interact with, e.g. *-q {queue-name}*. 
+
+To make running the samples straightforward, there are scripts for Bash ([Azure CLI](https://docs.microsoft.com/en-us/azure/azure-resource-manager/xplat-cli-azure-resource-manager)) and Powershell ([Azure PS](https://docs.microsoft.com/azure/azure-resource-manager/powershell-azure-resource-manager)) in *scripts* that will obtain the namespace connection string from your current Azure subscription, assume the entity names configured in the deployed templates, and export those into environment variables, eliminating the need to pass those arguments on the command line.
+
+The Bash script is *scripts/setupenv.sh*, the Powershell equivalent is *scripts/setupenv.ps1*. Either needs to be called with the name of the Resource Group and the Service Bus namespace name as ordinal arguments. The Bash version runs a (re-)deployment of the template to obtain the required keys. For parsing
+the returned JSON file, the Bash script relies on the [./jq](https://stedolan.github.io/jq/) package that can be installed with ```sudo apt install jq```.
 
 Run the Powershell script from the scripts directory with
 
@@ -53,94 +143,29 @@ Run the Powershell script from the scripts directory with
 ./setupenv.ps1 {rg-name} {service-bus-namespace-name} 
 ```
 
-## Common Considerations
+Run the Bash script with 
+```bash
+eval `./sampleenv.sh {rg-name} {service-bus-namespace-name}`
+```
 
-Most samples use shared [entry-point boilerplate code](common/Main.cs) that loads the configuration and then launches the sample's 
-**Program.Run()** instance methods. 
+The scripts initialize the following environment variables:
 
-Except for the samples that explicitly demonstrate security capabilities, all samples are invoked with an externally issued SAS token 
-rather than a connection string or a raw SAS key. The security model design of Service Bus generally prefers clients to handle tokens 
-rather than keys, because tokens can be constrained to a particular scope and can be issued to expire at a certain time. 
-More about SAS and tokens can be found [here](https://azure.microsoft.com/documentation/articles/service-bus-shared-access-signature-authentication/).               
+* SB_SAMPLES_CONNECTIONSTRING - Service Bus connection string
+* SB_SAMPLES_QUEUE - Default queue name
+* SB_SAMPLES_TOPIC - Default topic name
+* SB_SAMPLES_SUBSCRIPTION - Default subscription name
 
-All samples use the asynchronous, task-based programming model of the .NET Framework and therefore the *xAsync* overloads of the 
-respective Service Bus API methods. Since nearly all Service Bus operations result in network I/O, using the asynchronous programming
-model is strongly encouraged at all times as it yields significantly more efficient execution at runtime.      
+The samples build into the *target* folder of the respective sample subdirectory and can be run from there, using 
 
-> As you are exploring the samples, you should keep in mind that these samples are not aiming to show the simplest way to 
-> use the Service Bus API, but rather the **recommended**, most robust, and most efficient way to use the Service Bus API.
-> The samples are therefore more explicit and take more lines of code than the simplest use of the API would. Distributed 
-> systems, and especially cloud systems, are dynamic environments and the samples reflect this reality.     
+```bash
+java -jar {name]-jar-with-dependencies.jar 
+```
 
-## Samples
+## Building all samples 
 
-### Getting Started
+To build all samples, run a Maven build from the samples root directory:
 
-* **Getting Started with Queues** - The [QueuesGettingStarted](./QueuesGettingStarted) sample illustrates the basic send and receive gestures 
-  for interacting with a previously provisioned Service Bus Queue. Most other samples in this repository are derivatives of this basic sample. 
-* **Getting Started with Topics** - The [TopicsGettingStarted](./TopicsGettingStarted) sample illustrates the basic gestures for sending
-  messages into Topics and receiving them from Subscriptions.
-  
-### Message Handling
+```bash
+mvn -B package
+```
 
-* **Senders and Receivers with Queues** - The [SendersReceiversWithQueues](./SendersReceiversWithQueues) sample shows how to use the 
-  ```MessagingFactory```for explicit connection management and the generic ```MessageSender``` and ```MessageReceiver``` abstractions with queues. 
-* **Senders and Receivers with Topics** - The [SendersReceiversWithTopics](./SendersReceiversWithTopics) sample is a variation of 
-   the [SendersReceiversWithQueues](./SendersReceiversWithQueues) sample and shows how nearly identical code can be use with Queues and Topics
-   when using the ```MessageSender``` and ```MessageReceiver``` abstractions.  
-* **Receive Loop** - [ReceiveLoop](./ReceiveLoop) shows how to use an explicit receive loop with a queues instead of the 
-   recommended, callback-based OnMessage(Async) API used in the "getting started" sample.
-* **Message Prefetching** - The [Prefetch](./Prefetch) sample shows the difference between having "prefetch" turned on or off for the receiver. 
-  Prefetch is a background receive operation that acquires messages into a buffer before the application itself calls *Receive* and therefore 
-  optimizes and often accelerates the message flow.
-* **Duplicate Detection** - The sample for [DuplicateDetection](./DuplicateDetection) illustrates how Service Bus suppresses the secound and all 
-  further messages sent with an identical *MessageId* when sent during a defined duplicate detection time window when the *RequiresDuplicateDetection*
-  flag is turned on for a Queue or Topic.
-* **Message Browsing** - [MessageBrowse](./MessageBrowse) shows how to enumerate all messages residing in a Queue or Subscription without receiving
-  or locking them. This method also allows finding deferred and scheduled messages.
-* **Auto Forward** - [AutoForward](./AutoForward) illustrates how and why to use automatic forwarding between entities in Service Bus.
-  
-### Topics and Subscriptions
-
-* **Topic Filters** - The [TopicFilters](./TopicFilters) sample illustrates how to create and configure filters on Topic Subscriptions.
-* **Priority Subscriptions** - the sample [PrioritySubscriptions](./PrioritySubscriptions) shows how to model a "priority queue" pattern
-  with a Topic, with each priority tier having its own Topic Subscription.
-  
-### Partitioned Entities
-
-* **Partitioned Queues** - [PartitionedQueues](./PartitionedQueues) are largely identical in handling to "regular" Queues (and are the default 
-  option when creating new Queues via teh Azure Portal), but are more resilient against slowdowns in the backend storage system. 
-  This sample illustrates some special considerations to keep in mind for partitioned queues.   
-
-### Error and Transaction Handling
-
-* **Deadletter Queues** - The [DeadletterQueue](./DeadletterQueue) sample shows how to use the deadletter queue for setting aside 
-  messages that cannot be processed, and how to receive from the deadletter queue to inspect, repair, and resubmit such messages.
-* **Time To Live** - The [TimeToLive](./TimeToLive) example shows the basic functionality of the TimeToLive option for messages as
-  well as handling of the deadletter queue where messages can optionally be stored by the system as they expire.
-* **Atomic Transactions** - Service Bus supports wrapping [AtomicTransactions](./AtomicTransactions) scopes around a range of 
-  operations, allowing for such groups of operations to either jointly succeed or fail, enabling creating more robust business 
-  applications in the cloud.
-* **Durable Senders** - The [DurableSender](./DurableSender) sample shows how to make client applications robust against frequent
-  network link failures.
-* **Geo Replication** - The [GeoReplication](./GeoReplication) sample illustrates how to route messages through two distinct 
-  entities, possibly located in different namespaces in differentr datacenters, to limit the application's availability risk.      
-  
-### Session and Workflow Management Features
-
-* **Sessions** - The [Sessions](./Sessions) sample shows how to enforce strict ordered processing for messages originating from 
-  a particular context, and how to multiplex multiple distinct contexts over a single Queue or a Subscription.   
-* **Deferral** - The [Deferral](./Deferral) sample shows how to postpone processing of received messages by deferral, which 
-  allows pushing messages back into a Queue or Subscription so that they can be picked up directly as the processor is 
-  ready to handle them.    
-* **Session State** - The [SessionState](./SessionState) sample shows how to keep track of processing a workflow using 
-  the session state feature. 
- 
-### Windows Communication Foundation (WCF) Binding
-  
-* **NetMessagingBinding** - The [NetMessagingBinding](./NetMessagingBinding) sample shows how to use Service Bus Queues 
-   and Topics seamlessly the context of WCF applications using the NetMessagingBinding.
-* **Sessions with the NetMessagingBinding** - The [NetMessagingSession](./NetMessagingSession) sample shows how to use Service Bus
-  sessions with the NetMessagingBinding.
-                              
- 
