@@ -1,6 +1,6 @@
 # Message Senders and Receivers with Service Bus Topics
 
-This sample shows interacting with Service Bus topiscs using the MessageReceiver
+This sample shows interacting with Service Bus topics using the MessageReceiver
 and MessageSender classes.
 
 Refer to the main [README](../README.md) document for setup instructions. 
