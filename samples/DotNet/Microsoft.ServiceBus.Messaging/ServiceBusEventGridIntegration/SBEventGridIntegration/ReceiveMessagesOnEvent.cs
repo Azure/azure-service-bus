@@ -15,7 +15,7 @@ namespace SBEventGridIntegration
 {
     public static class ReceiveMessagesOnEvent
     {
-        const string ServiceBusConnectionString = "Endpoint=sb://demonamespacesb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=33C5MVgYEz3Ox38+6SJZ0BomXxY9r2GPgJWlCw7DXTk=";
+        const string ServiceBusConnectionString = "YOUR CONNECTION STRING";
         const int numberOfMessages = 10; // Choose the amount of messages you want to receive. Note that this is receive batch and there is no guarantee you will get all the messages.        
         static IMessageReceiver messageReceiver;
 
@@ -58,7 +58,7 @@ namespace SBEventGridIntegration
         {            
             log.Info($"TopicName: {ge[0].Data["topicName"]} : SubscriptionName: {ge[0].Data["subscriptionName"]}");
             // Get entity path, at this point you would in case you want to use Event Grid to monitor and react to deadletter messages likely also look for that.
-            string EntityPath = $"{ge[0].Data["topicName"]}/subscriptions/{ge[0].Data["subscriptionName"]}";//"eventgridreleasetest/subscriptions/PublishIfThisSubscriptionGotMessage"; // e.g.: topicname/subscriptions/subscriptionname
+            string EntityPath = $"{ge[0].Data["topicName"]}/subscriptions/{ge[0].Data["subscriptionName"]}";// e.g.: topicname/subscriptions/subscriptionname
 
             // Create MessageReceiver
             messageReceiver = new MessageReceiver(ServiceBusConnectionString, EntityPath, ReceiveMode.PeekLock, null, numberOfMessages);

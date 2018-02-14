@@ -8,9 +8,9 @@ namespace MessageSender
 {
     class Program
     {
-        const string ServiceBusConnectionString = "Endpoint=sb://demonamespacesb.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=33C5MVgYEz3Ox38+6SJZ0BomXxY9r2GPgJWlCw7DXTk=";
-        const string QueueName = "eventgridreleasetest";
-        static ITopicClient queueClient;
+        const string ServiceBusConnectionString = "YOUR CONNECTION STRING";
+        const string TopicName = "YOUR TOPIC NAME";
+        static ITopicClient TopicClient;
 
         static void Main(string[] args)
         {
@@ -20,7 +20,7 @@ namespace MessageSender
         static async Task MainAsync()
         {
             const int numberOfMessages = 1;
-            queueClient = new TopicClient(ServiceBusConnectionString, QueueName);
+            TopicClient = new TopicClient(ServiceBusConnectionString, TopicName);
 
             Console.WriteLine("================================================");
             Console.WriteLine("Press any key to exit after sending the message.");
@@ -31,7 +31,7 @@ namespace MessageSender
 
             Console.ReadKey();
 
-            await queueClient.CloseAsync();
+            await TopicClient.CloseAsync();
         }               
 
         static async Task SendMessagesAsync(int numberOfMessagesToSend)
@@ -48,7 +48,7 @@ namespace MessageSender
                     Console.WriteLine($"Sending message: {messageBody}");
 
                     // Send the message to the queue
-                    await queueClient.SendAsync(message);
+                    await TopicClient.SendAsync(message);
                 }
             }
             catch (Exception exception)
