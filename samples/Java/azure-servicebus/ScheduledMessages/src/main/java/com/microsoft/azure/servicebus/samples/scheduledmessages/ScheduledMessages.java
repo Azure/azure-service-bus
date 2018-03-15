@@ -36,7 +36,7 @@ public class ScheduledMessages {
         sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
         this.sendMessagesAsync(sendClient).thenRunAsync(() -> sendClient.closeAsync());
 
-        waitForEnter(60);
+        waitForEnter(150);
 
         receiveClient.close();
 
@@ -68,7 +68,7 @@ public class ScheduledMessages {
             message.setLabel("Scientist");
             message.setMessageId(messageId);
             message.setTimeToLive(Duration.ofMinutes(2));
-            message.setScheduledEnqueuedTimeUtc(Clock.systemUTC().instant().plusSeconds(30));
+            message.setScheduledEnqueuedTimeUtc(Clock.systemUTC().instant().plusSeconds(120));
             System.out.printf("Message sending: Id = %s\n", message.getMessageId());
             tasks.add(
                     sendClient.sendAsync(message).thenRunAsync(() -> {

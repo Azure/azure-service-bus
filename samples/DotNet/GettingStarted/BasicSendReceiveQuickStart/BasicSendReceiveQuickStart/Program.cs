@@ -1,44 +1,54 @@
-﻿// Copyright (c) Microsoft. All rights reserved.
-// Licensed under the MIT license. See LICENSE file in the project root for full license information.
+﻿using Microsoft.Azure.ServiceBus;
+using System;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 
-namespace BasicSendReceiveUsingTopicSubscriptionClient
+namespace BasicSendReceiveQuickStart
 {
-    using Microsoft.Azure.ServiceBus;
-    using System;
-    using System.Text;
-    using System.Threading;
-    using System.Threading.Tasks;
-
     class Program
     {
-        // Connection String for the namespace can be obtained from the Azure portal under the 
-        // 'Shared Access policies' section.
-        const string ServiceBusConnectionString = "{ServiceBus connection string}";
-        const string TopicName = "{Topic Name}";
-        const string SubscriptionName = "{Subscription Name}";
-        static ITopicClient topicClient;
-        static ISubscriptionClient subscriptionClient;
+        static IQueueClient queueClient;
 
         static void Main(string[] args)
         {
-            MainAsync().GetAwaiter().GetResult();
+            string ServiceBusConnectionString = "";
+            string QueueName = "";
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                var p = new Program();
+                if (args[i] == "-ConnectionString")
+                {
+                    Console.WriteLine($"ConnectionString: {args[i+1]}");
+                    ServiceBusConnectionString = args[i + 1]; // Alternatively enter your connection string here.
+                }
+                else if(args[i] == "-QueueName")
+                {
+                    Console.WriteLine($"QueueName: {args[i+1]}");
+                    QueueName = args[i + 1]; // Alternatively enter your queue name here.
+                }                
+            }
+
+            if (ServiceBusConnectionString != "" && QueueName != "")
+                MainAsync(ServiceBusConnectionString, QueueName).GetAwaiter().GetResult();
+            else
+            {
+                Console.WriteLine("Specify -Connectionstring and -QueueName to execute the example.");
+                Console.ReadKey();
+            }                            
         }
 
-        static async Task MainAsync()
+        static async Task MainAsync(string ServiceBusConnectionString, string QueueName)
         {
             const int numberOfMessages = 10;
-            topicClient = new TopicClient(ServiceBusConnectionString, TopicName);
-            subscriptionClient = new SubscriptionClient(ServiceBusConnectionString, TopicName, SubscriptionName);
-
-            // Ensure default rule exists
-            await subscriptionClient.RemoveRuleAsync(RuleDescription.DefaultRuleName);
-            await subscriptionClient.AddRuleAsync(new RuleDescription(RuleDescription.DefaultRuleName, new TrueFilter()));
+            queueClient = new QueueClient(ServiceBusConnectionString, QueueName);
 
             Console.WriteLine("======================================================");
             Console.WriteLine("Press any key to exit after receiving all the messages.");
             Console.WriteLine("======================================================");
 
-            // Register Subscription's MessageHandler and receive messages in a loop
+            // Register QueueClient's MessageHandler and receive messages in a loop
             RegisterOnMessageHandlerAndReceiveMessages();
 
             // Send Messages
@@ -46,8 +56,7 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
 
             Console.ReadKey();
 
-            await subscriptionClient.CloseAsync();
-            await topicClient.CloseAsync();
+            await queueClient.CloseAsync();
         }
 
         static void RegisterOnMessageHandlerAndReceiveMessages()
@@ -65,7 +74,7 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
             };
 
             // Register the function that will process messages
-            subscriptionClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
+            queueClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
         }
 
         static async Task ProcessMessagesAsync(Message message, CancellationToken token)
@@ -74,11 +83,11 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
             Console.WriteLine($"Received message: SequenceNumber:{message.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(message.Body)}");
 
             // Complete the message so that it is not received again.
-            // This can be done only if the subscriptionClient is created in ReceiveMode.PeekLock mode (which is default).
-            await subscriptionClient.CompleteAsync(message.SystemProperties.LockToken);
+            // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode (which is default).
+            await queueClient.CompleteAsync(message.SystemProperties.LockToken);
 
-            // Note: Use the cancellationToken passed as necessary to determine if the subscriptionClient has already been closed.
-            // If subscriptionClient has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls 
+            // Note: Use the cancellationToken passed as necessary to determine if the queueClient has already been closed.
+            // If queueClient has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls 
             // to avoid unnecessary exceptions.
         }
 
@@ -100,15 +109,15 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
             {
                 for (var i = 0; i < numberOfMessagesToSend; i++)
                 {
-                    // Create a new message to send to the topic
+                    // Create a new message to send to the queue
                     string messageBody = $"Message {i}";
                     var message = new Message(Encoding.UTF8.GetBytes(messageBody));
 
                     // Write the body of the message to the console
                     Console.WriteLine($"Sending message: {messageBody}");
 
-                    // Send the message to the topic
-                    await topicClient.SendAsync(message);
+                    // Send the message to the queue
+                    await queueClient.SendAsync(message);
                 }
             }
             catch (Exception exception)
@@ -118,3 +127,4 @@ namespace BasicSendReceiveUsingTopicSubscriptionClient
         }
     }
 }
+

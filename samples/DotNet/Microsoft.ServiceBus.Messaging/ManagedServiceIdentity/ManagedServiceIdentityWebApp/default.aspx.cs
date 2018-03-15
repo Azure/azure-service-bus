@@ -18,6 +18,7 @@ namespace ManagedServiceIdentityWebApp
             };
 
             // TODO - Remove after backend is patched with the AuthComponent open fix
+            // https://github.com/Azure/azure-service-bus/issues/136
             messagingFactorySettings.AmqpTransportSettings.EnableLinkRedirect = false;
 
             // create the messaging factory using the namespace endpoint name supplied by the user
@@ -44,6 +45,7 @@ namespace ManagedServiceIdentityWebApp
             };
 
             // TODO - Remove after backend is patched with the AuthComponent open fix
+            // https://github.com/Azure/azure-service-bus/issues/136
             messagingFactorySettings.AmqpTransportSettings.EnableLinkRedirect = false;
 
             // create the messaging factory using the namespace endpoint name supplied by the user
