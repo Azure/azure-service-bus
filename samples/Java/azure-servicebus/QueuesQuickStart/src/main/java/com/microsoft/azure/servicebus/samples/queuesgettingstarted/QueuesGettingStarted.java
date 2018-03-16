@@ -20,18 +20,20 @@ import org.apache.commons.cli.*;
 public class QueuesGettingStarted {
 
     static final Gson GSON = new Gson();
+    String ConnectionString = null;
+    String QueueName = null;
 
-    public void run(String connectionString, String QueueName) throws Exception {
+    public void run() throws Exception {
 
         // Create a QueueClient instance for receiving using the connection string builder
         // We set the receive mode to "PeekLock", meaning the message is delivered
         // under a lock and must be acknowledged ("completed") to be removed from the queue
-        QueueClient receiveClient = new QueueClient(new ConnectionStringBuilder(connectionString, QueueName), ReceiveMode.PEEKLOCK);
+        QueueClient receiveClient = new QueueClient(new ConnectionStringBuilder(ConnectionString, QueueName), ReceiveMode.PEEKLOCK);
         this.registerReceiver(receiveClient);
 
         // Create a QueueClient instance for sending and then asynchronously send messages.
         // Close the sender once the send operation is complete.
-        QueueClient sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, QueueName), ReceiveMode.PEEKLOCK);
+        QueueClient sendClient = new QueueClient(new ConnectionStringBuilder(ConnectionString, QueueName), ReceiveMode.PEEKLOCK);
         this.sendMessagesAsync(sendClient).thenRunAsync(() -> sendClient.closeAsync());
 
         // wait for ENTER or 10 seconds elapsing
@@ -115,57 +117,37 @@ public class QueuesGettingStarted {
     }
 
     public static void main(String[] args) {
-
-        System.exit(runApp(args, (connectionString) -> {
             QueuesGettingStarted app = new QueuesGettingStarted();
             try {
-                app.run(connectionString);
-                return 0;
+                app.runApp(args);
+                app.run();
             } catch (Exception e) {
                 System.out.printf("%s", e.toString());
-                return 1;
             }
-        }));
+            System.exit(0);
     }
 
     static final String SB_SAMPLES_CONNECTIONSTRING = "SB_SAMPLES_CONNECTIONSTRING";
 
-    public static int runApp(String[] args, Function<String, Integer> run) {
+    public void runApp(String[] args) {
         try {
-
-            String connectionString = null;
-            String queueName = null;
-
             // parse connection string from command line
             Options options = new Options();
             options.addOption(new Option("c", true, "Connection string"));
-            options.addOption(new Option("q", true, "Queue Name"))
+            options.addOption(new Option("q", true, "Queue Name"));
             CommandLineParser clp = new DefaultParser();
             CommandLine cl = clp.parse(options, args);
             if (cl.getOptionValue("c") != null && cl.getOptionValue("q") != null) {
-                connectionString = cl.getOptionValue("c");
-                queueName =  cl.getOptionValue("q");
+                ConnectionString = cl.getOptionValue("c");
+                QueueName =  cl.getOptionValue("q");
             }
             else
             {
-                
-            }
-
-            // get overrides from the environment
-            String env = System.getenv(SB_SAMPLES_CONNECTIONSTRING);
-            if (env != null) {
-                connectionString = env;
-            }
-
-            if (connectionString == null) {
                 HelpFormatter formatter = new HelpFormatter();
                 formatter.printHelp("run jar with", "", options, "", true);
-                return 2;
             }
-            return run.apply(connectionString);
         } catch (Exception e) {
             System.out.printf("%s", e.toString());
-            return 3;
         }
     }
 
