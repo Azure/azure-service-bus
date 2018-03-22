@@ -37,7 +37,7 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>com.microsoft.azure.servicebus.samples.queuesgettingstarted.QueuesGettingStarted</mainClass>
+                            <mainClass>com.microsoft.azure.servicebus.samples.prefetch.Prefetch</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
