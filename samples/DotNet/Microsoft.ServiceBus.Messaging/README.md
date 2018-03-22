@@ -1,7 +1,7 @@
 # Azure Service Bus .NET Framework samples
 
 This repository contains the official set of samples for the Azure Service Bus service (Standard and Premium), illustrating all core 
-features of Service Bus Queues and Service Bus Topics.  This samples all use the `WindowsAzure.ServiceBus` NuGet package for
+features of Service Bus queues and Service Bus topics.  This samples all use the `WindowsAzure.ServiceBus` NuGet package for
 the full .NET Framework.
 
 # Setup 
@@ -81,7 +81,7 @@ model is strongly encouraged at all times as it yields significantly more effici
 * **Senders and Receivers with Queues** - The [SendersReceiversWithQueues](./SendersReceiversWithQueues) sample shows how to use the 
   ```MessagingFactory```for explicit connection management and the generic ```MessageSender``` and ```MessageReceiver``` abstractions with queues. 
 * **Senders and Receivers with Topics** - The [SendersReceiversWithTopics](./SendersReceiversWithTopics) sample is a variation of 
-   the [SendersReceiversWithQueues](./SendersReceiversWithQueues) sample and shows how nearly identical code can be use with Queues and Topics
+   the [SendersReceiversWithQueues](./SendersReceiversWithQueues) sample and shows how nearly identical code can be use with queues and topics
    when using the ```MessageSender``` and ```MessageReceiver``` abstractions.  
 * **Receive Loop** - [ReceiveLoop](./ReceiveLoop) shows how to use an explicit receive loop with a queues instead of the 
    recommended, callback-based OnMessage(Async) API used in the "getting started" sample.
@@ -103,8 +103,8 @@ model is strongly encouraged at all times as it yields significantly more effici
   
 ### Partitioned Entities
 
-* **Partitioned Queues** - [PartitionedQueues](./PartitionedQueues) are largely identical in handling to "regular" Queues (and are the default 
-  option when creating new Queues via teh Azure Portal), but are more resilient against slowdowns in the backend storage system. 
+* **Partitioned Queues** - [PartitionedQueues](./PartitionedQueues) are largely identical in handling to "regular" queues (and are the default 
+  option when creating new queues via the Azure portal), but are more resilient against slowdowns in the backend storage system. 
   This sample illustrates some special considerations to keep in mind for partitioned queues.   
 
 ### Error and Transaction Handling
@@ -133,7 +133,7 @@ model is strongly encouraged at all times as it yields significantly more effici
  
 ### Windows Communication Foundation (WCF) Binding
   
-* **NetMessagingBinding** - The [NetMessagingBinding](./NetMessagingBinding) sample shows how to use Service Bus Queues 
+* **NetMessagingBinding** - The [NetMessagingBinding](./NetMessagingBinding) sample shows how to use Service Bus queues 
    and Topics seamlessly the context of WCF applications using the NetMessagingBinding.
 * **Sessions with the NetMessagingBinding** - The [NetMessagingSession](./NetMessagingSession) sample shows how to use Service Bus
   sessions with the NetMessagingBinding.
