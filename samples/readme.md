@@ -27,7 +27,7 @@ maintained for backwards compatibility.
 The samples within the [Java](Java) folder target the
 [azure-service-bus-java](https://github.com/Azure/azure-service-bus-java)
 package and the [Apache Qpid JMS 2.0](https://qpid.apache.org/components/jms/)
-client. Additionally all newly added Quickstarts and Tutorials for Java will be available [here](ava/quickstarts-and-tutorials).
+client. Additionally all newly added Quickstarts and Tutorials for Java will be available [here](Java/quickstarts-and-tutorials).
 
 ## Management
 
