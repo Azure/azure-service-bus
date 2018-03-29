@@ -19,11 +19,11 @@ namespace AccessServiceBusMetricsViaCode
         }
         static async Task MainAsync(string[] args)
         {
-            var tenantId = "72f988bf-86f1-41af-91ab-2d7cd011db47"; // AAD Tenant
-            var clientId = "b96384a0-7a01-4f04-b290-4b48e117ee3c"; // AAD Web App ID. Do not use a native app
-            var secret = "pnAY/v75vD3Q23pqM64duhp0laN7Ct25NsN6YaPQqk8="; // Your generated secret                              
-            var resourceId = "subscriptions/326100e2-f69d-4268-8503-075374f62b6e/resourceGroups/DemoGroup/providers/Microsoft.ServiceBus/namespaces/DemoNamespaceSB"; // resourceId can be taken when you select the namespace you intend to use in the portal and copy the url. Then delete everything before "subscriptions" and after the namespace name.                        
-            string entityName = "inbound";  // Queue or Topic name           
+            var tenantId = ""; // AAD Tenant
+            var clientId = ""; // AAD Web App ID. Do not use a native app
+            var secret = ""; // Your generated secret                              
+            var resourceId = ""; // resourceId can be taken when you select the namespace you intend to use in the portal and copy the url. Then delete everything before "subscriptions" and after the namespace name.                        
+            string entityName = "";  // Queue or Topic name           
             string metricName = "ActiveMessages";  // Valid metrics "IncomingMessages,IncomingRequests,ActiveMessages,Messages,Size"            
             string aggregation = "Total"; // Valid aggregations: Total and Average
 
