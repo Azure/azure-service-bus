@@ -153,7 +153,7 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
         RegisterOnMessageHandlerAndReceiveMessages();
 
 		// Send Messages
-        await SendMessagesToQueue(10);        
+        await SendMessagesAsync(10);        
 
         Console.WriteLine("Press any key to exit after receiving all the messages.");
         Console.ReadKey();
