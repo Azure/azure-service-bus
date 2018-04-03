@@ -89,7 +89,7 @@ namespace MessagingSamples
                     ClientId,
                     new Uri(ConfigurationManager.AppSettings["redirectURI"]),
                     new PlatformParameters(PromptBehavior.SelectAccount),
-                    ServiceAudience.ServieBusAudience
+                    ServiceAudience.ServiceBusAudience
                 ),
                 TransportType = TransportType.Amqp
             };
@@ -109,7 +109,7 @@ namespace MessagingSamples
                     new AuthenticationContext($"https://login.windows.net/{TenantId}"),
                     ClientId,
                     userPasswordCredential,
-                    ServiceAudience.ServieBusAudience
+                    ServiceAudience.ServiceBusAudience
                 ),
                 TransportType = TransportType.Amqp
             };
@@ -125,7 +125,7 @@ namespace MessagingSamples
                 TokenProvider = TokenProvider.CreateAadTokenProvider(
                     new AuthenticationContext($"https://login.windows.net/{TenantId}"),
                     clientCredential,
-                    ServiceAudience.ServieBusAudience
+                    ServiceAudience.ServiceBusAudience
                 ),
                 TransportType = TransportType.Amqp
             };
