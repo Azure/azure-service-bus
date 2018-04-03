@@ -46,7 +46,7 @@ namespace AccessServiceBusMetricsViaCode
             // Use this as quick and easy way to understand what metrics are emitted and what to query for. 
             // When looking for the count and size of an entity the only supported way is using total and 1 minute time slices.
             // Accessing those metrics via code is mostly for auto scaling purposes on sender and receiver side.
-            Response metrics1 = monitoringClient.Metrics.List(resourceUri: resourceId, metricnames: "ActiveMessages", odataQuery: odataFilterMetrics, timespan: timeSpan, aggregation: "Total", interval: TimeSpan.FromMinutes(1));
+            Response metrics1 = monitoringClient.Metrics.List(resourceUri: resourceId, metricnames: metricName, odataQuery: odataFilterMetrics, timespan: timeSpan, aggregation: aggregation, interval: TimeSpan.FromMinutes(1));
             Console.WriteLine(JsonConvert.SerializeObject(metrics1, Newtonsoft.Json.Formatting.Indented));
 
             // Use this to get a list output to your console                        
