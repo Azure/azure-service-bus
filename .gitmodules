@@ -7,3 +7,19 @@
 	url = https://github.com/Azure/azure-service-bus-java.git
 	branch = dev
 
+[submodule "MgmtAADJavaTopics"]
+	path = samples/Management/service-bus-java-manage-publish-subscribe-with-basic-features
+	url = https://github.com/Azure-Samples/service-bus-java-manage-publish-subscribe-with-basic-features.git
+	branch = master
+[submodule "MgmtAADJavaQueues"]
+	path = samples/Management/service-bus-java-manage-queue-with-advanced-features
+	url = https://github.com/Azure-Samples/service-bus-java-manage-queue-with-advanced-features.git
+	branch = master
+[submodule "PerformanceTesting"]
+	path = samples/DotNet/service-bus-dotnet-messaging-performance
+	url = https://github.com/Azure-Samples/service-bus-dotnet-messaging-performance.git
+	branch = master
+[submodule "MgmtAADDotNet"]
+	path = samples/Management/service-bus-dotnet-management
+	url = https://github.com/Azure-Samples/service-bus-dotnet-management.git
+	branch = master
