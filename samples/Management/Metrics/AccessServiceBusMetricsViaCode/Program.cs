@@ -2,8 +2,6 @@
 using System.Linq;
 using Microsoft.Azure.Management.Monitor;
 using Microsoft.Azure.Management.Monitor.Models;
-using Microsoft.Azure.Management.ServiceBus;
-using Microsoft.Azure.Management.ServiceBus.Models;
 using Microsoft.Rest.Azure.OData;
 using System.Threading.Tasks;
 using Microsoft.Rest.Azure.Authentication;
@@ -13,11 +11,12 @@ namespace AccessServiceBusMetricsViaCode
 {
     class Program
     {
-        public static void Main(String[] args)
+        public static async Task Main(String[] args)
         {
-            MainAsync(args).GetAwaiter().GetResult();
+            await RunSampleAsync();
         }
-        static async Task MainAsync(string[] args)
+
+        static async Task RunSampleAsync()
         {
             var tenantId = ""; // AAD Tenant
             var clientId = ""; // AAD Web App ID. Do not use a native app
