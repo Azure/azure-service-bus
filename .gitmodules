@@ -6,3 +6,7 @@
 	path = java
 	url = https://github.com/Azure/azure-service-bus-java.git
 	branch = dev
+[submodule "performance"]
+	path = service-bus-dotnet-messaging-performance
+	url = https://github.com/Azure-Samples/service-bus-dotnet-messaging-performance
+	branch = master
