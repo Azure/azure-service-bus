@@ -17,7 +17,6 @@ import static java.nio.charset.StandardCharsets.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.function.Function;
 
 public class TutorialTopicsSubscriptionsFilters {
 	
@@ -72,22 +71,22 @@ public class TutorialTopicsSubscriptionsFilters {
 
         // Now we can start sending orders.
         CompletableFuture.allOf(
-                SendOrders(topicClient,Store[0]),
-                SendOrders(topicClient,Store[1]),
-                SendOrders(topicClient,Store[2]),
-                SendOrders(topicClient,Store[3]),
-                SendOrders(topicClient,Store[4]),
-                SendOrders(topicClient,Store[5]),
-                SendOrders(topicClient,Store[6]),
-                SendOrders(topicClient,Store[7]),
-                SendOrders(topicClient,Store[8]),
-                SendOrders(topicClient,Store[9])                
+                SendItems(topicClient,Store[0]),
+                SendItems(topicClient,Store[1]),
+                SendItems(topicClient,Store[2]),
+                SendItems(topicClient,Store[3]),
+                SendItems(topicClient,Store[4]),
+                SendItems(topicClient,Store[5]),
+                SendItems(topicClient,Store[6]),
+                SendItems(topicClient,Store[7]),
+                SendItems(topicClient,Store[8]),
+                SendItems(topicClient,Store[9])                
         ).join();
 
         System.out.printf("\nAll messages sent.\n");
     }
 
-    public CompletableFuture<Void> SendOrders(TopicClient topicClient, String store) throws Exception {
+    public CompletableFuture<Void> SendItems(TopicClient topicClient, String store) throws Exception {
 
         for(int i = 0;i<NrOfMessagesPerStore;i++) {
         	Random r = new Random();
@@ -108,7 +107,7 @@ public class TutorialTopicsSubscriptionsFilters {
                 put("Category", item.getItemCategory());
             }});
                         
-            System.out.printf("Sent order to Store %s. Price=%f, Color=%s, Category=%s\n", StoreId, item.getPrice(), item.getColor(), item.getItemCategory());            
+            System.out.printf("Sent item to Store %s. Price=%f, Color=%s, Category=%s\n", StoreId, item.getPrice(), item.getColor(), item.getItemCategory());            
             topicClient.sendAsync(message);
         }
                
