@@ -125,8 +125,7 @@
             "Manage"
           ],
           "properties": {
-            "requiresDuplicateDetection": true,
-            "duplicateDetectionHistoryTimeWindow" :  "T10M"
+            "requiresDuplicateDetection": true
           },
           "resources": []
         },
