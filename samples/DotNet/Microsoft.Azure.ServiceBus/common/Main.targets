@@ -1,0 +1,11 @@
+<Project DefaultTargets="Compile"  
+    xmlns="http://schemas.microsoft.com/developer/msbuild/2003">  
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)\Main.cs" Link="Main.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)\azure-msg-config.properties" Link="azure-msg-config.properties">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+</Project>

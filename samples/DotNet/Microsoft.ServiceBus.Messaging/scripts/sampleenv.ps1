@@ -4,8 +4,14 @@ param (
     [string]$ruleName="SendListen"
  )
 
-$env:SB_SAMPLES_CONNECTIONSTRING=(Get-AzureRmServiceBusKey -ResourceGroupName $resourceGroup -Namespace $namespaceName -Name $rulename).PrimaryConnectionString
-$env:SB_SAMPLES_MANAGE_CONNECTIONSTRING=(Get-AzureRmServiceBusKey -ResourceGroupName $resourceGroup -Namespace $namespaceName -Name "RootManageSharedAccessKey").PrimaryConnectionString
-$env:SB_SAMPLES_QUEUENAME="BasicQueue"
-$env:SB_SAMPLES_TOPICNAME="BasicTopic"
-$env:SB_SAMPLES_SUBSCRIPTIONNAME="Subscription1"
+function Get-ScriptDirectory
+{
+$Invocation = (Get-Variable MyInvocation -Scope 1).Value
+Split-Path $Invocation.MyCommand.Path
+}
+
+$configFile = Join-Path Get-ScriptDirectory "../common/azure-msg-config.properties" 
+"SB_SAMPLES_CONNECTIONSTRING="+(Get-AzureRmServiceBusKey -ResourceGroupName $resourceGroup -Namespace $namespaceName -Name $rulename).PrimaryConnectionString > $configFile
+"SB_SAMPLES_QUEUENAME=BasicQueue" >> $configFile
+"SB_SAMPLES_TOPICNAME=BasicTopic" >> $configFile
+"SB_SAMPLES_SUBSCRIPTIONNAME=Subscription1" >> $configFile

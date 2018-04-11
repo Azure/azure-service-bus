@@ -8,9 +8,7 @@
   <ItemGroup>
     <None Remove="app.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\..\common\Main.cs" Link="Main.cs" />
-  </ItemGroup>
+  <Import Project="..\..\common\Main.targets" />
   <ItemGroup>
     <Content Include="app.config" />
   </ItemGroup>

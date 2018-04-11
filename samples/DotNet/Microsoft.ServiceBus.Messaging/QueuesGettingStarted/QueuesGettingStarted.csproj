@@ -5,9 +5,7 @@
     <TargetFramework>net462</TargetFramework>
     
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="..\common\Main.cs" Link="Main.cs" />
-  </ItemGroup>
+  <Import Project="..\common\Main.targets" />
   <ItemGroup>
     
     <PackageReference Include="Microsoft.CSharp" Version="4.4.0" />

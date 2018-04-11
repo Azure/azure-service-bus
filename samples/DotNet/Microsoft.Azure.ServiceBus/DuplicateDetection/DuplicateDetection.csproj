@@ -10,9 +10,7 @@
   <ItemGroup>
     <None Remove="readme.md" />
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="..\common\Main.cs" Link="Main.cs" />
-  </ItemGroup>
+  <Import Project="..\common\Main.targets" />
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.ServiceBus" Version="2.0.0" />
     <PackageReference Include="System.Diagnostics.Debug" Version="4.3.0" />

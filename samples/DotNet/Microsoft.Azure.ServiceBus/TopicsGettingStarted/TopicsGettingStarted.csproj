@@ -5,9 +5,7 @@
     <TargetFrameworks>net462;netcoreapp2.0</TargetFrameworks>
     
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="..\common\Main.cs" Link="Main.cs" />
-  </ItemGroup>
+  <Import Project="..\common\Main.targets" />
   <ItemGroup>
     <PackageReference Include="Microsoft.Azure.ServiceBus" Version="2.0.0" />
     <PackageReference Include="Microsoft.CSharp" Version="4.4.0" />
