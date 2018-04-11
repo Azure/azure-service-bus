@@ -49,12 +49,9 @@ namespace MessagingSamples
             };
 
             // read the settings file created by the ./setup.ps1 file
-            var settingsFile = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                samplePropertiesFileName);
-            if (File.Exists(settingsFile))
+            if (File.Exists(samplePropertiesFileName))
             {
-                using (var fs = new StreamReader(settingsFile))
+                using (var fs = new StreamReader(samplePropertiesFileName))
                 {
                     while (!fs.EndOfStream)
                     {

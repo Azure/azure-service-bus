@@ -36,10 +36,11 @@ then
      echo "$cx1" >&2
      exit 4
   fi
-  echo export SB_SAMPLES_CONNECTIONSTRING="$cx"
-  echo export SB_SAMPLES_QUEUENAME="BasicQueue"
-  echo export SB_SAMPLES_TOPICNAME="BasicTopic"
-  echo export SB_SAMPLES_SUBSCRIPTIONNAME="Subscription1"
+  configFile = "$( dirname "${BASH_SOURCE[0]}" )/../common/azure-msg-config.properties"
+  echo "SB_SAMPLES_CONNECTIONSTRING=$cx" > configFile
+  echo "SB_SAMPLES_QUEUENAME=BasicQueue" >> configFile
+  echo "SB_SAMPLES_TOPICNAME=BasicTopic" >> configFile
+  echo "SB_SAMPLES_SUBSCRIPTIONNAME=Subscription1" >> configFile
 else
   echo "Unable to create/update Azure deployment" >&2
 fi
