@@ -142,7 +142,7 @@ public class TutorialTopicsSubscriptionsFilters {
                 
                 byte[] body = receivedMessage.getBody();
                 Item theItem = GSON.fromJson(new String(body, UTF_8), Item.class);
-                System.out.printf("Item data. Price=%f, Color=%s, Category=%s\n", theItem.getPrice(), theItem.getColor(), theItem.getItemCategory());                            
+                System.out.printf("Item data: Price=%f, Color=%s, Category=%s\n", theItem.getPrice(), theItem.getColor(), theItem.getItemCategory());                            
                 
                 subscriptionClient.complete(receivedMessage.getLockToken());
                 receivedMessages++;
