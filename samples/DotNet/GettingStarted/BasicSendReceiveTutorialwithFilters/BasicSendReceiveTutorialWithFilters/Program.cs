@@ -135,8 +135,8 @@ namespace BasicSendReceiveTutorialWithFilters
 
             await sr.Receive();
 
-            Char key = Console.ReadKey(true).KeyChar;
-            String keyPressed = key.ToString().ToUpper();
+            char key = Console.ReadKey(true).KeyChar;
+            string keyPressed = key.ToString().ToUpper();
 
             switch (keyPressed)
             {
