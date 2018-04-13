@@ -83,18 +83,23 @@ namespace BasicSendReceiveTutorialWithFilters
             switch (keyPressed)
             {
                 case "1":
+                    // This will remove the default filters, which you need to do always first
                     await RemoveDefaultFilters();
                     break;
                 case "2":
+                    // This will create the customer filters
                     await CreateCustomFilters();
                     break;
                 case "3":
+                    // Optionally with this you can remove the custom filters.
                     await CleanUpCustomFilters();
                     break;
                 case "4":
+                    // Use this to Send messages.
                     await SendMessages();
                     break;
                 case "5":
+                    // Use this to Receive messages.
                     await Receive();
                     break;
                 default:
