@@ -46,6 +46,7 @@ namespace BasicSendReceiveTutorialWithFilters
                 Random r = new Random();
                 Item item = new Item(r.Next(5), r.Next(5), r.Next(5));
 
+                // Note the extension class which is serializing an deserializing messages
                 Message message = item.AsMessage();
                 message.To = store;
                 message.UserProperties.Add("StoreId", store);
@@ -74,11 +75,18 @@ namespace BasicSendReceiveTutorialWithFilters
             var entityPath = EntityNameHelper.FormatSubscriptionPath(TopicName, subscription);
             var receiver = new MessageReceiver(ServiceBusConnectionString, entityPath, ReceiveMode.PeekLock, RetryPolicy.Default, 100);
 
+            // In reality you would not break out of the loop like in this example but would keep looping. The receiver keeps the connection open
+            // to the broker for the specified amount of seconds and the broker returns messages as soon as they arrive. The client then initiates
+            // a new connection. So in reality you would not want to break out of the loop. 
+            // Also note that the code shows how to batch receive, which you would do for performance reasons. For convenience you can also always
+            // use the regular receive pump which we show in our Quick Start and in other github samples.
             while (true)
             {
                 try
                 {
                     IList<Message> messages = await receiver.ReceiveAsync(10, TimeSpan.FromSeconds(2));
+                    // Note the extension class which is serializing an deserializing messages and testing messages is null or 0.
+                    // If you think you did not receive all messages, just press M and receive again via the menu.
                     if (messages.Any())
                     {
                         foreach (var message in messages)
