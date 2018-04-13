@@ -7,14 +7,14 @@ namespace BasicSendReceiveTutorialWithFilters
 {
     class Program
     {
-        string ServiceBusConnectionString = "";
-        string TopicName = "";
+        string ServiceBusConnectionString;
+        string TopicName;
 
         static string[] Subscriptions = { "S1", "S2", "S3" };
         static IDictionary<string, string[]> SubscriptionFilters = new Dictionary<string, string[]> {
-            { "S1", new string[] { "StoreId IN('Store1', 'Store2', 'Store3')", "StoreId = 'Store4'"} },
-            { "S2", new string[] { "sys.To IN ('Store5','Store6','Store7') OR StoreId = 'Store8'" } },
-            { "S3", new string[] { "sys.To NOT IN ('Store1','Store2','Store3','Store4','Store5','Store6','Store7','Store8') OR StoreId NOT IN ('Store1','Store2','Store3','Store4','Store5','Store6','Store7','Store8')" } }
+            { "S1", new[] { "StoreId IN('Store1', 'Store2', 'Store3')", "StoreId = 'Store4'"} },
+            { "S2", new[] { "sys.To IN ('Store5','Store6','Store7') OR StoreId = 'Store8'" } },
+            { "S3", new[] { "sys.To NOT IN ('Store1','Store2','Store3','Store4','Store5','Store6','Store7','Store8') OR StoreId NOT IN ('Store1','Store2','Store3','Store4','Store5','Store6','Store7','Store8')" } }
         };
         // You can have only have one action per rule and this sample code supports only one action for the first filter which is used to create the first rule. 
         static IDictionary<string, string> SubscriptionAction = new Dictionary<string, string> {
@@ -27,15 +27,15 @@ namespace BasicSendReceiveTutorialWithFilters
         static string CustomField = "StoreId";
         static int NrOfMessagesPerStore = 1; // Send at least 1.
 
-        public static Program StartProgram(string ServiceBusConnectionString, string TopicName)
+        static Program StartProgram(string ServiceBusConnectionString, string TopicName)
         {
-            Program P = new Program
+            var program = new Program
             {
                 ServiceBusConnectionString = ServiceBusConnectionString,
                 TopicName = TopicName
             };
 
-            return P;
+            return program;
         }
         static void Main(string[] args)
         {
@@ -106,7 +106,7 @@ namespace BasicSendReceiveTutorialWithFilters
 
         private async Task SendMessages()
         {
-            SendReceive sr = new SendReceive()
+            SendReceive sr = new SendReceive
             {
                 ServiceBusConnectionString = ServiceBusConnectionString,
                 TopicName = TopicName,
@@ -122,7 +122,7 @@ namespace BasicSendReceiveTutorialWithFilters
 
         private async Task Receive()
         {
-            SendReceive sr = new SendReceive()
+            SendReceive sr = new SendReceive
             {
                 ServiceBusConnectionString = ServiceBusConnectionString,
                 TopicName = TopicName,
