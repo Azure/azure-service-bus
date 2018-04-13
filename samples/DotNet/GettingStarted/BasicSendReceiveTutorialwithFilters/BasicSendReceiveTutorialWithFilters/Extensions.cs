@@ -1,4 +1,6 @@
-﻿using System.Text;
+﻿using System.Collections;
+using System.Collections.Generic;
+using System.Text;
 using Microsoft.Azure.ServiceBus;
 using Newtonsoft.Json;
 
@@ -13,6 +15,11 @@ namespace BasicSendReceiveTutorialWithFilters
         public static Message AsMessage(this object obj)
         {
             return new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(obj)));
+        }
+
+        public static bool Any(this IList<Message> collection)
+        {
+            return collection != null && collection.Count > 0;
         }
     }
 }

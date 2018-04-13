@@ -79,7 +79,7 @@ namespace BasicSendReceiveTutorialWithFilters
                 try
                 {
                     IList<Message> messages = await receiver.ReceiveAsync(10, TimeSpan.FromSeconds(2));
-                    if (messages != null)
+                    if (messages.Any())
                     {
                         foreach (var message in messages)
                         {
