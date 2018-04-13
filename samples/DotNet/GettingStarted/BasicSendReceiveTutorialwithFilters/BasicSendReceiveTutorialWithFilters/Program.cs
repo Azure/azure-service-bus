@@ -192,7 +192,7 @@ namespace BasicSendReceiveTutorialWithFilters
                                 {
                                     Filter = new SqlFilter(myFilter),
                                     Action = new SqlRuleAction(action),
-                                    Name = "MyRule" + count.ToString()
+                                    Name = $"MyRule{count}"
                                 });
                             }
                             else
@@ -200,7 +200,7 @@ namespace BasicSendReceiveTutorialWithFilters
                                 await s.AddRuleAsync(new RuleDescription
                                 {
                                     Filter = new SqlFilter(myFilter),
-                                    Name = "MyRule" + count.ToString()
+                                    Name = $"MyRule{count}"
                                 });
                             }
                         }
