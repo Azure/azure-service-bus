@@ -29,14 +29,14 @@ namespace BasicSendReceiveTutorialWithFilters
                     taskList.Add(SendItems(tc, Store[i]));
                 }
 
-                Task.WaitAll(taskList.ToArray());
+                await Task.WhenAll(taskList);
                 await tc.CloseAsync();
             }
             catch (Exception ex)
             {
                 Console.WriteLine(ex.ToString());
             }
-            Console.WriteLine("\nAll messages sent.\n");            
+            Console.WriteLine("\nAll messages sent.\n");
         }
 
         private async Task SendItems(TopicClient tc, string store)
@@ -45,65 +45,65 @@ namespace BasicSendReceiveTutorialWithFilters
             {
                 Random r = new Random();
                 Item item = new Item(r.Next(5), r.Next(5), r.Next(5));
-                Message message = new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(item)))
-                {
-                    To = store
-                };
+
+                Message message = item.AsMessage();
+                message.To = store;
                 message.UserProperties.Add("StoreId", store);
                 message.UserProperties.Add("Price", item.getPrice().ToString());
                 message.UserProperties.Add("Color", item.getColor());
                 message.UserProperties.Add("Category", item.getItemCategory());
 
                 await tc.SendAsync(message);
-                Console.WriteLine("Sent item to Store {0}. Price={1}, Color={2}, Category={3}", store, item.getPrice().ToString(), item.getColor(), item.getItemCategory()); ;
+                Console.WriteLine($"Sent item to Store {store}. Price={item.getPrice()}, Color={item.getColor()}, Category={item.getItemCategory()}"); ;
             }
         }
 
         public async Task Receive()
         {
             var taskList = new List<Task>();
-            for (int i = 0; i < Subscriptions.Length; i++)
+            for (var i = 0; i < Subscriptions.Length; i++)
             {
                 taskList.Add(this.ReceiveMessages(Subscriptions[i]));
             }
 
-            Task.WaitAll(taskList.ToArray());            
+            await Task.WhenAll(taskList);
         }
 
         private async Task ReceiveMessages(string subscription)
         {
-            var receiver = new MessageReceiver(ServiceBusConnectionString, TopicName + "/Subscriptions/" + subscription, ReceiveMode.PeekLock, RetryPolicy.Default, 100);
-            
-                while (true)
+            var entityPath = EntityNameHelper.FormatSubscriptionPath(TopicName, subscription);
+            var receiver = new MessageReceiver(ServiceBusConnectionString, entityPath, ReceiveMode.PeekLock, RetryPolicy.Default, 100);
+
+            while (true)
+            {
+                try
                 {
-                    try
+                    Message message = await receiver.ReceiveAsync(TimeSpan.FromSeconds(2));
+                    if (message != null)
                     {
-                        Message message = await receiver.ReceiveAsync(TimeSpan.FromSeconds(2));
-                        if (message != null)
+                        lock (Console.Out)
                         {
-                            lock (Console.Out)
-                            {
-                                Item item = JsonConvert.DeserializeObject<Item>(Encoding.UTF8.GetString(message.Body));
-                                IDictionary<String, Object> myUserProperties = message.UserProperties;
-                                Console.WriteLine("StoreId={0}", myUserProperties["StoreId"].ToString());
+                            Item item = message.As<Item>();
+                            IDictionary<string, object> myUserProperties = message.UserProperties;
+                            Console.WriteLine($"StoreId={myUserProperties["StoreId"]}");
 
-                                if (message.Label != null)
-                                    Console.WriteLine("Label={0}", message.Label);
+                            if (message.Label != null)
+                                Console.WriteLine($"Label={message.Label}");
 
-                                Console.WriteLine("Item data: Price={0}, Color={1}, Category={2}", item.getPrice(), item.getColor(), item.getItemCategory());
-                            }
-                            await receiver.CompleteAsync(message.SystemProperties.LockToken);
+                            Console.WriteLine($"Item data: Price={item.getPrice()}, Color={item.getColor()}, Category={item.getItemCategory()}");
                         }
-                        else
-                        {
-                            break;
-                        }
+                        await receiver.CompleteAsync(message.SystemProperties.LockToken);
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Console.WriteLine(ex.ToString());
+                        break;
                     }
-                }            
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                }
+            }
 
             await receiver.CloseAsync();
         }
