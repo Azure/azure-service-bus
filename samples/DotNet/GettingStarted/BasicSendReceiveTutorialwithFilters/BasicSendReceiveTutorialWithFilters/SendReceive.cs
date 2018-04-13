@@ -78,21 +78,28 @@ namespace BasicSendReceiveTutorialWithFilters
             {
                 try
                 {
-                    Message message = await receiver.ReceiveAsync(TimeSpan.FromSeconds(2));
-                    if (message != null)
+                    IList<Message> messages = await receiver.ReceiveAsync(10, TimeSpan.FromSeconds(2));
+                    if (messages != null)
                     {
-                        lock (Console.Out)
+                        foreach (var message in messages)
                         {
-                            Item item = message.As<Item>();
-                            IDictionary<string, object> myUserProperties = message.UserProperties;
-                            Console.WriteLine($"StoreId={myUserProperties["StoreId"]}");
+                            lock (Console.Out)
+                            {
+                                Item item = message.As<Item>();
+                                IDictionary<string, object> myUserProperties = message.UserProperties;
+                                Console.WriteLine($"StoreId={myUserProperties["StoreId"]}");
 
-                            if (message.Label != null)
-                                Console.WriteLine($"Label={message.Label}");
+                                if (message.Label != null)
+                                {
+                                    Console.WriteLine($"Label={message.Label}");
+                                }
 
-                            Console.WriteLine($"Item data: Price={item.getPrice()}, Color={item.getColor()}, Category={item.getItemCategory()}");
+                                Console.WriteLine(
+                                    $"Item data: Price={item.getPrice()}, Color={item.getColor()}, Category={item.getItemCategory()}");
+                            }
+
+                            await receiver.CompleteAsync(message.SystemProperties.LockToken);
                         }
-                        await receiver.CompleteAsync(message.SystemProperties.LockToken);
                     }
                     else
                     {
