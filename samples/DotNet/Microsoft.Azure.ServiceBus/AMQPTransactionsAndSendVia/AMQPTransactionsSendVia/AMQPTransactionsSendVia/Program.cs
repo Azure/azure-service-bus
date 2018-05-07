@@ -195,6 +195,8 @@ namespace AMQPTransactionsSendVia
 
             var msgBody = myMsgBody.AsBody();
 
+            // Note: If you use a partitioned queue to send or receive messages via a transaction you will need to specify the correct partition key. 
+            // Those partition keys are always ignored in case you send to a non partitioned queue.
             var message1 = new Message(msgBody) { MessageId = "1", PartitionKey = "pk1" };
             var message2 = new Message(msgBody) { MessageId = "2", PartitionKey = "pk2", ViaPartitionKey = "pk1" };
 
