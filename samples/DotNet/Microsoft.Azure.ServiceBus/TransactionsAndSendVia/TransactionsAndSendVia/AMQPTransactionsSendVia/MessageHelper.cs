@@ -6,7 +6,7 @@ using Newtonsoft.Json;
 
 
 
-namespace AMQPTransactionsSendVia
+namespace TransactionsAndSendVia
 {
     public static class MessageHelper
     {

@@ -4,7 +4,7 @@ using System.Transactions;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 
-namespace AMQPTransactionsSendVia
+namespace TransactionsAndSendVia
 {
     class Program
     {

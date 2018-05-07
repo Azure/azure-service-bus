@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace AMQPTransactionsSendVia
+namespace TransactionsAndSendVia
 {
     class MyMessage
     {
