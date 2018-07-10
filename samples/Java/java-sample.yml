@@ -1,0 +1,13 @@
+### YamlMime:Sample
+sample:
+- name: Service Bus Premium Messaging .NET Performance Test
+  description: The sample in this repo can be used to help benchmark Service Bus Premium Messaging throughput, and can be used to study performance best practices.
+  generateZip: true
+  author: celemensv
+  readme: readme.md
+  languages:
+  - csharp
+  technologies:
+  - service-bus
+  - service-bus-messaging
+  - azure
