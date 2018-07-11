@@ -10,7 +10,7 @@ Refer to the main [README](../README.md) document for setup instructions.
 
 ## Sample Code 
 
-The sample is documented inline in the [Program.cs](Program.cs) C# file.
+The sample is documented inline in the [program.cs](program.cs) C# file.
 
 To keep things reasonably simple, the sample program keeps message sender and
 message receiver code within a single hosting application, even though these
