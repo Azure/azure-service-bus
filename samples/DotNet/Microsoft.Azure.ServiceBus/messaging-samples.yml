@@ -1,0 +1,13 @@
+### YamlMime:Sample
+sample:
+- name: 'Azure Service Bus .NET Standard samples'
+  description: 'Official set of .NET Standard samples for the Azure Service Bus service.'
+  generateZip: true
+  author: celemensv
+  readme: README.md
+  languages:
+  - csharp
+  technologies:
+  - service-bus
+  - service-bus-messaging
+  - azure

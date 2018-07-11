@@ -6,7 +6,7 @@ sample:
   author: celemensv
   readme: readme.md
   languages:
-  - csharp
+  - java
   technologies:
   - service-bus
   - service-bus-messaging

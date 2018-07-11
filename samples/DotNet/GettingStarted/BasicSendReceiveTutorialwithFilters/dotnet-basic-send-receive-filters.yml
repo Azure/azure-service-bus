@@ -1,0 +1,12 @@
+### YamlMime:Sample
+sample:
+- name: 'Azure Service Bus - Basic Send/Receieve with Filters in .NET'
+  description: 'A sample demonstrating the basic send/receive operations with Azure Service Bus, using the .NET platform.'
+  generateZip: true
+  author: celemensv
+  languages:
+  - csharp
+  technologies:
+  - service-bus
+  - service-bus-messaging
+  - azure
