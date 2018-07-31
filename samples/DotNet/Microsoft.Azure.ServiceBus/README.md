@@ -137,3 +137,8 @@ model is strongly encouraged at all times as it yields significantly more effici
    and Topics seamlessly the context of WCF applications using the NetMessagingBinding.
 * **Sessions with the NetMessagingBinding** - The [NetMessagingSession](./NetMessagingSession) sample shows how to use Service Bus
   sessions with the NetMessagingBinding.
+  
+### External Samples
+
+* **Authentication using Managed Service Identity** - The [MSI_Authentication](https://github.com/Azure-Samples/app-service-msi-servicebus-dotnet) sample shows how to send and receive data from Azure Service Bus Queue at run-time from an App Service with a Managed Service Identity (MSI) 
+* **High throughput performance sample** - The [PerformanceSample](https://github.com/Azure-Samples/service-bus-dotnet-messaging-performance) can be used to help benchmark Service Bus premium messaging, and can be used for performance best practices. 
