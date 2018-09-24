@@ -78,7 +78,7 @@ and a simple basic topology of a few exemplary queues, topics, and subscriptions
 with an Azure Service Bus "Standard" namespace, just click the button below and follow the further instructions 
 on the Azure Portal:
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2Fclemensv%2Fazure-service-bus%2Fmaster%2Fsamples%2FJava%2Fscripts%2Fazuredeploy.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-service-bus%2Fmaster%2Fsamples%2FJava%2Fscripts%2Fazuredeploy.json" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
@@ -134,13 +134,13 @@ All samples have similar command line usage and accept a Service Bus connection 
 
 To make running the samples straightforward, there are scripts for Bash ([Azure CLI](https://docs.microsoft.com/en-us/azure/azure-resource-manager/xplat-cli-azure-resource-manager)) and Powershell ([Azure PS](https://docs.microsoft.com/azure/azure-resource-manager/powershell-azure-resource-manager)) in *scripts* that will obtain the namespace connection string from your current Azure subscription, assume the entity names configured in the deployed templates, and export those into environment variables, eliminating the need to pass those arguments on the command line.
 
-The Bash script is *scripts/setupenv.sh*, the Powershell equivalent is *scripts/setupenv.ps1*. Either needs to be called with the name of the Resource Group and the Service Bus namespace name as ordinal arguments. The Bash version runs a (re-)deployment of the template to obtain the required keys. For parsing
+The Bash script is *scripts/sampleenv.sh*, the Powershell equivalent is *scripts/sampleenv.ps1*. Either needs to be called with the name of the Resource Group and the Service Bus namespace name as ordinal arguments. The Bash version runs a (re-)deployment of the template to obtain the required keys. For parsing
 the returned JSON file, the Bash script relies on the [./jq](https://stedolan.github.io/jq/) package that can be installed with ```sudo apt install jq```.
 
 Run the Powershell script from the scripts directory with
 
 ```bash
-./setupenv.ps1 {rg-name} {service-bus-namespace-name} 
+./sampleenv.ps1 {rg-name} {service-bus-namespace-name} 
 ```
 
 Run the Bash script with 
