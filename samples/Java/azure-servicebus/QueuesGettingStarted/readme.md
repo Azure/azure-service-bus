@@ -10,7 +10,7 @@ Refer to the main [README](../README.md) document for setup instructions.
 
 ## Sample Code 
 
-The sample is documented inline in the [QueuesGettingStarted.java](.\src\main\java\com\microsoft\azure\servicebus\samples\queuesgettingstarted\QueuesGettingStarted.java) file.
+The sample is documented inline in the [QueuesGettingStarted.java](./src/main/java/com/microsoft/azure/servicebus/samples/queuesgettingstarted/QueuesGettingStarted.java) file.
 
 To keep things reasonably simple, the sample program keeps message sender and
 message receiver code within a single hosting application, even though these
