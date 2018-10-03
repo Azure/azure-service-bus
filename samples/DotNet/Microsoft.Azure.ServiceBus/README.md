@@ -133,9 +133,9 @@ model is strongly encouraged at all times as it yields significantly more effici
  
 ### Management Operations
 
-* **Managing entities** - The [QueueCRUD](./Managing Entities/QueueCRUD) sample shows how to create a new entity, retrieve an existing
+* **Managing entities** - The [QueueCRUD](./ManagingEntities/QueueCRUD) sample shows how to create a new entity, retrieve an existing
   entity and its properties, update the properties (which can be udpated), and also delete the entity.
-* **SASAuthorizationRule** - The [SASAuthorizationRule](./Managing Entities/SASAuthorizationRule) sample shows how to create a new 
+* **SASAuthorizationRule** - The [SASAuthorizationRule](./ManagingEntities/SASAuthorizationRule) sample shows how to create a new 
   SAS authentication policy for a particular entity with a limited scope of Send or Listen.
   
 ### External Samples

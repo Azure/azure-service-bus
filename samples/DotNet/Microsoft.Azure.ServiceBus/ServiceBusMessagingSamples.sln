@@ -176,15 +176,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{9B998979-5
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SamplesTest", "SamplesTest\SamplesTest.csproj", "{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Managing Entities", "Managing Entities", "{3E788AFE-6B4C-4864-BC3D-E6B227117519}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ManagingEntities", "ManagingEntities", "{3E788AFE-6B4C-4864-BC3D-E6B227117519}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "QueueCRUD", "QueueCRUD", "{3AD9E987-0AF0-4C02-841F-79F0236497DD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueueCRUD", "Managing Entities\QueueCRUD\QueueCRUD.csproj", "{F27DBD18-70E6-45DA-9B4E-9B12908322AB}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueueCRUD", "ManagingEntities\QueueCRUD\QueueCRUD.csproj", "{F27DBD18-70E6-45DA-9B4E-9B12908322AB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SASAuthorizationRules", "SASAuthorizationRules", "{5C639DC4-3288-4E31-8245-3872CD2F6D17}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SASAuthorizationRule", "Managing Entities\SASAuthorizationRule\SASAuthorizationRule.csproj", "{18900704-C22A-4EB4-A12F-5501E1FF45DD}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SASAuthorizationRule", "ManagingEntities\SASAuthorizationRule\SASAuthorizationRule.csproj", "{18900704-C22A-4EB4-A12F-5501E1FF45DD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
