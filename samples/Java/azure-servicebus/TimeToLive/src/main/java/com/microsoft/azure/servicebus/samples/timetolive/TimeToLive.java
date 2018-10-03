@@ -150,7 +150,7 @@ public class TimeToLive {
 
     CompletableFuture pickUpAndFixDeadLetters(String connectionString, String queueName, IMessageSender resubmitSender, ExecutorService executorService) throws Exception {
         CompletableFuture running = new CompletableFuture();
-        SubscriptionClient receiver = new SubscriptionClient(new ConnectionStringBuilder(connectionString, "BasicQueue/$deadletterqueue"), ReceiveMode.PEEKLOCK);
+        QueueClient receiver = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue/$deadletterqueue"), ReceiveMode.PEEKLOCK);
 
         running.whenComplete((r, t) -> {
             try {
