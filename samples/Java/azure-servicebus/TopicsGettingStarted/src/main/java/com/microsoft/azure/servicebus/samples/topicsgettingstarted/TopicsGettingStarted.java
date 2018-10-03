@@ -32,9 +32,10 @@ public class TopicsGettingStarted {
         subscription2Client = new SubscriptionClient(new ConnectionStringBuilder(connectionString, "BasicTopic/subscriptions/Subscription2"), ReceiveMode.PEEKLOCK);
         subscription3Client = new SubscriptionClient(new ConnectionStringBuilder(connectionString, "BasicTopic/subscriptions/Subscription3"), ReceiveMode.PEEKLOCK);
 
-        registerMessageHandlerOnClient(subscription1Client);
-        registerMessageHandlerOnClient(subscription2Client);
-        registerMessageHandlerOnClient(subscription3Client);
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        registerMessageHandlerOnClient(subscription1Client, executorService);
+        registerMessageHandlerOnClient(subscription2Client, executorService);
+        registerMessageHandlerOnClient(subscription3Client, executorService);
 
         sendClient = new TopicClient(new ConnectionStringBuilder(connectionString, "BasicTopic"));
         sendMessagesAsync(sendClient).thenRunAsync(() -> sendClient.closeAsync());
@@ -46,6 +47,8 @@ public class TopicsGettingStarted {
                 subscription1Client.closeAsync(),
                 subscription2Client.closeAsync(),
                 subscription3Client.closeAsync()).join();
+        
+        executorService.shutdown();
     }
 
     CompletableFuture<Void> sendMessagesAsync(TopicClient sendClient) {
@@ -83,7 +86,7 @@ public class TopicsGettingStarted {
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture<?>[tasks.size()]));
     }
 
-    void registerMessageHandlerOnClient(SubscriptionClient receiveClient) throws Exception {
+    void registerMessageHandlerOnClient(SubscriptionClient receiveClient, ExecutorService executorService) throws Exception {
 
         // register the RegisterMessageHandler callback
         receiveClient.registerMessageHandler(
@@ -120,7 +123,8 @@ public class TopicsGettingStarted {
                     }
                 },
                 // 1 concurrent call, messages are auto-completed, auto-renew duration
-                new MessageHandlerOptions(1, false, Duration.ofMinutes(1)));
+                new MessageHandlerOptions(1, false, Duration.ofMinutes(1)),
+                executorService);
 
     }
 

@@ -30,7 +30,9 @@ public class PartitionedQueues {
         // We set the receive mode to "PeekLock", meaning the message is delivered
         // under a lock and must be acknowledged ("completed") to be removed from the queue
         receiveClient = new QueueClient(new ConnectionStringBuilder(connectionString, "PartitionedQueue"), ReceiveMode.PEEKLOCK);
-        this.registerMessageHandler(receiveClient);
+        // We are using single thread executor as we are only processing one message at a time
+    	ExecutorService executorService = Executors.newSingleThreadExecutor();
+        this.registerMessageHandler(receiveClient, executorService);
 
         sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, "PartitionedQueue"), ReceiveMode.PEEKLOCK);
         this.sendMessagesAsync(sendClient).thenRunAsync(()->sendClient.closeAsync());
@@ -39,6 +41,7 @@ public class PartitionedQueues {
         waitForEnter(10);
 
         receiveClient.close();
+        executorService.shutdown();
     }
 
     CompletableFuture<Void> sendMessagesAsync(QueueClient sendClient) {
@@ -77,8 +80,8 @@ public class PartitionedQueues {
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture<?>[tasks.size()]));
     }
 
-    void registerMessageHandler(QueueClient receiveClient) throws Exception {
-        // register the RegisterMessageHandler callback
+    void registerMessageHandler(QueueClient receiveClient, ExecutorService executorService) throws Exception {
+        // register the RegisterMessageHandler callback    	
         receiveClient.registerMessageHandler(new IMessageHandler() {
                   // callback invoked when the message handler loop has obtained a message
                   public CompletableFuture<Void> onMessageAsync(IMessage message) {
@@ -111,7 +114,8 @@ public class PartitionedQueues {
                   }
               },
               // 1 concurrent call, messages are auto-completed, auto-renew duration
-              new MessageHandlerOptions(1, false, Duration.ofMinutes(1)));
+              new MessageHandlerOptions(1, false, Duration.ofMinutes(1)),
+              executorService);
 
     }
 

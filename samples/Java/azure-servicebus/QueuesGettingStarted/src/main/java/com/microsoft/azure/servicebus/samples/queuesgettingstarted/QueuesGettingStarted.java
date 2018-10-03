@@ -27,7 +27,9 @@ public class QueuesGettingStarted {
         // We set the receive mode to "PeekLock", meaning the message is delivered
         // under a lock and must be acknowledged ("completed") to be removed from the queue
         QueueClient receiveClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
-        this.registerReceiver(receiveClient);
+        // We are using single thread executor as we are only processing one message at a time
+    	ExecutorService executorService = Executors.newSingleThreadExecutor();
+        this.registerReceiver(receiveClient, executorService);
 
         // Create a QueueClient instance for sending and then asynchronously send messages.
         // Close the sender once the send operation is complete.
@@ -39,6 +41,7 @@ public class QueuesGettingStarted {
 
         // shut down receiver to close the receive loop
         receiveClient.close();
+        executorService.shutdown();
     }
 
     CompletableFuture<Void> sendMessagesAsync(QueueClient sendClient) {
@@ -75,9 +78,10 @@ public class QueuesGettingStarted {
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture<?>[tasks.size()]));
     }
 
-    void registerReceiver(QueueClient queueClient) throws Exception {
+    void registerReceiver(QueueClient queueClient, ExecutorService executorService) throws Exception {
 
-        // register the RegisterMessageHandler callback
+    	
+        // register the RegisterMessageHandler callback with executor service
         queueClient.registerMessageHandler(new IMessageHandler() {
                                                // callback invoked when the message handler loop has obtained a message
                                                public CompletableFuture<Void> onMessageAsync(IMessage message) {
@@ -110,7 +114,8 @@ public class QueuesGettingStarted {
                                                }
                                            },
                 // 1 concurrent call, messages are auto-completed, auto-renew duration
-                new MessageHandlerOptions(1, true, Duration.ofMinutes(1)));
+                new MessageHandlerOptions(1, true, Duration.ofMinutes(1)),
+                executorService);
 
     }
 

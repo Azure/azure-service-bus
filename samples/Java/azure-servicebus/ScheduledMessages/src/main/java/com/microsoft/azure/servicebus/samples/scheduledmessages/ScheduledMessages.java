@@ -31,7 +31,9 @@ public class ScheduledMessages {
         // We set the receive mode to "PeekLock", meaning the message is delivered
         // under a lock and must be acknowledged ("completed") to be removed from the queue
         receiveClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
-        this.initializeReceiver(receiveClient);
+        // We are using single thread executor as we are only processing one message at a time
+    	ExecutorService executorService = Executors.newSingleThreadExecutor();
+        this.initializeReceiver(receiveClient, executorService);
 
         sendClient = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
         this.sendMessagesAsync(sendClient).thenRunAsync(() -> sendClient.closeAsync());
@@ -39,6 +41,7 @@ public class ScheduledMessages {
         waitForEnter(150);
 
         receiveClient.close();
+        executorService.shutdown();
 
     }
 
@@ -68,7 +71,7 @@ public class ScheduledMessages {
             message.setLabel("Scientist");
             message.setMessageId(messageId);
             message.setTimeToLive(Duration.ofMinutes(2));
-            message.setScheduledEnqueuedTimeUtc(Clock.systemUTC().instant().plusSeconds(120));
+            message.setScheduledEnqueueTimeUtc(Clock.systemUTC().instant().plusSeconds(120));
             System.out.printf("Message sending: Id = %s\n", message.getMessageId());
             tasks.add(
                     sendClient.sendAsync(message).thenRunAsync(() -> {
@@ -78,7 +81,7 @@ public class ScheduledMessages {
         return CompletableFuture.allOf(tasks.toArray(new CompletableFuture<?>[tasks.size()]));
     }
 
-    void initializeReceiver(QueueClient receiveClient) throws Exception {
+    void initializeReceiver(QueueClient receiveClient, ExecutorService executorService) throws Exception {
         // register the RegisterMessageHandler callback
         receiveClient.registerMessageHandler(new IMessageHandler() {
                   // callback invoked when the message handler loop has obtained a message
@@ -112,7 +115,8 @@ public class ScheduledMessages {
                   }
               },
               // 1 concurrent call, messages are auto-completed, auto-renew duration
-              new MessageHandlerOptions(1, true, Duration.ofMinutes(1)));
+              new MessageHandlerOptions(1, true, Duration.ofMinutes(1)),
+              executorService);
 
     }
 
