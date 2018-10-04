@@ -131,12 +131,12 @@ model is strongly encouraged at all times as it yields significantly more effici
 * **Session State** - The [SessionState](./SessionState) sample shows how to keep track of processing a workflow using 
   the session state feature. 
  
-### Windows Communication Foundation (WCF) Binding
-  
-* **NetMessagingBinding** - The [NetMessagingBinding](./NetMessagingBinding) sample shows how to use Service Bus Queues 
-   and Topics seamlessly the context of WCF applications using the NetMessagingBinding.
-* **Sessions with the NetMessagingBinding** - The [NetMessagingSession](./NetMessagingSession) sample shows how to use Service Bus
-  sessions with the NetMessagingBinding.
+### Management Operations
+
+* **Managing entities** - The [QueueCRUD](./ManagingEntities/QueueCRUD) sample shows how to create a new entity, retrieve an existing
+  entity and its properties, update the properties (which can be udpated), and also delete the entity.
+* **SASAuthorizationRule** - The [SASAuthorizationRule](./ManagingEntities/SASAuthorizationRule) sample shows how to create a new 
+  SAS authentication policy for a particular entity with a limited scope of Send or Listen.
   
 ### External Samples
 
