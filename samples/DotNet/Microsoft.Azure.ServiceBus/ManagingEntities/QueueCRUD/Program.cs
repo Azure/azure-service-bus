@@ -158,7 +158,7 @@ namespace QueueCRUD
             {
                 var queueRuntimeInfo = await managementClient.GetQueueRuntimeInfoAsync(queueName).ConfigureAwait(false);
                 Console.WriteLine($"Retrieved runtime information of queue\n " +
-                    $"Active_messages:{queueRuntimeInfo.MessageCountDetails.ActiveMessageCount}\n " +
+                    $"Active messages:{queueRuntimeInfo.MessageCountDetails.ActiveMessageCount}\n " +
                     $"Size of queue:{queueRuntimeInfo.SizeInBytes}\n" +
                     $"Queue Creation time: {queueRuntimeInfo.CreatedAt}\n" +
                     $"Queue last updation time: {queueRuntimeInfo.UpdatedAt}\n");
