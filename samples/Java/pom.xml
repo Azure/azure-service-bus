@@ -34,6 +34,9 @@
         <module>azure-servicebus/TopicFilters</module>
         <module>azure-servicebus/TimeToLive</module>
         <module>azure-servicebus/PartitionedQueues</module>
+        <module>azure-servicebus/ManagingEntity</module>
+        <module>azure-servicebus/ManagingTopicRules</module>
+        <module>azure-servicebus/SasAuthorization</module>
         <module>qpid-jms-client/JmsQueueQuickstart</module>
         <module>qpid-jms-client/JmsTopicQuickstart</module>
     </modules>
