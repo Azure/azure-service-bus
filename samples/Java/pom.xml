@@ -22,21 +22,21 @@
     </build>
 
     <modules>
-        <module>azure-servicebus/ScheduledMessages</module>
-        <module>azure-servicebus/DuplicateDetection</module>
         <module>azure-servicebus/AutoForward</module>
-        <module>azure-servicebus/Prefetch</module>
-        <module>azure-servicebus/ReceiveLoop</module>
-        <module>azure-servicebus/MessageBrowse</module>
         <module>azure-servicebus/DeadletterQueue</module>
-        <module>azure-servicebus/QueuesGettingStarted</module>
-        <module>azure-servicebus/TopicsGettingStarted</module>
-        <module>azure-servicebus/TopicFilters</module>
-        <module>azure-servicebus/TimeToLive</module>
-        <module>azure-servicebus/PartitionedQueues</module>
+        <module>azure-servicebus/DuplicateDetection</module>
         <module>azure-servicebus/ManagingEntity</module>
         <module>azure-servicebus/ManagingTopicRules</module>
+        <module>azure-servicebus/MessageBrowse</module>
+        <module>azure-servicebus/PartitionedQueues</module>
+        <module>azure-servicebus/Prefetch</module>
+        <module>azure-servicebus/QueuesGettingStarted</module>
+        <module>azure-servicebus/ReceiveLoop</module>
         <module>azure-servicebus/SasAuthorization</module>
+        <module>azure-servicebus/ScheduledMessages</module>
+        <module>azure-servicebus/TimeToLive</module>
+        <module>azure-servicebus/TopicsGettingStarted</module>
+        <module>azure-servicebus/TopicFilters</module>
         <module>qpid-jms-client/JmsQueueQuickstart</module>
         <module>qpid-jms-client/JmsTopicQuickstart</module>
     </modules>
