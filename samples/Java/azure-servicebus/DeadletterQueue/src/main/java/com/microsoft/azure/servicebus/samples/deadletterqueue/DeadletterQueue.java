@@ -36,8 +36,9 @@ public class DeadletterQueue {
 
         // fix-up scenario
         this.sendMessagesAsync(sendClient, Integer.MAX_VALUE);
-        receiveTask = this.receiveMessagesAsync(connectionString, "BasicQueue");
-        fixUpTask = this.PickUpAndFixDeadletters(connectionString, "BasicQueue", sendClient);
+        ExecutorService executorService = Executors.newCachedThreadPool();
+        receiveTask = this.receiveMessagesAsync(connectionString, "BasicQueue", executorService);
+        fixUpTask = this.PickUpAndFixDeadletters(connectionString, "BasicQueue", sendClient, executorService);
 
 
         // wait for ENTER or 10 seconds elapsing
@@ -51,6 +52,8 @@ public class DeadletterQueue {
                 receiveTask.exceptionally(t -> {if (t instanceof CancellationException) {return null;} throw new RuntimeException((Throwable) t);}),
                 fixUpTask.exceptionally(t -> {if (t instanceof CancellationException) {return null;} throw new RuntimeException((Throwable) t);})
         ).join();
+        
+        executorService.shutdown();
     }
 
     CompletableFuture<Void> sendMessagesAsync(IMessageSender sendClient, int maxMessages) {
@@ -121,7 +124,7 @@ public class DeadletterQueue {
         return CompletableFuture.completedFuture(null);
     }
 
-    CompletableFuture receiveMessagesAsync(String connectionString, String queueName) throws Exception {
+    CompletableFuture receiveMessagesAsync(String connectionString, String queueName, ExecutorService executorService) throws Exception {
 
         CompletableFuture running = new CompletableFuture();
         QueueClient receiver = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
@@ -171,12 +174,13 @@ public class DeadletterQueue {
                     }
                 },
                 // 1 concurrent call, messages are auto-completed, auto-renew duration
-                new MessageHandlerOptions(1, false, Duration.ofMinutes(1)));
+                new MessageHandlerOptions(1, false, Duration.ofMinutes(1)),
+                executorService);
 
         return running;
     }
 
-    CompletableFuture PickUpAndFixDeadletters(String connectionString, String queueName, IMessageSender resubmitSender) throws Exception {
+    CompletableFuture PickUpAndFixDeadletters(String connectionString, String queueName, IMessageSender resubmitSender, ExecutorService executorService) throws Exception {
         CompletableFuture running = new CompletableFuture();
         QueueClient receiver = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue/$deadletterqueue"), ReceiveMode.PEEKLOCK);
 
@@ -221,7 +225,8 @@ public class DeadletterQueue {
                     }
                 },
                 // 1 concurrent call, messages are auto-completed, auto-renew duration
-                new MessageHandlerOptions(1, false, Duration.ofMinutes(1)));
+                new MessageHandlerOptions(1, false, Duration.ofMinutes(1)),
+                executorService);
 
         return running;
     }

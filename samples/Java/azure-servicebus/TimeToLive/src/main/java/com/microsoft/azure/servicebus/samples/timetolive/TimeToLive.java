@@ -36,9 +36,10 @@ public class TimeToLive {
         // wait for all messages to expire
         Thread.sleep(15 * 1000);
 
+        ExecutorService executorService = Executors.newCachedThreadPool();
         // start the receiver tasks and the fixup tasks
-        receiveTask = this.receiveMessagesAsync(connectionString, "BasicQueue");
-        fixUpTask = this.pickUpAndFixDeadLetters(connectionString, "BasicQueue", sendClient);
+        receiveTask = this.receiveMessagesAsync(connectionString, "BasicQueue", executorService);
+        fixUpTask = this.pickUpAndFixDeadLetters(connectionString, "BasicQueue", sendClient, executorService);
 
         // wait for ENTER or 10 seconds elapsing
         waitForEnter(10);
@@ -53,6 +54,8 @@ public class TimeToLive {
             receiveTask.exceptionally(t ->{ if (t instanceof CancellationException) { return null; } throw new RuntimeException(t);}),
             fixUpTask.exceptionally(t ->{if (t instanceof CancellationException) { return null; } throw new RuntimeException(t);})
         ).join();
+        
+        executorService.shutdown();
     }
 
     CompletableFuture<Void> sendMessagesAsync(IMessageSender sendClient) {
@@ -90,7 +93,7 @@ public class TimeToLive {
     }
 
 
-    CompletableFuture receiveMessagesAsync(String connectionString, String queueName) throws Exception {
+    CompletableFuture receiveMessagesAsync(String connectionString, String queueName, ExecutorService executorService) throws Exception {
 
         CompletableFuture running = new CompletableFuture();
         QueueClient receiver = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue"), ReceiveMode.PEEKLOCK);
@@ -139,14 +142,15 @@ public class TimeToLive {
                     }
                 },
                 // 1 concurrent call, messages are auto-completed, auto-renew duration
-                new MessageHandlerOptions(1, false, Duration.ofMinutes(1)));
+                new MessageHandlerOptions(1, false, Duration.ofMinutes(1)),
+                executorService);
 
         return running;
     }
 
-    CompletableFuture pickUpAndFixDeadLetters(String connectionString, String queueName, IMessageSender resubmitSender) throws Exception {
+    CompletableFuture pickUpAndFixDeadLetters(String connectionString, String queueName, IMessageSender resubmitSender, ExecutorService executorService) throws Exception {
         CompletableFuture running = new CompletableFuture();
-        SubscriptionClient receiver = new SubscriptionClient(new ConnectionStringBuilder(connectionString, "BasicQueue/$deadletterqueue"), ReceiveMode.PEEKLOCK);
+        QueueClient receiver = new QueueClient(new ConnectionStringBuilder(connectionString, "BasicQueue/$deadletterqueue"), ReceiveMode.PEEKLOCK);
 
         running.whenComplete((r, t) -> {
             try {
@@ -188,7 +192,8 @@ public class TimeToLive {
                     }
                 },
                 // 1 concurrent call, messages are auto-completed, auto-renew duration
-                new MessageHandlerOptions(1, false, Duration.ofMinutes(1)));
+                new MessageHandlerOptions(1, false, Duration.ofMinutes(1)),
+                executorService);
 
         return running;
     }

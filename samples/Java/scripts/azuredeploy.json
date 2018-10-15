@@ -12,9 +12,13 @@
   },
   "variables": {
     "apiVersion": "2017-04-01",
-    "queueName": "myqueue",
-    "topicName": "mytopic",
-    "rulesTopicName": "myrulestopic"
+    "rulesTopicName": "TopicFilterSampleTopic",
+	"basicqueuename": "basicqueue",
+	"dedupqueuename": "dupdetectqueue",
+	"basictopicname": "basictopic",
+	"autofwdtopicname": "autoforwardsourcetopic",
+	"autofwdtargetqueuename":"autoforwardtargetqueue",
+	"partitionedqueuename" : "partitionedqueue"
   },
   "resources": [
       {
@@ -35,35 +39,29 @@
           "dependsOn": [
             "[parameters('serviceBusNamespaceName')]"
           ]
-        },
-        {
+        },        
+		{
           "apiVersion": "[variables('apiVersion')]",
-          "name": "[variables('queueName')]",
+          "name": "[variables('basicqueuename')]",
           "type": "queues",
           "dependsOn": [
             "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]"
           ],
           "properties": {},
           "resources": []
-        },       
-        {
+        }, 
+		{
           "apiVersion": "[variables('apiVersion')]",
-          "name": "[variables('topicName')]",
-          "type": "topics",
+          "name": "[variables('dedupqueuename')]",
+          "type": "queues",
           "dependsOn": [
             "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]"
           ],
-          "properties": {},
-          "resources": [
-            {
-              "apiVersion": "[variables('apiVersion')]",
-              "name": "mysub",
-              "type": "subscriptions",
-              "dependsOn": ["[variables('topicName')]"],
-              "properties": {},
-              "resources": []
-            }
-          ]
+          "properties": {
+				"requiresDuplicateDetection": true,
+				 "duplicateDetectionHistoryTimeWindow": "PT5M"
+			},
+          "resources": []
         },
         {
           "apiVersion": "[variables('apiVersion')]",
@@ -76,37 +74,175 @@
           "resources": [
             {
               "apiVersion": "[variables('apiVersion')]",
-              "name": "allMessages",
+              "name": "allorders",
               "type": "subscriptions",
               "dependsOn": ["[variables('rulesTopicName')]"],
               "properties": {},
-              "resources": []
+              "resources": [
+				{
+					"apiVersion": "[variables('apiVersion')]",
+					"name": "rule1",
+					"type": "rules",
+					"dependsOn": [ "allorders" ],
+					"properties": {
+						"filterType": "SqlFilter",
+						"sqlFilter": {
+						   "sqlExpression": "1=1",
+						   "requiresPreprocessing": false
+						}
+					}
+				}
+			  ]
             },
             {
               "apiVersion": "[variables('apiVersion')]",
-              "name": "sqlFilterOnly",
+              "name": "ColorBlueSize10Orders",
               "type": "subscriptions",
               "dependsOn": ["[variables('rulesTopicName')]"],
               "properties": {},
-              "resources": []
+              "resources": [
+					{
+					"apiVersion": "[variables('apiVersion')]",
+					"name": "rule1",
+					"type": "rules",
+					"dependsOn": [ "ColorBlueSize10Orders" ],
+					"properties": {
+					"filterType": "SqlFilter",
+					   "sqlFilter": {
+						  "sqlExpression": "color = 'blue' AND quantity = 10",
+						  "requiresPreprocessing": false
+					   }
+					}
+				 }
+			  ]
             },
             {
               "apiVersion": "[variables('apiVersion')]",
-              "name": "sqlFilterWithAction",
+              "name": "ColorRed",
               "type": "subscriptions",
               "dependsOn": ["[variables('rulesTopicName')]"],
               "properties": {},
-              "resources": []
+              "resources": [
+					{
+						"apiVersion": "[variables('apiVersion')]",
+						"name": "rule1",
+						"type": "rules",
+						"dependsOn": [ "ColorRed" ],
+						"properties": {
+						"filterType": "SqlFilter",
+						   "sqlFilter": {
+							  "sqlExpression": "color = 'red'",
+							  "requiresPreprocessing": false
+						   },
+						   "action": {
+							  "sqlExpression": "SET quantity = quantity / 2; REMOVE priority; SET sys.CorrelationId = 'low';"
+						   }
+					}
+				 }
+			  ]
             },
             {
               "apiVersion": "[variables('apiVersion')]",
-              "name": "correlationFilter",
+              "name": "HighPriorityOrders",
               "type": "subscriptions",
               "dependsOn": ["[variables('rulesTopicName')]"],
+              "properties": {},
+              "resources": [
+				{
+					"apiVersion": "[variables('apiVersion')]",
+					"name": "rule1",
+					"type": "rules",
+					"dependsOn": [ "HighPriorityOrders" ],
+					"properties": {
+						"filterType": "CorrelationFilter",
+						"correlationFilter": {
+							"label": "red",
+							"correlationId": "high"
+						}
+					}
+				}
+				]
+            }
+          ]
+        },
+		{
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "[variables('basictopicname')]",
+          "type": "topics",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]"
+          ],
+          "properties": {},
+          "resources": [
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "subscription1",
+              "type": "subscriptions",
+              "dependsOn": ["[variables('basictopicname')]"],
+              "properties": {},
+              "resources": []
+            },
+			{
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "subscription2",
+              "type": "subscriptions",
+              "dependsOn": ["[variables('basictopicname')]"],
+              "properties": {},
+              "resources": []
+            },
+			{
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "subscription3",
+              "type": "subscriptions",
+              "dependsOn": ["[variables('basictopicname')]"],
               "properties": {},
               "resources": []
             }
           ]
+        },
+		{
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "[variables('autofwdtargetqueuename')]",
+          "type": "queues",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]"
+          ],
+          "properties": {},
+          "resources": []
+        },
+		{
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "[variables('autofwdtopicname')]",
+          "type": "topics",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]",
+			"[variables('autofwdtargetqueuename')]"
+          ],
+          "properties": {},
+          "resources": [
+            {
+              "apiVersion": "[variables('apiVersion')]",
+              "name": "forwarder",
+              "type": "subscriptions",
+              "dependsOn": ["[variables('autofwdtopicname')]"],
+              "properties": {
+					"forwardTo": "[variables('autofwdtargetqueuename')]"
+				},
+              "resources": []
+            }
+          ]
+        },		
+		{
+          "apiVersion": "[variables('apiVersion')]",
+          "name": "[variables('partitionedqueuename')]",
+          "type": "queues",
+          "dependsOn": [
+            "[concat('Microsoft.ServiceBus/namespaces/', parameters('serviceBusNamespaceName'))]"
+          ],
+          "properties": {
+				"enablePartitioning" : true
+			},
+          "resources": []
         }
       ]
     }
