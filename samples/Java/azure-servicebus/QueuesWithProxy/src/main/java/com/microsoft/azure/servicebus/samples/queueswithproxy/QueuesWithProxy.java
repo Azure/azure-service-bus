@@ -15,7 +15,9 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.function.Function;
 
+import com.microsoft.azure.servicebus.primitives.StringUtil;
 import org.apache.commons.cli.*;
+import org.apache.commons.lang3.math.NumberUtils;
 
 public class QueuesWithProxy {
 
@@ -134,37 +136,77 @@ public class QueuesWithProxy {
     }
 
     static final String SB_SAMPLES_CONNECTIONSTRING = "SB_SAMPLES_CONNECTIONSTRING";
+    static final String SB_SAMPLES_PROXY_HOSTNAME = "SB_SAMPLES_PROXY_HOSTNAME";
+    static final String SB_SAMPLES_PROXY_PORT = "SB_SAMPLES_PROXY_PORT";
+    static final String SB_SAMPLES_PROXY_USERNAME = "SB_SAMPLES_PROXY_USERNAME";
+    static final String SB_SAMPLES_PROXY_PASSWORD= "SB_SAMPLES_PROXY_PASSWORD";
 
     public static int runApp(String[] args, Function<String, Integer> run) {
         try {
 
-            String connectionString = null;
+            String connectionString;
+            String proxyHostname;
+            String proxyPort;
+            String proxyUsername;
+            String proxyPassword;
 
-            // parse connection string from command line
+            // Add command line options and create parser
             Options options = new Options();
             options.addOption(new Option("c", true, "Connection string"));
+            options.addOption(new Option("n", true, "Proxy hostname"));
+            options.addOption(new Option("p", true, "Proxy port"));
+            options.addOption(new Option("user", true, "Proxy username"));
+            options.addOption(new Option("pass", true, "Proxy password"));
+
             CommandLineParser clp = new DefaultParser();
             CommandLine cl = clp.parse(options, args);
-            if (cl.getOptionValue("c") != null) {
-                connectionString = cl.getOptionValue("c");
-            }
 
-            // get overrides from the environment
-            String env = System.getenv(SB_SAMPLES_CONNECTIONSTRING);
-            if (env != null) {
-                connectionString = env;
-            }
+            // Pull variables from command line options or environment variables
+            connectionString = getOptionOrEnv(cl, "c", SB_SAMPLES_CONNECTIONSTRING);
+            proxyHostname = getOptionOrEnv(cl, "n", SB_SAMPLES_PROXY_HOSTNAME);
+            proxyPort = getOptionOrEnv(cl, "p", SB_SAMPLES_PROXY_PORT);
+            proxyUsername = getOptionOrEnv(cl, "user", SB_SAMPLES_PROXY_USERNAME);
+            proxyPassword = getOptionOrEnv(cl, "pass", SB_SAMPLES_PROXY_PASSWORD);
 
-            if (connectionString == null) {
+            // Check for bad input
+            if (StringUtil.isNullOrEmpty(connectionString) ||
+                    StringUtil.isNullOrEmpty(proxyHostname) ||
+                    StringUtil.isNullOrEmpty(proxyPort) )
+            {
                 HelpFormatter formatter = new HelpFormatter();
                 formatter.printHelp("run jar with", "", options, "", true);
                 return 2;
             }
+
+            if (!NumberUtils.isCreatable(proxyPort)) {
+                System.err.println("Please provide a numerical value for a port");
+            }
+
+            // Set up proxy here
+            /* TODO */
+
             return run.apply(connectionString);
         } catch (Exception e) {
             System.out.printf("%s", e.toString());
             return 3;
         }
+    }
+
+    static private String getOptionOrEnv(CommandLine cl, String optionValue, String envName)
+    {
+        String output = null;
+
+        if (cl.getOptionValue(optionValue) != null) {
+            output = cl.getOptionValue("c");
+        }
+
+        // get overrides from the environment
+        String env = System.getenv(envName);
+        if (env != null) {
+            output = env;
+        }
+
+        return output;
     }
 
     private void waitForEnter(int seconds) {
