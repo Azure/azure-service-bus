@@ -10,6 +10,8 @@ import com.google.gson.Gson;
 
 import static java.nio.charset.StandardCharsets.*;
 
+import java.io.IOException;
+import java.net.*;
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
@@ -26,7 +28,7 @@ public class QueuesWithProxy {
     public void run(String connectionString) throws Exception {
         // Set the transport type to AmqpWithWebsockets
         ConnectionStringBuilder connStrBuilder = new ConnectionStringBuilder(connectionString, "BasicQueue");
-        /* TODO requires proxy update */
+        /* TODO requires proxy update to build */
         // connStrBuilder.setTransportType(TransportType.AMQP_WEB_SOCKETS);
 
         // Create a QueueClient instance for receiving using the connection string builder
@@ -149,8 +151,9 @@ public class QueuesWithProxy {
         try {
 
             String connectionString;
-            String proxyHostname;
-            String proxyPort;
+            String proxyHostName;
+            String proxyPortString;
+            int proxyPort;
             String proxyUsername;
             String proxyPassword;
 
@@ -167,27 +170,40 @@ public class QueuesWithProxy {
 
             // Pull variables from command line options or environment variables
             connectionString = getOptionOrEnv(cl, "c", SB_SAMPLES_CONNECTIONSTRING);
-            proxyHostname = getOptionOrEnv(cl, "n", SB_SAMPLES_PROXY_HOSTNAME);
-            proxyPort = getOptionOrEnv(cl, "p", SB_SAMPLES_PROXY_PORT);
+            proxyHostName = getOptionOrEnv(cl, "n", SB_SAMPLES_PROXY_HOSTNAME);
+            proxyPortString = getOptionOrEnv(cl, "p", SB_SAMPLES_PROXY_PORT);
             proxyUsername = getOptionOrEnv(cl, "user", SB_SAMPLES_PROXY_USERNAME);
             proxyPassword = getOptionOrEnv(cl, "pass", SB_SAMPLES_PROXY_PASSWORD);
 
             // Check for bad input
             if (StringUtil.isNullOrEmpty(connectionString) ||
-                    StringUtil.isNullOrEmpty(proxyHostname) ||
-                    StringUtil.isNullOrEmpty(proxyPort) )
+                    StringUtil.isNullOrEmpty(proxyHostName) ||
+                    StringUtil.isNullOrEmpty(proxyPortString) )
             {
                 HelpFormatter formatter = new HelpFormatter();
                 formatter.printHelp("run jar with", "", options, "", true);
                 return 2;
             }
 
-            if (!NumberUtils.isCreatable(proxyPort)) {
-                System.err.println("Please provide a numerical value for a port");
+            if (!NumberUtils.isCreatable(proxyPortString)) {
+                System.err.println("Please provide a numerical value for the port");
             }
+            proxyPort = Integer.parseInt(proxyPortString);
 
-            // Set up proxy here
-            /* TODO */
+            // ProxySelector set up for an HTTP proxy
+            ProxySelector.setDefault(new ProxySelector() {
+                @Override
+                public List<Proxy> select(URI uri) {
+                    List<Proxy> proxies = new LinkedList<>();
+                    proxies.add(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHostName, proxyPort)));
+                    return proxies;
+                }
+
+                @Override
+                public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
+                    // no-op
+                }
+            });
 
             return run.apply(connectionString);
         } catch (Exception e) {
