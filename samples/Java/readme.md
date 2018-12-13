@@ -22,7 +22,7 @@ the Azure portal to get immediate help) and it provides unfiltered and easy acce
 
 ### Message Handling
 
-* **Receive Loop** - [ReceiveLoop](./azure-servicebus/ReceiveLoop) shows how to use an explicit receive loop with a queues instead of the 
+* **Receive Loop** - [ReceiveLoop](./azure-servicebus/ReceiveLoop) shows how to use an explicit receive loop with a queue instead of the 
    recommended, callback-based OnMessage(Async) API used in the "getting started" sample.
 * **Message Prefetching** - The [Prefetch](./azure-servicebus/Prefetch) sample shows the difference between having "prefetch" turned on or off for the receiver. 
   Prefetch is a background receive operation that acquires messages into a buffer before the application itself calls *Receive* and therefore 
