@@ -117,6 +117,7 @@ to write more code to renew message locks, complete messages and define how to a
     ```csharp
     static async Task MainAsync(string[] args)
     {
+        const int numberOfMessages = 10;
         messageSender = new MessageSender(ServiceBusConnectionString, QueueName);
         messageReceiver = new MessageReceiver(ServiceBusConnectionString, QueueName, ReceiveMode.PeekLock);
 
