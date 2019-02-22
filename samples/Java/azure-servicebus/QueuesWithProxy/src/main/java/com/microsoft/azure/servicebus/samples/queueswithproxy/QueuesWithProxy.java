@@ -144,8 +144,6 @@ public class QueuesWithProxy {
     static final String SB_SAMPLES_CONNECTIONSTRING = "SB_SAMPLES_CONNECTIONSTRING";
     static final String SB_SAMPLES_PROXY_HOSTNAME = "SB_SAMPLES_PROXY_HOSTNAME";
     static final String SB_SAMPLES_PROXY_PORT = "SB_SAMPLES_PROXY_PORT";
-    static final String SB_SAMPLES_PROXY_USERNAME = "SB_SAMPLES_PROXY_USERNAME";
-    static final String SB_SAMPLES_PROXY_PASSWORD= "SB_SAMPLES_PROXY_PASSWORD";
 
     public static int runApp(String[] args, Function<String, Integer> run) {
         try {
@@ -154,16 +152,12 @@ public class QueuesWithProxy {
             String proxyHostName;
             String proxyPortString;
             int proxyPort;
-            String proxyUsername;
-            String proxyPassword;
 
             // Add command line options and create parser
             Options options = new Options();
             options.addOption(new Option("c", true, "Connection string"));
             options.addOption(new Option("n", true, "Proxy hostname"));
             options.addOption(new Option("p", true, "Proxy port"));
-            options.addOption(new Option("user", true, "Proxy username"));
-            options.addOption(new Option("pass", true, "Proxy password"));
 
             CommandLineParser clp = new DefaultParser();
             CommandLine cl = clp.parse(options, args);
@@ -172,8 +166,6 @@ public class QueuesWithProxy {
             connectionString = getOptionOrEnv(cl, "c", SB_SAMPLES_CONNECTIONSTRING);
             proxyHostName = getOptionOrEnv(cl, "n", SB_SAMPLES_PROXY_HOSTNAME);
             proxyPortString = getOptionOrEnv(cl, "p", SB_SAMPLES_PROXY_PORT);
-            proxyUsername = getOptionOrEnv(cl, "user", SB_SAMPLES_PROXY_USERNAME);
-            proxyPassword = getOptionOrEnv(cl, "pass", SB_SAMPLES_PROXY_PASSWORD);
 
             // Check for bad input
             if (StringUtil.isNullOrEmpty(connectionString) ||
@@ -191,17 +183,26 @@ public class QueuesWithProxy {
             proxyPort = Integer.parseInt(proxyPortString);
 
             // ProxySelector set up for an HTTP proxy
+            final ProxySelector systemDefaultSelector = ProxySelector.getDefault();
             ProxySelector.setDefault(new ProxySelector() {
                 @Override
                 public List<Proxy> select(URI uri) {
-                    List<Proxy> proxies = new LinkedList<>();
-                    proxies.add(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHostName, proxyPort)));
-                    return proxies;
+                    if (uri != null
+                            && uri.getHost() != null
+                            && uri.getHost().equalsIgnoreCase(proxyHostName)) {
+                        List<Proxy> proxies = new LinkedList<>();
+                        proxies.add(new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHostName, proxyPort)));
+                        return proxies;
+                    }
+                    return systemDefaultSelector.select(uri);
                 }
 
                 @Override
-                public void connectFailed(URI uri, SocketAddress sa, IOException ioe) {
-                    // no-op
+                public void connectFailed(URI uri, SocketAddress sa, IOException ioe){
+                    if (uri == null || sa == null || ioe == null) {
+                        throw new IllegalArgumentException("Arguments can't be null.");
+                    }
+                    systemDefaultSelector.connectFailed(uri, sa, ioe);
                 }
             });
 
