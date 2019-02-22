@@ -10,8 +10,9 @@ Refer to the main [README](../README.md) document for setup instructions.
 
 ## Sample Code 
 
-The sample is documented inline in the [QueuesGettingStarted.java](src/main/java/com/microsoft/azure/servicebus/samples/queueswithproxy/QueuesGettingStarted.java) file.
+The sample is documented inline in the [QueuesWithProxy.java](src/main/java/com/microsoft/azure/servicebus/samples/queueswithproxy/QueuesWithProxy.java) file.
 
+### Note from [QueuesGettingStarted.java](../QueuesGettingStarted/src/main/java/com/microsoft/azure/servicebus/samples/queuesgettingstarted/QueuesGettingStarted.java) sample:
 To keep things reasonably simple, the sample program keeps message sender and
 message receiver code within a single hosting application, even though these
 roles are often spread across applications, services, or at least across
