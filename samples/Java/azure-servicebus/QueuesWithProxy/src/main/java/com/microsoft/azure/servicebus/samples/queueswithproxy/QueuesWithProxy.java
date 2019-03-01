@@ -18,6 +18,7 @@ import java.util.concurrent.*;
 import java.util.function.Function;
 
 import com.microsoft.azure.servicebus.primitives.StringUtil;
+import com.microsoft.azure.servicebus.primitives.TransportType;
 import org.apache.commons.cli.*;
 import org.apache.commons.lang3.math.NumberUtils;
 
@@ -28,8 +29,7 @@ public class QueuesWithProxy {
     public void run(String connectionString) throws Exception {
         // Set the transport type to AmqpWithWebsockets
         ConnectionStringBuilder connStrBuilder = new ConnectionStringBuilder(connectionString, "BasicQueue");
-        /* TODO requires proxy update to build */
-        // connStrBuilder.setTransportType(TransportType.AMQP_WEB_SOCKETS);
+        connStrBuilder.setTransportType(TransportType.AMQP_WEB_SOCKETS);
 
         // Create a QueueClient instance for receiving using the connection string builder
         // We set the receive mode to "PeekLock", meaning the message is delivered
