@@ -51,6 +51,10 @@ the Azure portal to get immediate help) and it provides unfiltered and easy acce
 * **Time To Live** - The [TimeToLive](./azure-servicebus/TimeToLive) example shows the basic functionality of the TimeToLive option for messages as
   well as handling of the deadletter queue where messages can optionally be stored by the system as they expire.
   
+### Networking
+
+* **Proxy Use** - The [QueuesWithProxy](./azure-servicebus/QueuesWithProxy) sample shows how to use the ProxySelector class to connect to Service Bus
+  via a proxy as well as how to configure basic authentication with a proxy. 
 
 ## Apache Qpid JMS
 

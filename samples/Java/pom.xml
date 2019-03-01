@@ -31,6 +31,7 @@
         <module>azure-servicebus/PartitionedQueues</module>
         <module>azure-servicebus/Prefetch</module>
         <module>azure-servicebus/QueuesGettingStarted</module>
+        <module>azure-servicebus/QueuesWithProxy</module>
         <module>azure-servicebus/ReceiveLoop</module>
         <module>azure-servicebus/SasAuthorization</module>
         <module>azure-servicebus/ScheduledMessages</module>
