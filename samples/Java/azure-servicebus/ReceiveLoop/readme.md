@@ -10,7 +10,7 @@ Refer to the main [README](../README.md) document for setup instructions.
 
 ## Sample Code 
 
-The sample is documented inline in the [ReceiveLoop.java](.\src\main\java\com\microsoft\azure\servicebus\samples\receiveloop\ReceiveLoop.java) file.
+The sample is documented inline in the [ReceiveLoop.java](./src/main/java/com/microsoft/azure/servicebus/samples/receiveloop/ReceiveLoop.java) file.
 
 To keep things reasonably simple, the sample program keeps message sender and
 message receiver code within a single hosting application, even though these
