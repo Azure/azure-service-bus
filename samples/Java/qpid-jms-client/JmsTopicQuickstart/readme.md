@@ -39,7 +39,7 @@ The JMS Topic publisher side is compatible with Service Bus, as shown in this sa
 dynamic subscribers are not. The following topology-related JMS APIs are not supported with Service Bus. 
 
 
-*| Unsupported method          | Replace with                                                                             |
+| Unsupported method          | Replace with                                                                             |
 |-----------------------------|------------------------------------------------------------------------------------------|
 | createDurableSubscriber     | create a Topic subscription porting the message selector                                 |
 | createDurableConsumer       | create a Topic subscription porting the message selector                                 |
