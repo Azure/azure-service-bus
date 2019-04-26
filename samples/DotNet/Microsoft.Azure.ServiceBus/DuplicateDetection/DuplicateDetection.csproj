@@ -4,7 +4,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>MessagingSamples</RootNamespace>
     <AssemblyName>DuplicateDetection</AssemblyName>
-    <TargetFrameworks>net461;netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks>net472;netcoreapp2.2</TargetFrameworks>
     
   </PropertyGroup>
   <ItemGroup>
