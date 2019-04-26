@@ -13,7 +13,7 @@
     "apiVersion": "2017-04-01"
   },
   "resources": 
-    {
+    [{
       "apiVersion": "[variables('apiVersion')]",
       "name": "[parameters('serviceBusNamespaceName')]",
       "type": "Microsoft.ServiceBus/namespaces",
@@ -126,7 +126,7 @@
           ],
           "properties": {
             "requiresDuplicateDetection": true,
-            "duplicateDetectionHistoryTimeWindow" :  "T10M"
+            "duplicateDetectionHistoryTimeWindow" :  "PT10M"
           },
           "resources": []
         },
