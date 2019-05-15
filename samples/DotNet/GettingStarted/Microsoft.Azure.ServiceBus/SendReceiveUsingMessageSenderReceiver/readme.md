@@ -84,7 +84,7 @@ to write more code to renew message locks, complete messages and define how to a
         }
     }
 	```
-1. Create a new method called `SendMessagesToQueue` with the following code:
+1. Create a new method called `SendMessagesAsync` with the following code:
 
     ```csharp
     // Sends messages to the queue.
@@ -117,11 +117,12 @@ to write more code to renew message locks, complete messages and define how to a
     ```csharp
     static async Task MainAsync(string[] args)
     {
+        const int numberOfMessages = 10;
         messageSender = new MessageSender(ServiceBusConnectionString, QueueName);
         messageReceiver = new MessageReceiver(ServiceBusConnectionString, QueueName, ReceiveMode.PeekLock);
 
 		// Send Messages
-        await SendMessagesToQueue(numberOfMessages);
+        await SendMessagesAsync(numberOfMessages);
 
 		// Receive Messages
         await ReceiveMessagesAsync(numberOfMessages);
