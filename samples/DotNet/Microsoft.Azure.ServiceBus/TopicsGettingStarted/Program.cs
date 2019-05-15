@@ -131,7 +131,7 @@ namespace TopicsGettingStarted
 
         private Task LogMessageHandlerException(ExceptionReceivedEventArgs e)
         {
-            Console.WriteLine("Exception: \"{0}\" {0}", e.Exception.Message, e.ExceptionReceivedContext.EntityPath);
+            Console.WriteLine("Exception: \"{0}\" {1}", e.Exception.Message, e.ExceptionReceivedContext.EntityPath);
             return Task.CompletedTask;
         }
 
