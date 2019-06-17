@@ -73,7 +73,7 @@ namespace MessagingSamples
         {
             MessagingFactorySettings messagingFactorySettings = new MessagingFactorySettings
             {
-                TokenProvider = TokenProvider.CreateManagedServiceIdentityTokenProvider(ServiceAudience.EventHubsAudience),
+                TokenProvider = TokenProvider.CreateManagedIdentityTokenProvider(),
                 TransportType = TransportType.Amqp
             };
 
