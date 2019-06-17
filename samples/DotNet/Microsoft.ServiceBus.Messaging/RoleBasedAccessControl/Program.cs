@@ -119,18 +119,34 @@ namespace MessagingSamples
         
         async Task ClientCredentialsCertScenario()
         {
-            ClientCredential clientCredential = new ClientCredential(ClientId, ConfigurationManager.AppSettings["clientSecret"]);
             MessagingFactorySettings messagingFactorySettings = new MessagingFactorySettings
             {
-                TokenProvider = TokenProvider.CreateAadTokenProvider(
-                    new AuthenticationContext($"https://login.windows.net/{TenantId}"),
-                    clientCredential,
-                    ServiceAudience.ServiceBusAudience
-                ),
+                TokenProvider = TokenProvider.CreateAzureActiveDirectoryTokenProvider(AzureActiveDirectoryCallback),
                 TransportType = TransportType.Amqp
             };
 
             await SendReceive(messagingFactorySettings);
+        }
+
+        static AzureActiveDirectoryTokenProvider.AuthenticationCallback AzureActiveDirectoryCallback()
+        {
+
+            // Please fill out values below manually if the AAD tests should be run
+            string tenantId = ConfigurationManager.AppSettings["tenantId"];
+            string clientId = ConfigurationManager.AppSettings["aadAppId"];
+            string clientSecret = ConfigurationManager.AppSettings["clientSecret"];
+            if (string.IsNullOrEmpty(tenantId))
+            {
+                return null;
+            }
+            return async (audience, authority, state) =>
+            {
+                var authContext = new AuthenticationContext($"https://login.windows.net/{tenantId}", false);
+                var cc = new ClientCredential(clientId, clientSecret);
+                var authResult = await authContext.AcquireTokenAsync(ServiceBusAudience.ToString(), cc, ServiceAudience.ServiceBusAudience);
+                return authResult.AccessToken;
+            };
+
         }
 
         X509Certificate2 GetCertificate()
