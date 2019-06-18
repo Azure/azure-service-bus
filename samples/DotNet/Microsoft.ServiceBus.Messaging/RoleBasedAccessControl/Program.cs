@@ -28,6 +28,8 @@ namespace MessagingSamples
     using System.Security.Cryptography.X509Certificates;
     using System.Collections.Generic;
     using Microsoft.IdentityModel.Clients.ActiveDirectory;
+    using System.ServiceModel.Activation;
+    using Microsoft.IdentityModel.Tokens;
 
     public class Program
     {
@@ -65,6 +67,13 @@ namespace MessagingSamples
                     case 4:
                         await ClientCredentialsCertScenario();
                         break;
+                        
+                // Still pending
+                // Data owner scenario
+                // Custom role scenario
+                // Connection string scenario
+                // Control plane &data plane mixed scenario
+
                 }
             }
         }
@@ -97,6 +106,21 @@ namespace MessagingSamples
             await SendReceive(messagingFactorySettings);
         }
 
+        static AzureActiveDirectoryTokenProvider.AuthenticationCallback UserInteractiveLoginCallback()
+        {
+            return async (audience, authority, state) =>
+            {
+                var authContext = new AuthenticationContext($"https://login.windows.net/{TenantId}");
+                var clientId = ClientId;
+                var uri = new Uri(ConfigurationManager.AppSettings["redirectURI"]);
+                var platformParams = new PlatformParameters(PromptBehavior.SelectAccount);
+
+                var authResult = await authContext.AcquireTokenAsync(ServiceBusAudience.toString(), ClientId, uri, platformParams, ServiceAudience.ServiceBusAudience);
+
+                return authResult.AccessToken;
+            };
+        }
+
         async Task UserPasswordCredentialScenario()
         {
             UserPasswordCredential userPasswordCredential = new UserPasswordCredential(
@@ -121,19 +145,19 @@ namespace MessagingSamples
         {
             MessagingFactorySettings messagingFactorySettings = new MessagingFactorySettings
             {
-                TokenProvider = TokenProvider.CreateAzureActiveDirectoryTokenProvider(AzureActiveDirectoryCallback),
+                TokenProvider = TokenProvider.CreateAzureActiveDirectoryTokenProvider(AzureActiveDirectoryClientCertCallback),
                 TransportType = TransportType.Amqp
             };
 
             await SendReceive(messagingFactorySettings);
         }
 
-        static AzureActiveDirectoryTokenProvider.AuthenticationCallback AzureActiveDirectoryCallback()
+        static AzureActiveDirectoryTokenProvider.AuthenticationCallback AzureActiveDirectoryClientCertCallback()
         {
 
             // Please fill out values below manually if the AAD tests should be run
             string tenantId = ConfigurationManager.AppSettings["tenantId"];
-            string clientId = ConfigurationManager.AppSettings["aadAppId"];
+            string clientId = ConfigurationManager.AppSettings["clientId"];
             string clientSecret = ConfigurationManager.AppSettings["clientSecret"];
             if (string.IsNullOrEmpty(tenantId))
             {
