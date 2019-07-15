@@ -63,7 +63,7 @@ namespace MessagingSamples
                         await UserInteractiveLoginScenario();
                         break;
                     case 3:
-                        await ClientCredentialsScenarioAsync();
+                        await ClientCredentialsScenario();
                         break;
                     case 4:
                         await ClientCredentialsCertScenario();
@@ -207,7 +207,7 @@ namespace MessagingSamples
 
         }
 
-        async Task ClientCredentialsScenarioAsync()
+        async Task ClientCredentialsScenario()
         {
             var qClient = QueueClient.CreateWithAzureActiveDirectory(
                 new Uri($"sb://{ServiceBusNamespace}").ToString(),
@@ -227,7 +227,7 @@ namespace MessagingSamples
             await SendReceiveAsync(qClient);
         }
 
-        private X509Certificate2 GetCertificate()
+        X509Certificate2 GetCertificate()
         {
             List<StoreLocation> locations = new List<StoreLocation>
                 {
