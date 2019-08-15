@@ -189,7 +189,9 @@ namespace MessagingSamples
                             .WithRedirectUri(ConfigurationManager.AppSettings["redirectURI"])
                             .Build();
 
-                var authResult = await app.AcquireTokenInteractive(new string[] { $"{audience}/.default" }).ExecuteAsync();
+                Uri ServiceBusAudience = new Uri("https://servicebus.azure.net");
+
+                var authResult = await app.AcquireTokenInteractive(new string[] { $"{ServiceBusAudience}/.default" }).ExecuteAsync();
 
                 return authResult.AccessToken;
             }, $"https://login.windows.net/{TenantId}");
@@ -202,21 +204,24 @@ namespace MessagingSamples
 
         async Task ClientCredentialsScenario()
         {
-            var aadTokenProvider = TokenProvider.CreateAzureActiveDirectoryTokenProvider(async (audience, authority, state) =>
+            var aadTokenProvider = TokenProvider.CreateAzureActiveDirectoryTokenProvider
+                (async (audience, authority, state) =>
             {
                 IConfidentialClientApplication app = ConfidentialClientApplicationBuilder.Create(ClientId)
                                 .WithAuthority(authority)
                                 .WithClientSecret(ConfigurationManager.AppSettings["clientSecret"])
                                 .Build();
 
-                var authResult = await app.AcquireTokenForClient(new string[] { $"{audience}/.default" }).ExecuteAsync();
+                Uri ServiceBusAudience = new Uri("https://servicebus.azure.net");
+
+                var authResult = await app.AcquireTokenForClient(new string[] { $"{ServiceBusAudience}/.default" }).ExecuteAsync();
                 return authResult.AccessToken;
 
-            });
+            }, $"https://login.windows.net/{TenantId}");
 
-            var qClient = new QueueClient(new Uri($"sb://{ServiceBusNamespace}/").ToString(), QueueName, aadTokenProvider);
+            var qc = new QueueClient(new Uri($"sb://{ServiceBusNamespace}/").ToString(), QueueName, aadTokenProvider);
 
-            await SendReceiveAsync(qClient);
+            await SendReceiveAsync(qc);
         }
 
         X509Certificate2 GetCertificate()
@@ -259,15 +264,16 @@ namespace MessagingSamples
                                 .WithAuthority(authority)
                                 .WithCertificate(certificate)
                                 .Build();
+                Uri ServiceBusAudience = new Uri("https://servicebus.azure.net");
 
-                var authResult = await app.AcquireTokenForClient(new string[] { $"{audience}/.default" }).ExecuteAsync();
+                var authResult = await app.AcquireTokenForClient(new string[] { $"{ServiceBusAudience}/.default" }).ExecuteAsync();
                 return authResult.AccessToken;
 
             });
 
-            var qClient = new QueueClient(new Uri($"sb://{ServiceBusNamespace}/").ToString(), QueueName, aadTokenProvider);
+            var qc = new QueueClient(new Uri($"sb://{ServiceBusNamespace}/").ToString(), QueueName, aadTokenProvider);
 
-            await SendReceiveAsync(qClient);
+            await SendReceiveAsync(qc);
 
         }
 
