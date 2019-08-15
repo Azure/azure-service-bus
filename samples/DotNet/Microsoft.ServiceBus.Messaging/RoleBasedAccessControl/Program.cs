@@ -69,13 +69,6 @@ namespace MessagingSamples
                     case 4:
                         await ClientCredentialsCertScenario();
                         break;
-
-                        // Still pending
-                        // Data owner scenario
-                        // Custom role scenario
-                        // Connection string scenario
-                        // Control plane &data plane mixed scenario
-
                 }
             }
         }
