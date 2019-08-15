@@ -189,7 +189,9 @@ namespace MessagingSamples
                             .WithRedirectUri(ConfigurationManager.AppSettings["redirectURI"])
                             .Build();
 
-                var authResult = await app.AcquireTokenInteractive(new string[] { $"{audience}/.default" }).ExecuteAsync();
+                Uri ServiceBusAudience = new Uri("https://servicebus.azure.net");
+
+                var authResult = await app.AcquireTokenInteractive(new string[] { $"{ServiceBusAudience}/.default" }).ExecuteAsync();
 
                 return authResult.AccessToken;
             }, $"https://login.windows.net/{TenantId}");
