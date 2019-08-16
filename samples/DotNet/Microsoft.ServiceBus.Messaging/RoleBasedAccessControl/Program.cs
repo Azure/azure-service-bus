@@ -189,14 +189,14 @@ namespace MessagingSamples
                             .WithRedirectUri(ConfigurationManager.AppSettings["redirectURI"])
                             .Build();
 
-                Uri ServiceBusAudience = new Uri("https://servicebus.azure.net");
+                var serviceBusAudience = new Uri("https://servicebus.azure.net");
 
-                var authResult = await app.AcquireTokenInteractive(new string[] { $"{ServiceBusAudience}/.default" }).ExecuteAsync();
+                var authResult = await app.AcquireTokenInteractive(new string[] { $"{serviceBusAudience}/.default" }).ExecuteAsync();
 
                 return authResult.AccessToken;
             }, $"https://login.windows.net/{TenantId}");
 
-            var qc = new QueueClient(new Uri($"sb://{ServiceBusNamespace}/").ToString(), QueueName, aadTokenProvider);
+            var qc = new QueueClient(new Uri($"sb://{serviceBusNamespace}/").ToString(), QueueName, aadTokenProvider);
 
             await SendReceiveAsync(qc);
 
@@ -212,9 +212,9 @@ namespace MessagingSamples
                                 .WithClientSecret(ConfigurationManager.AppSettings["clientSecret"])
                                 .Build();
 
-                Uri ServiceBusAudience = new Uri("https://servicebus.azure.net");
+                var serviceBusAudience = new Uri("https://servicebus.azure.net");
 
-                var authResult = await app.AcquireTokenForClient(new string[] { $"{ServiceBusAudience}/.default" }).ExecuteAsync();
+                var authResult = await app.AcquireTokenForClient(new string[] { $"{serviceBusAudience}/.default" }).ExecuteAsync();
                 return authResult.AccessToken;
 
             }, $"https://login.windows.net/{TenantId}");
@@ -264,9 +264,10 @@ namespace MessagingSamples
                                 .WithAuthority(authority)
                                 .WithCertificate(certificate)
                                 .Build();
-                Uri ServiceBusAudience = new Uri("https://servicebus.azure.net");
+                
+                var serviceBusAudience = new Uri("https://servicebus.azure.net");
 
-                var authResult = await app.AcquireTokenForClient(new string[] { $"{ServiceBusAudience}/.default" }).ExecuteAsync();
+                var authResult = await app.AcquireTokenForClient(new string[] { $"{serviceBusAudience}/.default" }).ExecuteAsync();
                 return authResult.AccessToken;
 
             });
