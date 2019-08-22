@@ -17,7 +17,6 @@ namespace BasicSendReceiveQuickStart
 
             for (int i = 0; i < args.Length; i++)
             {
-                var p = new Program();
                 if (args[i] == "-ConnectionString")
                 {
                     Console.WriteLine($"ConnectionString: {args[i+1]}");
@@ -34,7 +33,7 @@ namespace BasicSendReceiveQuickStart
                 MainAsync(ServiceBusConnectionString, QueueName).GetAwaiter().GetResult();
             else
             {
-                Console.WriteLine("Specify -Connectionstring and -QueueName to execute the example.");
+                Console.WriteLine("Specify -ConnectionString and -QueueName to execute the example.");
                 Console.ReadKey();
             }                            
         }
