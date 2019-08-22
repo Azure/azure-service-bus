@@ -8,29 +8,30 @@ namespace BasicSendReceiveQuickStart
 {
     class Program
     {
-        static IQueueClient queueClient;
+        static IQueueClient _queueClient;
 
         static void Main(string[] args)
         {
-            string ServiceBusConnectionString = "";
-            string QueueName = "";
+            string serviceBusConnectionString = string.Empty;
+            string queueName = string.Empty;
 
-            for (int i = 0; i < args.Length; i++)
+            for (var i = 0; i < args.Length; i++)
             {
-                if (args[i] == "-ConnectionString")
+                switch (args[i])
                 {
-                    Console.WriteLine($"ConnectionString: {args[i+1]}");
-                    ServiceBusConnectionString = args[i + 1]; // Alternatively enter your connection string here.
+                    case "-ConnectionString":
+                        Console.WriteLine($"ConnectionString: {args[i+1]}");
+                        serviceBusConnectionString = args[i + 1]; // Alternatively enter your connection string here.
+                        break;
+                    case "-QueueName":
+                        Console.WriteLine($"QueueName: {args[i+1]}");
+                        queueName = args[i + 1]; // Alternatively enter your queue name here.
+                        break;
                 }
-                else if(args[i] == "-QueueName")
-                {
-                    Console.WriteLine($"QueueName: {args[i+1]}");
-                    QueueName = args[i + 1]; // Alternatively enter your queue name here.
-                }                
             }
 
-            if (ServiceBusConnectionString != "" && QueueName != "")
-                MainAsync(ServiceBusConnectionString, QueueName).GetAwaiter().GetResult();
+            if (serviceBusConnectionString != "" && queueName != "")
+                MainAsync(serviceBusConnectionString, queueName).GetAwaiter().GetResult();
             else
             {
                 Console.WriteLine("Specify -ConnectionString and -QueueName to execute the example.");
@@ -38,10 +39,10 @@ namespace BasicSendReceiveQuickStart
             }                            
         }
 
-        static async Task MainAsync(string ServiceBusConnectionString, string QueueName)
+        static async Task MainAsync(string serviceBusConnectionString, string queueName)
         {
             const int numberOfMessages = 10;
-            queueClient = new QueueClient(ServiceBusConnectionString, QueueName);
+            _queueClient = new QueueClient(serviceBusConnectionString, queueName);
 
             Console.WriteLine("======================================================");
             Console.WriteLine("Press any key to exit after receiving all the messages.");
@@ -55,7 +56,7 @@ namespace BasicSendReceiveQuickStart
 
             Console.ReadKey();
 
-            await queueClient.CloseAsync();
+            await _queueClient.CloseAsync();
         }
 
         static void RegisterOnMessageHandlerAndReceiveMessages()
@@ -73,7 +74,7 @@ namespace BasicSendReceiveQuickStart
             };
 
             // Register the function that will process messages
-            queueClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
+            _queueClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
         }
 
         static async Task ProcessMessagesAsync(Message message, CancellationToken token)
@@ -83,7 +84,7 @@ namespace BasicSendReceiveQuickStart
 
             // Complete the message so that it is not received again.
             // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode (which is default).
-            await queueClient.CompleteAsync(message.SystemProperties.LockToken);
+            await _queueClient.CompleteAsync(message.SystemProperties.LockToken);
 
             // Note: Use the cancellationToken passed as necessary to determine if the queueClient has already been closed.
             // If queueClient has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls 
@@ -109,14 +110,14 @@ namespace BasicSendReceiveQuickStart
                 for (var i = 0; i < numberOfMessagesToSend; i++)
                 {
                     // Create a new message to send to the queue
-                    string messageBody = $"Message {i}";
+                    var messageBody = $"Message {i}";
                     var message = new Message(Encoding.UTF8.GetBytes(messageBody));
 
                     // Write the body of the message to the console
                     Console.WriteLine($"Sending message: {messageBody}");
 
                     // Send the message to the queue
-                    await queueClient.SendAsync(message);
+                    await _queueClient.SendAsync(message);
                 }
             }
             catch (Exception exception)
