@@ -8,12 +8,12 @@ namespace BasicSendReceiveQuickStart
 {
     class Program
     {
-        static IQueueClient _queueClient;
+        static IQueueClient queueClient;
 
         static void Main(string[] args)
         {
-            string serviceBusConnectionString = string.Empty;
-            string queueName = string.Empty;
+            var serviceBusConnectionString = string.Empty;
+            var queueName = string.Empty;
 
             for (var i = 0; i < args.Length; i++)
             {
@@ -42,7 +42,7 @@ namespace BasicSendReceiveQuickStart
         static async Task MainAsync(string serviceBusConnectionString, string queueName)
         {
             const int numberOfMessages = 10;
-            _queueClient = new QueueClient(serviceBusConnectionString, queueName);
+            queueClient = new QueueClient(serviceBusConnectionString, queueName);
 
             Console.WriteLine("======================================================");
             Console.WriteLine("Press any key to exit after receiving all the messages.");
@@ -56,7 +56,7 @@ namespace BasicSendReceiveQuickStart
 
             Console.ReadKey();
 
-            await _queueClient.CloseAsync();
+            await queueClient.CloseAsync();
         }
 
         static void RegisterOnMessageHandlerAndReceiveMessages()
@@ -74,7 +74,7 @@ namespace BasicSendReceiveQuickStart
             };
 
             // Register the function that will process messages
-            _queueClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
+            queueClient.RegisterMessageHandler(ProcessMessagesAsync, messageHandlerOptions);
         }
 
         static async Task ProcessMessagesAsync(Message message, CancellationToken token)
@@ -84,7 +84,7 @@ namespace BasicSendReceiveQuickStart
 
             // Complete the message so that it is not received again.
             // This can be done only if the queueClient is created in ReceiveMode.PeekLock mode (which is default).
-            await _queueClient.CompleteAsync(message.SystemProperties.LockToken);
+            await queueClient.CompleteAsync(message.SystemProperties.LockToken);
 
             // Note: Use the cancellationToken passed as necessary to determine if the queueClient has already been closed.
             // If queueClient has already been Closed, you may chose to not call CompleteAsync() or AbandonAsync() etc. calls 
@@ -117,7 +117,7 @@ namespace BasicSendReceiveQuickStart
                     Console.WriteLine($"Sending message: {messageBody}");
 
                     // Send the message to the queue
-                    await _queueClient.SendAsync(message);
+                    await queueClient.SendAsync(message);
                 }
             }
             catch (Exception exception)
