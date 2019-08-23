@@ -30,7 +30,7 @@ namespace BasicSendReceiveQuickStart
                 }
             }
 
-            if (serviceBusConnectionString != "" && queueName != "")
+            if (!string.IsNullOrEmpty(serviceBusConnectionString) && !string.IsNullOrEmpty(queueName))
                 MainAsync(serviceBusConnectionString, queueName).GetAwaiter().GetResult();
             else
             {
