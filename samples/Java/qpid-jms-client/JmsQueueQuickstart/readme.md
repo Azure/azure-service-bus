@@ -47,12 +47,13 @@ and then run with (or just from VS Code or another Java IDE)
 java -jar ./target/azure-servicebus-samples-jmsqueuequickstart-1.0.0-jar-with-dependencies.jar
 ```
 
-The sample accept two arguments that can either be supplied on the command line or via environment
+The sample accept the connection string as an argument that can either be supplied on the command line or via environment
 variables. The setup script discussed in the overview readme sets the environment variables for you.
 
 * -c (env: SB_SAMPLES_CONNECTIONSTRING) - Service Bus connection string with credentials or 
                                           token granting send and listen rights for the namespace
-* -q (env: SB_SAMPLES_QUEUENAME) - Name of an existing queue within the namespace
+
+The example assumes that the "BasicQueue" exists on the namespace. Please ensure that is created before running the sample.
 
 ## Sample Code Explained
 
