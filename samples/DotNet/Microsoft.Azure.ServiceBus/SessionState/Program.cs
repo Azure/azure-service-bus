@@ -186,7 +186,7 @@ namespace SessionState
                                                     recipeStep.Title);
                                                 Console.ResetColor();
                                             }
-                                            await session.CompleteAsync(message.SystemProperties.LockToken);
+                                            await session.CompleteAsync(deferredMessage.SystemProperties.LockToken);
                                             processingState.LastProcessedRecipeStep = processingState.LastProcessedRecipeStep + 1;
                                             processingState.DeferredSteps.Remove(processingState.LastProcessedRecipeStep);
                                             await session.SetStateAsync(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(processingState)));
