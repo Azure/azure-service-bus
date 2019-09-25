@@ -12,7 +12,7 @@ This repository is intended to be used for the following:
 * Reports of documentation issues
 
 If you are looking for the code of a specific client library, see the following:
-* [.NET Standard](https://github.com/azure/azure-service-bus-dotnet)
+* [.NET Standard](https://github.com/Azure/azure-sdk-for-net/)
 * [Java](https://github.com/azure/azure-service-bus-java)
 
 ## How to provide feedback
