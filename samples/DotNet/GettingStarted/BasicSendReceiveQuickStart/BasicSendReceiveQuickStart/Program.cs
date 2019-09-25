@@ -12,37 +12,37 @@ namespace BasicSendReceiveQuickStart
 
         static void Main(string[] args)
         {
-            string ServiceBusConnectionString = "";
-            string QueueName = "";
+            var serviceBusConnectionString = string.Empty;
+            var queueName = string.Empty;
 
-            for (int i = 0; i < args.Length; i++)
+            for (var i = 0; i < args.Length; i++)
             {
-                var p = new Program();
-                if (args[i] == "-ConnectionString")
+                switch (args[i])
                 {
-                    Console.WriteLine($"ConnectionString: {args[i+1]}");
-                    ServiceBusConnectionString = args[i + 1]; // Alternatively enter your connection string here.
+                    case "-ConnectionString":
+                        Console.WriteLine($"ConnectionString: {args[i+1]}");
+                        serviceBusConnectionString = args[i + 1]; // Alternatively enter your connection string here.
+                        break;
+                    case "-QueueName":
+                        Console.WriteLine($"QueueName: {args[i+1]}");
+                        queueName = args[i + 1]; // Alternatively enter your queue name here.
+                        break;
                 }
-                else if(args[i] == "-QueueName")
-                {
-                    Console.WriteLine($"QueueName: {args[i+1]}");
-                    QueueName = args[i + 1]; // Alternatively enter your queue name here.
-                }                
             }
 
-            if (ServiceBusConnectionString != "" && QueueName != "")
-                MainAsync(ServiceBusConnectionString, QueueName).GetAwaiter().GetResult();
+            if (!string.IsNullOrEmpty(serviceBusConnectionString) && !string.IsNullOrEmpty(queueName))
+                MainAsync(serviceBusConnectionString, queueName).GetAwaiter().GetResult();
             else
             {
-                Console.WriteLine("Specify -Connectionstring and -QueueName to execute the example.");
+                Console.WriteLine("Specify -ConnectionString and -QueueName to execute the example.");
                 Console.ReadKey();
             }                            
         }
 
-        static async Task MainAsync(string ServiceBusConnectionString, string QueueName)
+        static async Task MainAsync(string serviceBusConnectionString, string queueName)
         {
             const int numberOfMessages = 10;
-            queueClient = new QueueClient(ServiceBusConnectionString, QueueName);
+            queueClient = new QueueClient(serviceBusConnectionString, queueName);
 
             Console.WriteLine("======================================================");
             Console.WriteLine("Press any key to exit after receiving all the messages.");
@@ -110,7 +110,7 @@ namespace BasicSendReceiveQuickStart
                 for (var i = 0; i < numberOfMessagesToSend; i++)
                 {
                     // Create a new message to send to the queue
-                    string messageBody = $"Message {i}";
+                    var messageBody = $"Message {i}";
                     var message = new Message(Encoding.UTF8.GetBytes(messageBody));
 
                     // Write the body of the message to the console
