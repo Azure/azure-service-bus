@@ -20,7 +20,7 @@ the product documentation.][1]
 
 The sample implements two scenarios:
 
-* Send a message and then retrierve and abandon the message until the maximum
+* Send a message and then retrieve and abandon the message until the maximum
 delivery count is exhausted and the message is automatically dead-lettered. 
 
 * Send a set of messages, and explicitly dead-letter messages that do not match
