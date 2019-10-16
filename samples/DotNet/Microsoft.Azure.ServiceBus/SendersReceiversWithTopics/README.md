@@ -44,7 +44,7 @@ as we do with queues, but first format a path to the subscription from the topic
 the ```MessageReceiver``` using the composite path. From the ```MessageReceiver``` perspective, the resulting path is completely 
 interchangeable with any queue's path.
 
-The static helper method ```SubscriptionClient.FormatSubscriptionPath()``` returns a path of the form ```{topic-name}/Subscription/{subscription-name}```
+The static helper method ```SubscriptionClient.FormatSubscriptionPath()``` returns a path of the form ```{topic-name}/Subscriptions/{subscription-name}```
 
 ``` C#
 >       var subscriptionPath = SubscriptionClient.FormatSubscriptionPath(topicName, subscriptionName);
