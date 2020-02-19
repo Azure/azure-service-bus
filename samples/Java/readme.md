@@ -41,7 +41,7 @@ the Azure portal to get immediate help) and it provides unfiltered and easy acce
 ### Partitioned Entities
 
 * **Partitioned Queues** - [PartitionedQueues](./azure-servicebus/PartitionedQueues) are largely identical in handling to "regular" Queues (and are the default 
-  option when creating new Queues via teh Azure Portal), but are more resilient against slowdowns in the backend storage system. 
+  option when creating new Queues via the Azure Portal), but are more resilient against slowdowns in the backend storage system. 
   This sample illustrates some special considerations to keep in mind for partitioned queues.   
 
 ### Error and Transaction Handling
