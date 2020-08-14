@@ -17,8 +17,6 @@
 
 namespace MessagingSamples
 {
-    using Microsoft.IdentityModel.Clients.ActiveDirectory;
-    using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
     using System.Configuration;
@@ -27,11 +25,9 @@ namespace MessagingSamples
     using System.Text;
     using System.Threading.Tasks;
     using Microsoft.Identity.Client;
-    using System.Collections;
-    using Microsoft.Azure.ServiceBus.Primitives;
-    using Microsoft.Azure.ServiceBus;
-    using Microsoft.Azure.ServiceBus.InteropExtensions;
-    
+    using Microsoft.ServiceBus;
+    using Microsoft.ServiceBus.Messaging;
+    using Newtonsoft.Json;
 
     public class Program
     {
@@ -75,11 +71,11 @@ namespace MessagingSamples
 
         async Task ManagedServiceIdentityScenario()
         {
-            var msiTokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
-            var qc = new QueueClient(new Uri($"sb://{ServiceBusNamespace}/").ToString(), QueueName, msiTokenProvider);
+            QueueClient qc = QueueClient.CreateWithManagedIdentity(
+                new Uri($"sb://{ServiceBusNamespace}/"),
+                QueueName);
 
             await SendReceiveAsync(qc);
-
         }
 
         async Task SendReceiveAsync(QueueClient qc)
@@ -122,7 +118,7 @@ namespace MessagingSamples
 
             for (int i = 0; i < data.Length; i++)
             {
-                var message = new Message(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data[i])))
+                var message = new BrokeredMessage(new MemoryStream(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(data[i]))))
                 {
                     ContentType = "application/json",
                     Label = "Scientist",
@@ -143,8 +139,8 @@ namespace MessagingSamples
         void InitializeReceiver()
         {
             // register the OnMessageAsync callback
-            this.receiveClient.RegisterMessageHandler(
-                async (message, token) =>
+            this.receiveClient.OnMessageAsync(
+                async message =>
                 {
                     if (message.Label != null &&
                         message.ContentType != null &&
@@ -162,8 +158,8 @@ namespace MessagingSamples
                                 "\t\t\t\tMessage received: \n\t\t\t\t\t\tMessageId = {0}, \n\t\t\t\t\t\tSequenceNumber = {1}, \n\t\t\t\t\t\tEnqueuedTimeUtc = {2}," +
                                 "\n\t\t\t\t\t\tExpiresAtUtc = {5}, \n\t\t\t\t\t\tContentType = \"{3}\", \n\t\t\t\t\t\tSize = {4},  \n\t\t\t\t\t\tContent: [ firstName = {6}, name = {7} ]",
                                 message.MessageId,
-                                message.SystemProperties.SequenceNumber,
-                                message.SystemProperties.EnqueuedTimeUtc,
+                                message.SequenceNumber,
+                                message.EnqueuedTimeUtc,
                                 message.ContentType,
                                 message.Size,
                                 message.ExpiresAtUtc,
@@ -172,9 +168,9 @@ namespace MessagingSamples
                             Console.ResetColor();
                         }
                     }
-                    await this.receiveClient.CompleteAsync(message.SystemProperties.LockToken);
+                    await message.CompleteAsync();
                 },
-                new MessageHandlerOptions((eventargs) => { return Task.CompletedTask; })
+                new OnMessageOptions() 
                 {
                     AutoComplete = false,
                     MaxConcurrentCalls = 1
@@ -183,29 +179,31 @@ namespace MessagingSamples
 
         async Task UserInteractiveLoginScenario()
         {
-            var aadTokenProvider = TokenProvider.CreateAzureActiveDirectoryTokenProvider(async (audience, authority, state) =>
-            {
-                var app = PublicClientApplicationBuilder.Create(ClientId)
-                            .WithRedirectUri(ConfigurationManager.AppSettings["redirectURI"])
-                            .Build();
+            AzureActiveDirectoryTokenProvider.AuthenticationCallback authCallback = async (audience, authority, state) =>
+                {
+                    var app = PublicClientApplicationBuilder.Create(ClientId)
+                                .WithRedirectUri(ConfigurationManager.AppSettings["redirectURI"])
+                                .Build();
 
-                var serviceBusAudience = new Uri("https://servicebus.azure.net");
+                    var serviceBusAudience = new Uri("https://servicebus.azure.net");
 
-                var authResult = await app.AcquireTokenInteractive(new string[] { $"{serviceBusAudience}/.default" }).ExecuteAsync();
+                    var authResult = await app.AcquireTokenInteractive(new string[] { $"{serviceBusAudience}/.default" }).ExecuteAsync();
 
-                return authResult.AccessToken;
-            }, $"https://login.windows.net/{TenantId}");
+                    return authResult.AccessToken;
+                };
 
-            var qc = new QueueClient(new Uri($"sb://{serviceBusNamespace}/").ToString(), QueueName, aadTokenProvider);
+            QueueClient qc = QueueClient.CreateWithAzureActiveDirectory(
+                new Uri($"sb://{ServiceBusNamespace}/"),
+                QueueName,
+                authCallback,
+                $"https://login.windows.net/{TenantId}");
 
             await SendReceiveAsync(qc);
-
         }
 
         async Task ClientCredentialsScenario()
         {
-            var aadTokenProvider = TokenProvider.CreateAzureActiveDirectoryTokenProvider
-                (async (audience, authority, state) =>
+            AzureActiveDirectoryTokenProvider.AuthenticationCallback authCallback = async (audience, authority, state) =>
             {
                 IConfidentialClientApplication app = ConfidentialClientApplicationBuilder.Create(ClientId)
                                 .WithAuthority(authority)
@@ -215,11 +213,15 @@ namespace MessagingSamples
                 var serviceBusAudience = new Uri("https://servicebus.azure.net");
 
                 var authResult = await app.AcquireTokenForClient(new string[] { $"{serviceBusAudience}/.default" }).ExecuteAsync();
+
                 return authResult.AccessToken;
+            };
 
-            }, $"https://login.windows.net/{TenantId}");
-
-            var qc = new QueueClient(new Uri($"sb://{ServiceBusNamespace}/").ToString(), QueueName, aadTokenProvider);
+            QueueClient qc = QueueClient.CreateWithAzureActiveDirectory(
+                new Uri($"sb://{ServiceBusNamespace}/"),
+                QueueName,
+                authCallback,
+                $"https://login.windows.net/{TenantId}");
 
             await SendReceiveAsync(qc);
         }
@@ -258,24 +260,26 @@ namespace MessagingSamples
         {
             X509Certificate2 certificate = GetCertificate();
 
-            var aadTokenProvider = TokenProvider.CreateAzureActiveDirectoryTokenProvider(async (audience, authority, state) =>
-            {
-                IConfidentialClientApplication app = ConfidentialClientApplicationBuilder.Create(ClientId)
-                                .WithAuthority(authority)
-                                .WithCertificate(certificate)
-                                .Build();
-                
-                var serviceBusAudience = new Uri("https://servicebus.azure.net");
+            AzureActiveDirectoryTokenProvider.AuthenticationCallback authCallback = async (audience, authority, state) =>
+                {
+                    IConfidentialClientApplication app = ConfidentialClientApplicationBuilder.Create(ClientId)
+                                    .WithAuthority(authority)
+                                    .WithCertificate(certificate)
+                                    .Build();
 
-                var authResult = await app.AcquireTokenForClient(new string[] { $"{serviceBusAudience}/.default" }).ExecuteAsync();
-                return authResult.AccessToken;
+                    var serviceBusAudience = new Uri("https://servicebus.azure.net");
 
-            });
+                    var authResult = await app.AcquireTokenForClient(new string[] { $"{serviceBusAudience}/.default" }).ExecuteAsync();
+                    return authResult.AccessToken;
+                };
 
-            var qc = new QueueClient(new Uri($"sb://{ServiceBusNamespace}/").ToString(), QueueName, aadTokenProvider);
+            QueueClient qc = QueueClient.CreateWithAzureActiveDirectory(
+                new Uri($"sb://{ServiceBusNamespace}/"),
+                QueueName,
+                authCallback,
+                $"https://login.windows.net/{TenantId}");
 
             await SendReceiveAsync(qc);
-
         }
 
         public static int Main(string[] args)
@@ -293,8 +297,6 @@ namespace MessagingSamples
             }
             return 0;
         }
-
-
     }
 }
 
