@@ -1,34 +1,66 @@
 using System;
-using System.IO;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json;
-
-//using Microsoft.Azure.ServiceBus;
-//using Microsoft.Azure.ServiceBus.Core;
-using System.Net;
 using System.Collections.Generic;
-using System.Text;
-using System.Linq;
-
 using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Azure.EventGrid.Models;
+using Microsoft.Identity.Client;
+using Newtonsoft.Json.Linq;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Azure.WebJobs.Extensions.Http;
+using System.IO;
+using System.Linq;
+using Newtonsoft.Json;
 
 namespace SBEventGridIntegrationV2
 {
     public static class ReceiveMessagesOnEvent
     {
-        const string ServiceBusConnectionString = "<CONNECTION STRING TO SERVICE BUS NAMESPACE>";
-        const int numberOfMessages = 10; // Choose the amount of messages you want to receive. Note that this is receive batch and there is no guarantee you will get all the messages.        
-        //static IMessageReceiver messageReceiver;
+        const string ServiceBusConnectionString = "<SERCICE BUS NAMESPACE - CONNECTION STRING>";
 
-        [FunctionName("ReceiveMessagesOnEvent")]
-        public static async Task<IActionResult> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req, ILogger log)
+        [FunctionName("EventGridTriggerFunction")]
+        public static void EventGridTriggerFunction([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
+        {
+            log.LogInformation("C# Event Grid trigger function processed a request.");
+            log.LogInformation(eventGridEvent.Data.ToString());
+            
+            var data = eventGridEvent.Data as JObject;
+            ServiceBusActiveMessagesAvailableWithNoListenersEventData eventData = data.ToObject<ServiceBusActiveMessagesAvailableWithNoListenersEventData>();
+            string topicName = eventData.TopicName;
+            string subscriptionName = eventData.SubscriptionName;
+
+            ReceiveAndProcess(topicName, subscriptionName, log).GetAwaiter().GetResult();
+        }
+
+        static async Task ReceiveAndProcess(string topicName, string subscriptionName, ILogger log)
+        {
+
+            log.LogInformation($"Topic: {topicName} Subscription: {subscriptionName}");
+
+            // crate a Service Bus Client using the connection string
+            ServiceBusClient client = new ServiceBusClient(ServiceBusConnectionString);
+
+            // create the receiver
+            ServiceBusReceiver receiver = client.CreateReceiver(topicName, subscriptionName);
+
+            // receive messages
+            IReadOnlyList<ServiceBusReceivedMessage> receivedMessages = await receiver.ReceiveMessagesAsync(maxMessages: 100);
+
+            foreach (ServiceBusReceivedMessage receivedMessage in receivedMessages)
+            {
+                // get the message body as a string
+                string body = receivedMessage.Body.ToString();
+                log.LogInformation($"Received: {body} from subscription: {subscriptionName}");
+                // complete the message, thereby deleting it from the service
+                await receiver.CompleteMessageAsync(receivedMessage);
+            }
+        }
+
+        [FunctionName("HTTPTriggerFunction")]
+        public static async Task<IActionResult> HTTPTriggerFunction([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)] HttpRequest req, ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
 
@@ -51,7 +83,8 @@ namespace SBEventGridIntegrationV2
                 }
                 else
                 {
-                    ReceiveAndProcess(log, JsonConvert.DeserializeObject<GridEvent[]>(jsonContent)).GetAwaiter().GetResult();
+                    GridEvent ge = JsonConvert.DeserializeObject<GridEvent[]>(jsonContent)[0];
+                    ReceiveAndProcess(ge.Data["topicName"], ge.Data["subscriptionName"], log).GetAwaiter().GetResult();
                 }
             }
 
@@ -60,53 +93,6 @@ namespace SBEventGridIntegrationV2
                 : (ActionResult)new OkObjectResult($"Hello, {jsonContent}");
         }
 
-        [FunctionName("ReceiveMessagesOnEvent2")]
-        public static void EventGridTriggerFunction([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
-        {
-            log.LogInformation("C# Event Grid trigger function processed a request.");
-            log.LogInformation(eventGridEvent.Data.ToString());
-        }
-
-        static async Task ReceiveAndProcess(ILogger log, GridEvent[] ge)
-        {
-            log.LogInformation($"TopicName: {ge[0].Data["topicName"]} : SubscriptionName: {ge[0].Data["subscriptionName"]}");
-
-            ServiceBusClient client = new ServiceBusClient(ServiceBusConnectionString);
-
-            // create the receiver
-            ServiceBusReceiver receiver = client.CreateReceiver(ge[0].Data["topicName"], ge[0].Data["subscriptionName"]);
-
-            // the received message is a different type as it contains some service set properties
-            IReadOnlyList<ServiceBusReceivedMessage> receivedMessages = await receiver.ReceiveMessagesAsync(maxMessages: 100);
-
-            foreach (ServiceBusReceivedMessage receivedMessage in receivedMessages)
-            {
-                // get the message body as a string
-                string body = receivedMessage.Body.ToString();
-                Console.WriteLine($"Received: {body} from subscription: {ge[0].Data["subscriptionName"]}");
-                // complete the message, thereby deleting it from the service
-                await receiver.CompleteMessageAsync(receivedMessage);
-            }
-
-            // Create MessageReceiver
-            //messageReceiver = new MessageReceiver(ServiceBusConnectionString, EntityPath, ReceiveMode.PeekLock, null, numberOfMessages);
-
-            // Receive messages
-            //await ReceiveMessagesAsync(numberOfMessages, log);
-            //await messageReceiver.CloseAsync();
-        }
-        /*
-        static async Task ReceiveMessagesAsync(int numberOfMessagesToReceive, ILogger tw)
-        {
-            // Receive the message
-            IList<Message> receiveList = await messageReceiver.ReceiveAsync(numberOfMessagesToReceive);
-            foreach (Message msg in receiveList)
-            {
-                tw.LogInformation($"Received message: SequenceNumber:{msg.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(msg.Body)}");
-                await messageReceiver.CompleteAsync(msg.SystemProperties.LockToken);
-            }
-        }
-        */
     }
 
     public class GridEvent

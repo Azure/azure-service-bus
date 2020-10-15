@@ -7,7 +7,7 @@ namespace MessageSender
 {
     class Program
     {
-        const string ServiceBusConnectionString = "<CONNECTION STRING TO SERVICE BUS NAMESPACE>";
+        const string ServiceBusConnectionString = "<SERCICE BUS NAMESPACE - CONNECTION STRING>";
         const string TopicName = "<TOPIC NAME>";
 
         static void Main(string[] args)
@@ -33,7 +33,6 @@ namespace MessageSender
         {
             try
             {
-                // create a ServiceBusClient using the connection to the namespace
                 await using var client = new ServiceBusClient(ServiceBusConnectionString);
                 // create the sender
                 ServiceBusSender sender = client.CreateSender(TopicName);
