@@ -23,7 +23,7 @@ namespace SBEventGridIntegrationV2
 {
     public static class ReceiveMessagesOnEvent
     {
-        const string ServiceBusConnectionString = "Endpoint=sb://spsbusegridtutns.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=j1lrBlYD/6QXwC+OqYpByxoq6WZQ7IgMkV37ETlTUUc=";
+        const string ServiceBusConnectionString = "<CONNECTION STRING TO SERVICE BUS NAMESPACE>";
         const int numberOfMessages = 10; // Choose the amount of messages you want to receive. Note that this is receive batch and there is no guarantee you will get all the messages.        
         //static IMessageReceiver messageReceiver;
 

@@ -7,8 +7,8 @@ namespace MessageSender
 {
     class Program
     {
-        const string ServiceBusConnectionString = "Endpoint=sb://spsbusegridtutns.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=j1lrBlYD/6QXwC+OqYpByxoq6WZQ7IgMkV37ETlTUUc=";
-        const string TopicName = "mytopic";
+        const string ServiceBusConnectionString = "<CONNECTION STRING TO SERVICE BUS NAMESPACE>";
+        const string TopicName = "<TOPIC NAME>";
 
         static void Main(string[] args)
         {
@@ -33,23 +33,22 @@ namespace MessageSender
         {
             try
             {
-                await using (ServiceBusClient client = new ServiceBusClient(ServiceBusConnectionString))
+                // create a ServiceBusClient using the connection to the namespace
+                await using var client = new ServiceBusClient(ServiceBusConnectionString);
+                // create the sender
+                ServiceBusSender sender = client.CreateSender(TopicName);
+
+                for (var i = 1; i <= numberOfMessagesToSend; i++)
                 {
-                    // create the sender
-                    ServiceBusSender sender = client.CreateSender(TopicName);
+                    // Create a new message to send to the queue
+                    string messageBody = $"Message {i}";
+                    var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(messageBody));
 
-                    for (var i = 1; i <= numberOfMessagesToSend; i++)
-                    {
-                        // Create a new message to send to the queue
-                        string messageBody = $"Message {i}";
-                        var message = new ServiceBusMessage(Encoding.UTF8.GetBytes(messageBody));
+                    // Write the body of the message to the console
+                    Console.WriteLine($"Sending message: {messageBody}");
 
-                        // Write the body of the message to the console
-                        Console.WriteLine($"Sending message: {messageBody}");
-
-                        // Send the message to the queue
-                        await sender.SendMessageAsync(message);
-                    }
+                    // Send the message to the queue
+                    await sender.SendMessageAsync(message);
                 }
             }
             catch (Exception exception)

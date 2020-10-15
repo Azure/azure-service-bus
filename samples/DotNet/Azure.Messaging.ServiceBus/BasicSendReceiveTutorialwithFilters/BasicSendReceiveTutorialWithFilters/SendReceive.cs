@@ -24,17 +24,14 @@ namespace BasicSendReceiveTutorialWithFilters
             try
             {
 
-                await using (ServiceBusClient client = new ServiceBusClient(ServiceBusConnectionString))
+                await using var client = new ServiceBusClient(ServiceBusConnectionString);
+                var taskList = new List<Task>();
+                for (int i = 0; i < Store.Length; i++)
                 {
-
-                    var taskList = new List<Task>();
-                    for (int i = 0; i < Store.Length; i++)
-                    {
-                        taskList.Add(SendItems(client, Store[i]));
-                    }
-
-                    await Task.WhenAll(taskList);
+                    taskList.Add(SendItems(client, Store[i]));
                 }
+
+                await Task.WhenAll(taskList);
             }
             catch (Exception ex)
             {
@@ -79,56 +76,54 @@ namespace BasicSendReceiveTutorialWithFilters
 
         private async Task ReceiveMessages(string subscription)
         {
-            await using (ServiceBusClient client = new ServiceBusClient(ServiceBusConnectionString))
+            await using var client = new ServiceBusClient(ServiceBusConnectionString);
+            ServiceBusReceiver receiver = client.CreateReceiver(TopicName, subscription);
+
+            // In reality you would not break out of the loop like in this example but would keep looping. The receiver keeps the connection open
+            // to the broker for the specified amount of seconds and the broker returns messages as soon as they arrive. The client then initiates
+            // a new connection. So in reality you would not want to break out of the loop. 
+            // Also note that the code shows how to batch receive, which you would do for performance reasons. For convenience you can also always
+            // use the regular receive pump which we show in our Quick Start and in other github samples.
+            while (true)
             {
-                ServiceBusReceiver receiver = client.CreateReceiver(TopicName, subscription);
-
-                // In reality you would not break out of the loop like in this example but would keep looping. The receiver keeps the connection open
-                // to the broker for the specified amount of seconds and the broker returns messages as soon as they arrive. The client then initiates
-                // a new connection. So in reality you would not want to break out of the loop. 
-                // Also note that the code shows how to batch receive, which you would do for performance reasons. For convenience you can also always
-                // use the regular receive pump which we show in our Quick Start and in other github samples.
-                while (true)
+                try
                 {
-                    try
-                    {
-                        //IList<Message> messages = await receiver.ReceiveAsync(10, TimeSpan.FromSeconds(2));
-                        // Note the extension class which is serializing an deserializing messages and testing messages is null or 0.
-                        // If you think you did not receive all messages, just press M and receive again via the menu.
-                        IReadOnlyList<ServiceBusReceivedMessage> messages = await receiver.ReceiveMessagesAsync(maxMessages: 100);
+                    //IList<Message> messages = await receiver.ReceiveAsync(10, TimeSpan.FromSeconds(2));
+                    // Note the extension class which is serializing an deserializing messages and testing messages is null or 0.
+                    // If you think you did not receive all messages, just press M and receive again via the menu.
+                    IReadOnlyList<ServiceBusReceivedMessage> messages = await receiver.ReceiveMessagesAsync(maxMessages: 100);
 
-                        if (messages.Any())
+                    if (messages.Any())
+                    {
+                        foreach (ServiceBusReceivedMessage message in messages)
                         {
-                            foreach (ServiceBusReceivedMessage message in messages)
+                            lock (Console.Out)
                             {
-                                lock (Console.Out)
+                                Item item = message.As<Item>();
+                                IReadOnlyDictionary<string, object> myUserProperties = message.ApplicationProperties;
+                                Console.WriteLine($"StoreId={myUserProperties["StoreId"]}");
+
+                                /*
+                                if (message.Label != null)
                                 {
-                                    Item item = message.As<Item>();
-                                    IReadOnlyDictionary<string, object> myUserProperties = message.ApplicationProperties;
-                                    Console.WriteLine($"StoreId={myUserProperties["StoreId"]}");
-
-                                    /*
-                                    if (message.Label != null)
-                                    {
-                                        Console.WriteLine($"Label={message.Label}");
-                                    }
-                                    */
-                                    Console.WriteLine(
-                                        $"Item data: Price={item.GetPrice()}, Color={item.GetColor()}, Category={item.GetItemCategory()}");
+                                    Console.WriteLine($"Label={message.Label}");
                                 }
-
-                                await receiver.CompleteMessageAsync(message);
+                                */
+                                Console.WriteLine(
+                                    $"Item data: Price={item.GetPrice()}, Color={item.GetColor()}, Category={item.GetItemCategory()}");
                             }
-                        }
-                        else
-                        {
-                            break;
+
+                            await receiver.CompleteMessageAsync(message);
                         }
                     }
-                    catch (Exception ex)
+                    else
                     {
-                        Console.WriteLine(ex.ToString());
+                        break;
                     }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
                 }
             }
 
