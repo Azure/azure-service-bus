@@ -102,13 +102,10 @@ namespace BasicSendReceiveTutorialWithFilters
                                 Item item = message.As<Item>();
                                 IReadOnlyDictionary<string, object> myUserProperties = message.ApplicationProperties;
                                 Console.WriteLine($"StoreId={myUserProperties["StoreId"]}");
-
-                                /*
-                                if (message.Label != null)
+                                if (message.Subject != null)
                                 {
-                                    Console.WriteLine($"Label={message.Label}");
+                                    Console.WriteLine($"Subject={message.Subject}");
                                 }
-                                */
                                 Console.WriteLine(
                                     $"Item data: Price={item.GetPrice()}, Color={item.GetColor()}, Category={item.GetItemCategory()}");
                             }
