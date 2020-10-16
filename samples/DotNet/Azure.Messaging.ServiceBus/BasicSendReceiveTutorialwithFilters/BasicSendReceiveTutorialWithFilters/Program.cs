@@ -232,7 +232,6 @@ namespace BasicSendReceiveTutorialWithFilters
                 try
                 {
                     var client = new ServiceBusAdministrationClient(ServiceBusConnectionString);
-                    // SubscriptionClient s = new SubscriptionClient(ServiceBusConnectionString, TopicName, subscription);
                     IAsyncEnumerator<RuleProperties> rules = client.GetRulesAsync(TopicName, subscription).GetAsyncEnumerator();
                     while (await rules.MoveNextAsync())
                     {
