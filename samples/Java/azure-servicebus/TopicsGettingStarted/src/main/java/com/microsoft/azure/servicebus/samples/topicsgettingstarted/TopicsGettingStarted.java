@@ -28,16 +28,19 @@ public class TopicsGettingStarted {
         // Create a QueueClient instance using the connection string builder
         // We set the receive mode to "PeekLock", meaning the message is delivered
         // under a lock and must be acknowledged ("completed") to be removed from the queue
-        subscription1Client = new SubscriptionClient(new ConnectionStringBuilder(connectionString, "BasicTopic/subscriptions/Subscription1"), ReceiveMode.PEEKLOCK);
-        subscription2Client = new SubscriptionClient(new ConnectionStringBuilder(connectionString, "BasicTopic/subscriptions/Subscription2"), ReceiveMode.PEEKLOCK);
-        subscription3Client = new SubscriptionClient(new ConnectionStringBuilder(connectionString, "BasicTopic/subscriptions/Subscription3"), ReceiveMode.PEEKLOCK);
+        // The keyword'subscriptions' must exist in the'entryPath' before entering the subscription name.
+        // example1) BasicTopic/subscriptions/BasicSubscriptions
+        // example2) MyTopic/subscriptions/MySubscriptions
+        subscription1Client = new SubscriptionClient(new ConnectionStringBuilder(connectionString, "{YourTopicName}/subscriptions/{YourSubscription1Name}"), ReceiveMode.PEEKLOCK);
+        subscription2Client = new SubscriptionClient(new ConnectionStringBuilder(connectionString, "{YourTopicName}/subscriptions/{YourSubscription2Name}"), ReceiveMode.PEEKLOCK);
+        subscription3Client = new SubscriptionClient(new ConnectionStringBuilder(connectionString, "{YourTopicName}/subscriptions/{YourSubscription3Name}"), ReceiveMode.PEEKLOCK);
 
         ExecutorService executorService = Executors.newCachedThreadPool();
         registerMessageHandlerOnClient(subscription1Client, executorService);
         registerMessageHandlerOnClient(subscription2Client, executorService);
         registerMessageHandlerOnClient(subscription3Client, executorService);
 
-        sendClient = new TopicClient(new ConnectionStringBuilder(connectionString, "BasicTopic"));
+        sendClient = new TopicClient(new ConnectionStringBuilder(connectionString, "{YourTopicName}"));
         sendMessagesAsync(sendClient).thenRunAsync(() -> sendClient.closeAsync());
 
         // wait for ENTER or 10 seconds elapsing
