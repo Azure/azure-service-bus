@@ -10,7 +10,7 @@ namespace BasicSendReceiveQuickStart
     {
         static IQueueClient queueClient;
 
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             var serviceBusConnectionString = string.Empty;
             var queueName = string.Empty;
@@ -31,32 +31,29 @@ namespace BasicSendReceiveQuickStart
             }
 
             if (!string.IsNullOrEmpty(serviceBusConnectionString) && !string.IsNullOrEmpty(queueName))
-                MainAsync(serviceBusConnectionString, queueName).GetAwaiter().GetResult();
+            {
+                const int numberOfMessages = 10;
+                queueClient = new QueueClient(serviceBusConnectionString, queueName);
+
+                Console.WriteLine("======================================================");
+                Console.WriteLine("Press any key to exit after receiving all the messages.");
+                Console.WriteLine("======================================================");
+
+                // Register QueueClient's MessageHandler and receive messages in a loop
+                RegisterOnMessageHandlerAndReceiveMessages();
+
+                // Send Messages
+                await SendMessagesAsync(numberOfMessages);
+
+                Console.ReadKey();
+
+                await queueClient.CloseAsync();
+            }
             else
             {
                 Console.WriteLine("Specify -ConnectionString and -QueueName to execute the example.");
                 Console.ReadKey();
             }                            
-        }
-
-        static async Task MainAsync(string serviceBusConnectionString, string queueName)
-        {
-            const int numberOfMessages = 10;
-            queueClient = new QueueClient(serviceBusConnectionString, queueName);
-
-            Console.WriteLine("======================================================");
-            Console.WriteLine("Press any key to exit after receiving all the messages.");
-            Console.WriteLine("======================================================");
-
-            // Register QueueClient's MessageHandler and receive messages in a loop
-            RegisterOnMessageHandlerAndReceiveMessages();
-
-            // Send Messages
-            await SendMessagesAsync(numberOfMessages);
-
-            Console.ReadKey();
-
-            await queueClient.CloseAsync();
         }
 
         static void RegisterOnMessageHandlerAndReceiveMessages()
