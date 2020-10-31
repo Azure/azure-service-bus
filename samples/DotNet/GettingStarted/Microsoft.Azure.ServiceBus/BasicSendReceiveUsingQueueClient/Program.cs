@@ -17,12 +17,7 @@ namespace BasicSendReceiveUsingQueueClient
         const string QueueName = "{Queue Name}";
         static IQueueClient queueClient;
 
-        static void Main(string[] args)
-        {
-            MainAsync().GetAwaiter().GetResult();
-        }
-
-        static async Task MainAsync()
+        static async Task Main(string[] args)
         {
             const int numberOfMessages = 10;
             queueClient = new QueueClient(ServiceBusConnectionString, QueueName);
