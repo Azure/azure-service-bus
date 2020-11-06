@@ -16,6 +16,6 @@ and once with prefetch turned off. You will observe that the variant with
 prefetch turned on yields higher throughput, and therefore a shorter execution
 time. 
 
-The sample is further documented inline in the [Prefetch.java](.\src\main\java\com\microsoft\azure\servicebus\samples\prefetch\Prefetch.java) file.
+The sample is further documented inline in the [Prefetch.java](./src/main/java/com/microsoft/azure/servicebus/samples/prefetch/Prefetch.java) file.
 
 [1]: https://docs.microsoft.com/azure/service-bus-messaging/service-bus-prefetch
