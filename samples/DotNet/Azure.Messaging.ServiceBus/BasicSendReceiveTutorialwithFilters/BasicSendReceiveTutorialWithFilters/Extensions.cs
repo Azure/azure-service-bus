@@ -12,7 +12,7 @@ namespace BasicSendReceiveTutorialWithFilters
     {
         public static T As<T>(this ServiceBusReceivedMessage message) where T : class
         {
-            return JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(message.Body.ToBytes().ToArray()));
+            return JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(message.Body.ToArray()));
         }
         public static ServiceBusMessage AsMessage(this object obj)
         {
