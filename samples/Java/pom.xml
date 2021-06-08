@@ -38,6 +38,7 @@
         <module>azure-servicebus/TimeToLive</module>
         <module>azure-servicebus/TopicsGettingStarted</module>
         <module>azure-servicebus/TopicFilters</module>
+        <module>azure-servicebus/TopicSubscriptionWithRuleOperationsSample</module>
         <module>qpid-jms-client/JmsQueueQuickstart</module>
         <module>qpid-jms-client/JmsTopicQuickstart</module>
     </modules>
