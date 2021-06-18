@@ -15,7 +15,6 @@ import org.apache.commons.cli.*;
 import org.apache.log4j.*;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
