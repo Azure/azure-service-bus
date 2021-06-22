@@ -22,6 +22,8 @@ namespace Receiver
             var reply = new Pong { Acknowledgement = $"Ping #{message.Round} processed at {DateTimeOffset.UtcNow:s}" };
 
             await context.Reply(reply);
+            
+            // throw new Exception("BOOM");
         }
     }
 }
