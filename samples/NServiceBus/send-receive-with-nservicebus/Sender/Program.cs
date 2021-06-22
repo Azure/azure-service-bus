@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,6 +27,9 @@ namespace Sender
                     var transport = endpointConfiguration.UseTransport<AzureServiceBusTransport>();
                     var connectionString = context.Configuration.GetConnectionString("AzureServiceBusConnectionString");
                     transport.ConnectionString(connectionString);
+
+                    endpointConfiguration.AuditProcessedMessagesTo("audit");
+                    endpointConfiguration.SendFailedMessagesTo("error");
 
                     transport.Routing().RouteToEndpoint(typeof(Ping), "Receiver");
 

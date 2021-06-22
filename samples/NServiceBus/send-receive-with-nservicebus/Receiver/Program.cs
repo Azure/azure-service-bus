@@ -1,4 +1,4 @@
-﻿using System.Threading.Tasks;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -25,6 +25,9 @@ namespace Receiver
                     var transport = endpointConfiguration.UseTransport<AzureServiceBusTransport>();
                     var connectionString = context.Configuration.GetConnectionString("AzureServiceBusConnectionString");
                     transport.ConnectionString(connectionString);
+
+                    endpointConfiguration.AuditProcessedMessagesTo("audit");
+                    endpointConfiguration.SendFailedMessagesTo("error");
 
                     // Operational scripting: https://docs.particular.net/transports/azure-service-bus/operational-scripting
                     endpointConfiguration.EnableInstallers();
