@@ -7,18 +7,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\Sender\appsettings.json" Link="appsettings.json">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="NServiceBus.Transport.AzureServiceBus" Version="1.*" />
     <PackageReference Include="NServiceBus.Extensions.Hosting" Version="1.*" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Shared\Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
