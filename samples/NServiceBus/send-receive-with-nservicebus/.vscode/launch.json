@@ -1,0 +1,47 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "compounds": [
+        {
+            "name": "Debug All",
+            "preLaunchTask": "build",
+            "configurations": [
+                "Sender",
+                "Receiver",
+            ]
+        }
+    ],
+    "configurations": [
+        
+        {
+            "name": "Receiver",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Receiver/bin/Debug/netcoreapp3.1/Receiver.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/Receiver",
+            "console": "externalTerminal",
+            "stopAtEntry": false
+        },
+
+        {
+            "name": "Sender",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceFolder}/Sender/bin/Debug/netcoreapp3.1/Sender.dll",
+            "args": [],
+            "cwd": "${workspaceFolder}/Sender",
+            "console": "externalTerminal",
+            "stopAtEntry": false
+        },
+        {
+            "name": ".NET Core Attach",
+            "type": "coreclr",
+            "request": "attach"
+        }
+    ]
+}
