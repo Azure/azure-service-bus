@@ -22,6 +22,10 @@ The samples in the
 target the .NET Framework `WindowsAzure.ServiceBus` NuGet package, which is
 maintained for backwards compatibility.
 
+## NServiceBus
+
+The samples within [NServiceBus](NServiceBus) folder show how to use NServiceBus with Azure Service Bus.
+
 ## Java
 
 The samples within the [Java](Java) folder target the

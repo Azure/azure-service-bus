@@ -14,6 +14,7 @@ This repository is intended to be used for the following:
 If you are looking for the code of a specific client library, see the following:
 * [.NET Standard](https://github.com/Azure/azure-sdk-for-net/)
 * [Java](https://github.com/azure/azure-service-bus-java)
+* [NServiceBus](https://github.com/Particular/NServiceBus.Transport.AzureServiceBus)
 
 ## How to provide feedback
 
