@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.27004.2005
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28822.285
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "QueuesGettingStarted", "QueuesGettingStarted", "{AD9316D9-4A79-460F-BD28-EA5631CDA045}"
 	ProjectSection(SolutionItems) = preProject
@@ -17,17 +17,17 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueuesGettingStarted", "Que
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TopicsGettingStarted", "TopicsGettingStarted\TopicsGettingStarted.csproj", "{3668A064-BE7B-474A-8A31-23C3ED47A6B4}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Getting Started", "Getting Started", "{435DD431-1259-4576-802C-781277C51C3C}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "01-Getting Started", "01-Getting Started", "{435DD431-1259-4576-802C-781277C51C3C}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Basic Message Handling", "Basic Message Handling", "{0473E8D7-F4E9-44E8-A400-CDFFFF3738C1}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "03-Basic Message Handling", "03-Basic Message Handling", "{0473E8D7-F4E9-44E8-A400-CDFFFF3738C1}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Topics and Subscriptions", "Topics and Subscriptions", "{CC766D96-3742-4AB2-9C6B-AB4D15B85EAE}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "02-Topics and Subscriptions", "02-Topics and Subscriptions", "{CC766D96-3742-4AB2-9C6B-AB4D15B85EAE}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Partitioned Entities", "Partitioned Entities", "{F84344A7-7044-4FB7-B44A-BEB66D172CD3}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "06-Partitioned Entities", "06-Partitioned Entities", "{F84344A7-7044-4FB7-B44A-BEB66D172CD3}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Error and Transaction Handling", "Error and Transaction Handling", "{743D2E74-C0B8-40F9-A015-045E5822BA06}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "04-Error and Transaction Handling", "04-Error and Transaction Handling", "{743D2E74-C0B8-40F9-A015-045E5822BA06}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Session and Workflow Management Features", "Session and Workflow Management Features", "{DF9C002E-7212-4692-8831-1381563183F0}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "07-Session and Workflow Management Features", "07-Session and Workflow Management Features", "{DF9C002E-7212-4692-8831-1381563183F0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TopicFilters", "TopicFilters", "{C71D0691-D6BB-4289-AA56-EA48AEE7F971}"
 	ProjectSection(SolutionItems) = preProject
@@ -176,11 +176,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test", "Test", "{9B998979-5
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SamplesTest", "SamplesTest\SamplesTest.csproj", "{64B092EE-91BD-4D83-8959-19E1ABE2F0CD}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ManagingEntities", "ManagingEntities", "{3E788AFE-6B4C-4864-BC3D-E6B227117519}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "05-ManagingEntities", "05-ManagingEntities", "{3E788AFE-6B4C-4864-BC3D-E6B227117519}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "QueueCRUD", "QueueCRUD", "{3AD9E987-0AF0-4C02-841F-79F0236497DD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QueueCRUD", "ManagingEntities\QueueCRUD\QueueCRUD.csproj", "{F27DBD18-70E6-45DA-9B4E-9B12908322AB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "QueueCRUD", "ManagingEntities\QueueCRUD\QueueCRUD.csproj", "{F27DBD18-70E6-45DA-9B4E-9B12908322AB}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SASAuthorizationRules", "SASAuthorizationRules", "{5C639DC4-3288-4E31-8245-3872CD2F6D17}"
 EndProject
