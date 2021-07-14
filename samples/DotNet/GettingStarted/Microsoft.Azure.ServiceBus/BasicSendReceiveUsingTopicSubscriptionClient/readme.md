@@ -161,7 +161,7 @@ quickly or the scenarios where they need basic send/receive and wants to achieve
         topicClient = new TopicClient(ServiceBusConnectionString, TopicName);
         subscriptionClient = new SubscriptionClient(ServiceBusConnectionString, TopicName, SubscriptionName);
 
-		Console.WriteLine("======================================================");
+        Console.WriteLine("======================================================");
         Console.WriteLine("Press any key to exit after receiving all the messages.");
         Console.WriteLine("======================================================");
 
