@@ -182,6 +182,7 @@ namespace MessagingSamples
             AzureActiveDirectoryTokenProvider.AuthenticationCallback authCallback = async (audience, authority, state) =>
                 {
                     var app = PublicClientApplicationBuilder.Create(ClientId)
+                                .WithAuthority(authority)
                                 .WithRedirectUri(ConfigurationManager.AppSettings["redirectURI"])
                                 .Build();
 
