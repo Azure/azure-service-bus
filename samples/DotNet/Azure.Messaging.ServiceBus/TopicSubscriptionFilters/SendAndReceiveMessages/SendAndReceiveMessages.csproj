@@ -2,8 +2,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net462</TargetFrameworks>
-    
+    <TargetFrameworks>net6.0</TargetFrameworks>    
   </PropertyGroup>
   <ItemGroup>
     <None Remove="readme.md" />
