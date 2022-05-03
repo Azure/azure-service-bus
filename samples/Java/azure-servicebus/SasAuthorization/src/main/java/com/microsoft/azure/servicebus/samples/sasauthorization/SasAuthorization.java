@@ -11,13 +11,11 @@ import com.microsoft.azure.servicebus.management.EntityNameHelper;
 import com.microsoft.azure.servicebus.management.ManagementClientAsync;
 import com.microsoft.azure.servicebus.management.SharedAccessAuthorizationRule;
 import com.microsoft.azure.servicebus.management.TopicDescription;
-import com.microsoft.azure.servicebus.primitives.AuthorizationFailedException;
 import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 import com.microsoft.azure.servicebus.primitives.MessagingFactory;
 import com.microsoft.azure.servicebus.primitives.ServiceBusException;
 import com.microsoft.azure.servicebus.security.SharedAccessSignatureTokenProvider;
 
-import java.net.URI;
 import java.util.Arrays;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
