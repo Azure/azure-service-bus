@@ -82,7 +82,7 @@ and a simple basic topology of a few exemplary queues, topics, and subscriptions
 with an Azure Service Bus "Standard" namespace, just click the button below and follow the further instructions 
 on the Azure Portal:
 
-<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fgithub.com%2Fazure%2Fazure-service-bus%2Fmaster%2Fsamples%2FJava%2Fscripts%2Fazuredeploy.json" target="_blank">
+<a href="https://portal.azure.com/#create/Microsoft.Template/uri/https%3A%2F%2Fraw.githubusercontent.com%2FAzure%2Fazure-service-bus%2Fmaster%2Fsamples%2FJava%2Fscripts%2Fazuredeploy.json" target="_blank">
     <img src="http://azuredeploy.net/deploybutton.png"/>
 </a>
 
