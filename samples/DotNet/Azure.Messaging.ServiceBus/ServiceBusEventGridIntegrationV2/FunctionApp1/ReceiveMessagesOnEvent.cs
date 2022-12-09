@@ -12,7 +12,7 @@ namespace SBEventGridIntegrationV2
 {
     public static class ReceiveMessagesOnEvent
     {
-        const string ServiceBusConnectionString = "Endpoint=sb://sppremsbusns1208.servicebus.windows.net/;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=iIT9ryKtubopYS1/rqg24+/foA0qXdwkbefd2oWW2/Q=";
+        const string ServiceBusConnectionString = "<SERCICE BUS NAMESPACE - CONNECTION STRING>";
 
         [FunctionName("EventGridTriggerFunction")]
         public static void EventGridTriggerFunction([EventGridTrigger] EventGridEvent eventGridEvent, ILogger log)
