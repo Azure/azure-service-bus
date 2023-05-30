@@ -122,7 +122,7 @@ property 'color' having the value 'red'.
     },
 ```
 
-The forth subscription selects all messages using a correlation filter with the
+The fourth subscription selects all messages using a correlation filter with the
 ```Label``` property having the value 'red' and the ```CorrelationId``` property
 having the value 'high' 
 
