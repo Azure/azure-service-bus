@@ -218,7 +218,7 @@ public class QueuesWithProxy {
         String output = null;
 
         if (cl.getOptionValue(optionValue) != null) {
-            output = cl.getOptionValue("c");
+            output = cl.getOptionValue(optionValue);
         }
 
         // get overrides from the environment
