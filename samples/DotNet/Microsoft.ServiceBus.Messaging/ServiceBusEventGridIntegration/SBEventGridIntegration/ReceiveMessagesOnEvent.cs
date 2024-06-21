@@ -1,15 +1,16 @@
 using System.Linq;
-using System.Net;
 using System.Text;
-using System.Net.Http;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
-using Microsoft.Azure.WebJobs.Host;
 using Newtonsoft.Json;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.ServiceBus.Core;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
+using Microsoft.AspNetCore.Http;
+using System.IO;
+using Microsoft.AspNetCore.Mvc;
 
 namespace SBEventGridIntegration
 {
@@ -20,27 +21,27 @@ namespace SBEventGridIntegration
         static IMessageReceiver messageReceiver;
 
         [FunctionName("ReceiveMessagesOnEvent")]
-        public static async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post", Route = null)]HttpRequestMessage req, TraceWriter log)
+        public static async Task<IActionResult> Run(
+            [HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)] HttpRequest req,
+            ILogger log)
         {
-            log.Info("C# HTTP trigger function processed a request.");
-            // parse query parameter
-            var content = req.Content;            
-
-            // Get content
-            string jsonContent = await content.ReadAsStringAsync();
-            log.Info($"Received Event with payload: {jsonContent}");
+            log.LogInformation("C# HTTP trigger function processed a request.");
+            var content = req.Body;
+            string jsonContent = await new StreamReader(content).ReadToEndAsync();
+            log.LogInformation($"Received Event with payload: {jsonContent}");
 
             IEnumerable<string> headerValues;
-            if (req.Headers.TryGetValues("Aeg-Event-Type", out headerValues))
+            headerValues = req.Headers.GetCommaSeparatedValues("Aeg-Event-Type");
+
+            if (headerValues.Count() != 0)
             {
-                // Handle Subscription validation (Whenever you create a new subscription we send a new validation message)
                 var validationHeaderValue = headerValues.FirstOrDefault();
                 if (validationHeaderValue == "SubscriptionValidation")
                 {
                     var events = JsonConvert.DeserializeObject<GridEvent[]>(jsonContent);
                     var code = events[0].Data["validationCode"];
-                    return req.CreateResponse(HttpStatusCode.OK,
-                    new { validationResponse = code });
+                    log.LogInformation("Validation code: {code}");
+                    return (ActionResult)new OkObjectResult(new { validationResponse = code });
                 }
                 // React to new messages and receive
                 else
@@ -48,15 +49,16 @@ namespace SBEventGridIntegration
                     ReceiveAndProcess(log, JsonConvert.DeserializeObject<GridEvent[]>(jsonContent)).GetAwaiter().GetResult();
                 }
             }
-            
+
+
             return jsonContent == null
-            ? req.CreateResponse(HttpStatusCode.BadRequest, "Please pass a name on the query string or in the request body")
-            : req.CreateResponse(HttpStatusCode.OK, "Hello " + jsonContent);
+         ? new BadRequestObjectResult("Please pass a name on the query string or in the request body")
+         : (ActionResult)new OkObjectResult($"Hello, {jsonContent}");
         }
 
-        static async Task ReceiveAndProcess(TraceWriter log, GridEvent[] ge)
-        {            
-            log.Info($"TopicName: {ge[0].Data["topicName"]} : SubscriptionName: {ge[0].Data["subscriptionName"]}");
+        static async Task ReceiveAndProcess(ILogger log, GridEvent[] ge)
+        {
+            log.LogInformation($"TopicName: {ge[0].Data["topicName"]} : SubscriptionName: {ge[0].Data["subscriptionName"]}");
             // Get entity path, at this point you would in case you want to use Event Grid to monitor and react to deadletter messages likely also look for that.
             string EntityPath = $"{ge[0].Data["topicName"]}/subscriptions/{ge[0].Data["subscriptionName"]}";// e.g.: topicname/subscriptions/subscriptionname
 
@@ -64,17 +66,17 @@ namespace SBEventGridIntegration
             messageReceiver = new MessageReceiver(ServiceBusConnectionString, EntityPath, ReceiveMode.PeekLock, null, numberOfMessages);
 
             // Receive messages
-            await ReceiveMessagesAsync(numberOfMessages, log);            
+            await ReceiveMessagesAsync(numberOfMessages, log);
             await messageReceiver.CloseAsync();
         }
 
-        static async Task ReceiveMessagesAsync(int numberOfMessagesToReceive, TraceWriter tw)
-        {            
+        static async Task ReceiveMessagesAsync(int numberOfMessagesToReceive, ILogger tw)
+        {
             // Receive the message
             IList<Message> receiveList = await messageReceiver.ReceiveAsync(numberOfMessagesToReceive);
             foreach (Message msg in receiveList)
             {
-                tw.Info($"Received message: SequenceNumber:{msg.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(msg.Body)}");
+                tw.LogInformation($"Received message: SequenceNumber:{msg.SystemProperties.SequenceNumber} Body:{Encoding.UTF8.GetString(msg.Body)}");
                 await messageReceiver.CompleteAsync(msg.SystemProperties.LockToken);
             }
         }
