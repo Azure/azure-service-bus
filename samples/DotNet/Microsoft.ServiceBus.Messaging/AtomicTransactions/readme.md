@@ -1,7 +1,7 @@
 # Atomic Transactions with Service Bus
 
 This sample illustrates how to use Azure Service Bus atomic transaction support by implementing a 
-travel booking scenario using the [Saga pattern](http://kellabyte.com/2012/05/30/clarifying-the-saga-pattern/)
+travel booking scenario using the [Saga pattern](http://web.archive.org/web/20160713234746/http://kellabyte.com/2012/05/30/clarifying-the-saga-pattern/)
 first formulated by [Hector Garcia Molina and Kenneth Salem [PDF]](http://www.cs.cornell.edu/andru/cs711/2002fa/reading/sagas.pdf) 
 in 1987 as a form of a long-lived transaction. 
 
