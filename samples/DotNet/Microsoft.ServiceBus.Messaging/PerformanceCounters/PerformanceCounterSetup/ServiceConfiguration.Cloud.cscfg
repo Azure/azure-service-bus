@@ -3,7 +3,7 @@
   <Role name="WorkerRole1">
     <Instances count="1" />
     <ConfigurationSettings>
-      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="DefaultEndpointsProtocol=https;AccountName=clemensveu;AccountKey=a+LWHv++/KQGwHXCJPMQ6VoGslG3awK6Vn5qoc0ssd4iapum0uqWl/yig5mkanEGqV0hKpMt7xcUnbHjLdpDvg==" />
+      <Setting name="Microsoft.WindowsAzure.Plugins.Diagnostics.ConnectionString" value="DefaultEndpointsProtocol=[Protocol];AccountName=[Your AccountName];AccountKey=[your account key]" />
       <Setting name="Microsoft.ServiceBus.ConnectionString" value="Endpoint=sb://[your namespace].servicebus.windows.net/;SharedAccessKeyName=[key name];SharedAccessKey=[your key]" />
     </ConfigurationSettings>
   </Role>
