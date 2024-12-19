@@ -7,7 +7,7 @@ namespace MessageSender
 {
     class Program
     {
-        const string ServiceBusConnectionString = "<SERCICE BUS NAMESPACE - CONNECTION STRING>";
+        const string ServiceBusConnectionString = "<SERVICE BUS NAMESPACE - CONNECTION STRING>";
         const string TopicName = "<TOPIC NAME>";
 
         static void Main(string[] args)
