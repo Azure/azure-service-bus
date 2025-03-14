@@ -18,7 +18,6 @@
 namespace DurableSenderLibrary
 {
     using System.Messaging;
-    using Microsoft.Azure.ServiceBus.Core;
 
     public class MsmqHelper
     {
