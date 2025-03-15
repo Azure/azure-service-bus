@@ -59,7 +59,7 @@ the Azure portal to get immediate help) and it provides unfiltered and easy acce
 ## Apache Qpid JMS
 
 The Qpid JMS client is a third party open source component managed by the Apache Qpid project. It 
-is compatible with Service Bus via its AMQP 1.0 proptocol support and can be used as an 
+is compatible with Service Bus via its AMQP 1.0 protocol support and can be used as an 
 "lowest common denominator" alternative when the JMS API has been chosen for an existing application
 that is being moved onto Azure Service Bus. Mind that JMS 2.0 gestures that change the namespace topology, 
 like creating durable subscriptions or temporary queues, are not supported with Azure Service Bus via 
