@@ -3,16 +3,25 @@
 
 package com.microsoft.azure.servicebus.samples.jmsqueuequickstart;
 
-import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
-import org.apache.commons.cli.*;
-import org.apache.log4j.*;
-
-import javax.jms.*;
-import javax.naming.Context;
-import javax.naming.InitialContext;
-import java.util.Hashtable;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
+
+import javax.jms.BytesMessage;
+import javax.jms.Connection;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.log4j.Logger;
+import org.apache.qpid.jms.JmsConnectionFactory;
+
+import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 
 /**
  * This sample demonstrates how to send messages from a JMS Queue producer into
@@ -36,16 +45,12 @@ public class JmsQueueQuickstart {
         ConnectionStringBuilder csb = new ConnectionStringBuilder(connectionString);
         
         // set up JNDI context
-        Hashtable<String, String> hashtable = new Hashtable<>();
-        hashtable.put("connectionfactory.SBCF", "amqps://" + csb.getEndpoint().getHost() + "?amqp.idleTimeout=120000&amqp.traceFrames=true");
-        hashtable.put("queue.QUEUE", "BasicQueue");
-        hashtable.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
-        Context context = new InitialContext(hashtable);
-        ConnectionFactory cf = (ConnectionFactory) context.lookup("SBCF");
-        
-        // Look up queue
-        Destination queue = (Destination) context.lookup("QUEUE");
 
+        final String jmsConnectionString = "amqps://" + csb.getEndpoint().getHost() + "?amqp.idleTimeout=120000&amqp.traceFrames=true";
+        final String queueName = "BasicQueue";
+        JmsConnectionFactory cf = new JmsConnectionFactory(jmsConnectionString);
+       
+     
         // we create a scope here so we can use the same set of local variables cleanly 
         // again to show the receive side separately with minimal clutter
         {
@@ -55,7 +60,7 @@ public class JmsQueueQuickstart {
             Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
             // Create producer
-            MessageProducer producer = session.createProducer(queue);
+            MessageProducer producer = session.createProducer(session.createQueue(queueName));
 
             // Send messages
             for (int i = 0; i < totalSend; i++) {
@@ -78,7 +83,7 @@ public class JmsQueueQuickstart {
             // Create Session, no transaction, client ack
             Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
             // Create consumer
-            MessageConsumer consumer = session.createConsumer(queue);
+            MessageConsumer consumer = session.createConsumer(session.createQueue(queueName));
             // create a listener callback to receive the messages
             consumer.setMessageListener(message -> {
                 try {
