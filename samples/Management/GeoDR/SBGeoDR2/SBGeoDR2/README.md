@@ -9,11 +9,14 @@ This sample shows how to:
 1. Achieve Geo-DR for an Service Bus namespace. 
 2. Create a namespace with live metadata replication between two customer chosen regions
 
-This sample consists of three parts:
+This management sample has two scenarios:
 
-1. The main scenario showing management (Setup, failover, remove pairing) of new or existing namespaces sample can be found [here](https://github.com/Azure/azure-service-bus/tree/master/samples/DotNet/Microsoft.ServiceBus.Messaging/GeoDR/SBGeoDR2/SBGeoDR2)
-2. The scenario in which you want to use an existing namespace name as alias can be found [here](https://github.com/Azure/azure-service-bus/tree/master/samples/DotNet/Microsoft.ServiceBus.Messaging/GeoDR/SBGeoDR2/SBGeoDR_existing_namespace_name). Make sure to thoroughly look through the comments as this diverges slightly from the main scenario. Examine both, App.config and Program.cs. ***Note:*** If you do not failover but just do break pairing, there is no need to execute delete alias as namespace name and alias are the same. If you do failover you would need to delete the alias if you would want to use the namespace outside of a DR setup.
-3. A sample on how to access the alias connection string which can be found [here](https://github.com/Azure/azure-service-bus/tree/master/samples/DotNet/Microsoft.ServiceBus.Messaging/GeoDR/TestGeoDR/ConsoleApp1).
+1. [Set up, fail over, and remove a pairing](../SBGeoDR2).
+1. [Use an existing namespace name as the alias](../SBGeoDR_existing_namespace_name). Review `App.config` and `Program.cs` for the differences from the main scenario.
+
+When the alias matches the namespace name, breaking the pairing without failing over does not require deleting the alias. After failover, delete the alias before using that namespace outside a Geo-DR pairing.
+
+Use the alias endpoint with the [current .NET quickstart](https://learn.microsoft.com/azure/service-bus-messaging/service-bus-dotnet-get-started-with-queues) to test message sending and receiving.
 
 ## Getting Started
 ### Prerequisites
@@ -69,6 +72,4 @@ For deleting an alias, that contains information about the primary-secondary pai
 
 *	GetConnectionStrings
 In a Geo DR enabled namespace, the Service Bus should be accessed only via the alias. This is because, the alias can point to either the primary Service Bus or the failed over Service Bus. This way, the user does not have to adjust the connection strings in his/her apps to point to a different Service Bus in the case of a failover.    
-The way to get the alias connection string is shown in a seperate console app which you can also use to test your newly geo paired namespaces. It can be found [here](https://github.com/Azure/azure-service-bus/tree/master/samples/DotNet/Microsoft.ServiceBus.Messaging/GeoDR/TestGeoDR).
-   
-***Note:*** The AAD access data for the GeoDR sample must also be used for the Test sample.
+To retrieve alias authorization keys, use [Azure CLI](https://learn.microsoft.com/cli/azure/servicebus/georecovery-alias/authorization-rule/keys). Use a supported messaging client with the alias endpoint when testing the pairing.

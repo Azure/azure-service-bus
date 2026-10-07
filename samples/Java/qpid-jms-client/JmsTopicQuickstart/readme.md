@@ -64,16 +64,12 @@ mvn clean package
 and then run with (or just from VS Code or another Java IDE)
 
 ```bash
-java -jar ./target/azure-servicebus-samples-jmsqueuequickstart-1.0.0-jar-with-dependencies.jar
+java -jar ./target/jmstopicquickstart-1.0.0-jar-with-dependencies.jar
 ```
 
-The sample accept two arguments that can either be supplied on the command line or via environment
-variables. The setup script discussed in the overview readme sets the environment variables for you.
+Set `SB_SAMPLES_NAMESPACE`, `SB_SAMPLES_SAS_KEY_NAME`, and `SB_SAMPLES_SAS_KEY` as described in the [overview README](../../readme.md). You can also pass the namespace host with `-n example.servicebus.windows.net`; the environment variable takes precedence. Credentials are read only from the environment.
 
-* -c (env: SB_SAMPLES_CONNECTIONSTRING) - Service Bus connection string with credentials or 
-                                          token granting send and listen rights for the namespace
-* -t (env: SB_SAMPLES_TOPICNAME)        - Name of an existing topic within the namespace
-* -s (env: SB_SAMPLES_SUBSCRIPTIONNAME) - Name of an existing subscription on the given topic
+Create `BasicTopic` with subscriptions `Subscription1`, `Subscription2`, and `Subscription3` before running this sample. These entity names are defined in the sample code.
 
 ## Sample Code Explained
 
