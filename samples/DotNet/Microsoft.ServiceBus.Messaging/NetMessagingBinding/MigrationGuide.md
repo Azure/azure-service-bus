@@ -198,6 +198,13 @@ listener.RequestHandler = context =>
 {
     try
     {
+        if (!string.Equals(context.Request.HttpMethod, "POST", StringComparison.OrdinalIgnoreCase))
+        {
+            context.Response.Headers["Allow"] = "POST";
+            context.Response.StatusCode = HttpStatusCode.MethodNotAllowed;
+            return;
+        }
+
         const int MaxRequestBytes = 64 * 1024;
         using var payload = new MemoryStream();
         byte[] buffer = new byte[4096];
@@ -242,7 +249,7 @@ finally
 
 The listener applies its own 64 KiB request-body limit, including for chunked requests. It reads at most one byte beyond that limit before returning HTTP 413; Relay's transport threshold is not an application payload limit.
 
-On the sending side, replace `channel.Ping(pingData)` with an HTTP request. The sender runs under its own identity with the Sender role:
+On the sending side, replace `channel.Ping(pingData)` with an HTTP request. The sender runs under its own identity with the Sender role. Create the `HttpClient` once for the sender's lifetime and reuse it for each call to `SendPingAsync`; dispose it when the sender shuts down:
 
 ```csharp
 using Microsoft.Azure.Relay;
@@ -255,17 +262,21 @@ string relayHost = "<relay-namespace>.servicebus.windows.net";
 string connectionName = "PingRelay";
 var tokenProvider = TokenProvider.CreateManagedIdentityTokenProvider();
 var address = new Uri($"https://{relayHost}/{connectionName}");
-string token = (await tokenProvider.GetTokenAsync(
-    address.AbsoluteUri, TimeSpan.FromHours(1))).TokenString;
-
 using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-using var request = new HttpRequestMessage(HttpMethod.Post, address);
-request.Headers.TryAddWithoutValidation("ServiceBusAuthorization", token);
-var ping = new PingData { Message = "Hello", SenderId = "sender-1" };
-request.Content = new StringContent(
-    JsonSerializer.Serialize(ping), Encoding.UTF8, "application/json");
-using var response = await client.SendAsync(request);
-response.EnsureSuccessStatusCode();
+
+async Task SendPingAsync(PingData ping)
+{
+    string token = (await tokenProvider.GetTokenAsync(
+        address.AbsoluteUri, TimeSpan.FromHours(1))).TokenString;
+    using var request = new HttpRequestMessage(HttpMethod.Post, address);
+    request.Headers.TryAddWithoutValidation("ServiceBusAuthorization", token);
+    request.Content = new StringContent(
+        JsonSerializer.Serialize(ping), Encoding.UTF8, "application/json");
+    using var response = await client.SendAsync(request);
+    response.EnsureSuccessStatusCode();
+}
+
+await SendPingAsync(new PingData { Message = "Hello", SenderId = "sender-1" });
 ```
 
 For a listener outside Azure without managed identity, use an application identity with `TokenProvider.CreateAzureActiveDirectoryTokenProvider` as described in [Relay application authentication](https://learn.microsoft.com/azure/azure-relay/authenticate-application). If identity authentication is unavailable, the [HTTP quickstart](https://learn.microsoft.com/azure/azure-relay/relay-hybrid-connections-http-requests-dotnet-get-started) also shows SAS-token authentication; protect its keys and scope policies to the required permissions. The managed-identity setup and roles are described in [Relay managed-identity guidance](https://learn.microsoft.com/azure/azure-relay/authenticate-managed-identity). This example confirms that the **live listener** accepted a request; it does not provide queue storage, redelivery or broker-managed settlement. Replace the console output with the actual business operation and define its failure responses before cutover.
