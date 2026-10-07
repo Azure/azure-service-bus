@@ -7,6 +7,8 @@ This sample demonstrates how to use the Azure Service Bus using the WCF service 
 
 The sample shows the use of the WCF service model to perform non-session communication via a Service Bus queue. The sample demonstrates this using a Ping service scenario. In this scenario, different senders send messages to the Ping service. All the messages are processed by the service. The service creates only one instance and processes all the messages in the same instance.
 
+> **Migrating from this sample?** `NetMessagingBinding` uses SBMP to send WCF operations through a Service Bus queue. See the [migration guide](MigrationGuide.md) to choose between the current Service Bus client for queued delivery and Azure Relay for a live-connection redesign.
+
 ##OrderService
 
 The sample prompts for service namespace credentials for the purpose of creating and deleting the queues. The credentials are used to authenticate with the Access Control service, and acquire an access token that proves to the Service Bus infrastructure that the client is authorized to create or delete the queue. The sender and service use the credentials defined in the config file. 
