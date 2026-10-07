@@ -198,8 +198,22 @@ listener.RequestHandler = context =>
 {
     try
     {
-        using var input = new StreamReader(context.Request.InputStream);
-        PingData ping = JsonSerializer.Deserialize<PingData>(input.ReadToEnd())
+        const int MaxRequestBytes = 64 * 1024;
+        using var payload = new MemoryStream();
+        byte[] buffer = new byte[4096];
+        int count;
+        while ((count = context.Request.InputStream.Read(
+            buffer, 0, Math.Min(buffer.Length, MaxRequestBytes + 1 - (int)payload.Length))) > 0)
+        {
+            payload.Write(buffer, 0, count);
+            if (payload.Length > MaxRequestBytes)
+            {
+                context.Response.StatusCode = HttpStatusCode.RequestEntityTooLarge;
+                return;
+            }
+        }
+        payload.Position = 0;
+        PingData ping = JsonSerializer.Deserialize<PingData>(payload)
             ?? throw new JsonException("Empty request.");
         Console.WriteLine($"{ping.SenderId}: {ping.Message}");
         context.Response.StatusCode = HttpStatusCode.OK;
@@ -225,6 +239,8 @@ finally
     await listener.CloseAsync();
 }
 ```
+
+The listener applies its own 64 KiB request-body limit, including for chunked requests. It reads at most one byte beyond that limit before returning HTTP 413; Relay's transport threshold is not an application payload limit.
 
 On the sending side, replace `channel.Ping(pingData)` with an HTTP request. The sender runs under its own identity with the Sender role:
 
