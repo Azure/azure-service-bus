@@ -1,7 +1,9 @@
 # Migrate applications using NetMessagingBinding
 
 `NetMessagingBinding` sends one-way WCF operations through a Service Bus queue.
-Its messaging transport uses SBMP. To remove this dependency, replace the
+Its messaging transport uses SBMP, which [was retired on 30 September
+2026](https://techcommunity.microsoft.com/t5/messaging-on-azure-blog/some-azure-service-bus-sdk-libraries-will-be-retired-on-30/ba-p/3917853).
+To remove this dependency, replace the
 binding on both sides of the application. First identify the queued
 endpoint, then decide whether work must wait for an offline receiver or
 whether the receiver can be available when each request is sent. Migrate
