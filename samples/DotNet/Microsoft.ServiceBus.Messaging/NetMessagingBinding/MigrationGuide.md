@@ -95,7 +95,7 @@ var message = new ServiceBusMessage(JsonSerializer.Serialize(ping))
 await sender.SendMessageAsync(message);
 ```
 
-Use an application-defined `MessageId` that stays the same if this operation is resubmitted; generating a fresh ID on every retry defeats broker duplicate detection. On the receiving side, replace the queued WCF `ServiceHost` with a processor. The example handles a malformed JSON body separately from an application failure:
+Use an application-defined `MessageId` that stays the same if this operation is resubmitted. [Broker duplicate detection](https://learn.microsoft.com/azure/service-bus-messaging/duplicate-detection) also requires a queue configured with duplicate detection and applies only within its configured time window; the sample's `PingQueue` is created without it. If the existing queue does not have duplicate detection, use application-level deduplication and an idempotent handler instead. On the receiving side, replace the queued WCF `ServiceHost` with a processor. The example handles a malformed JSON body separately from an application failure:
 
 ```csharp
 using Azure.Identity;
@@ -158,11 +158,11 @@ This illustrates a non-session queue. If the entity requires sessions, use `Serv
 
 ### Move existing messages and cut over
 
-The new JSON consumer cannot assume it can deserialize messages that the WCF binding encoded. Before changing the consumer, inspect representative messages and decide whether to **drain the old queue with the old WCF receiver** or build and test a converter that understands their actual format. Do not delete a queue while it contains unprocessed work.
+The new JSON consumer cannot assume it can deserialize messages that the WCF binding encoded. After SBMP retirement, do not rely on the old WCF receiver to drain a backlog. Use the current Service Bus client over AMQP to [peek at messages](https://learn.microsoft.com/dotnet/api/azure.messaging.servicebus.servicebusreceiver.peekmessageasync) and inspect their body and metadata; account for messages in the [dead-letter subqueue](https://learn.microsoft.com/azure/service-bus-messaging/service-bus-dead-letter-queues) too. Build and test a converter against representative messages before processing and settling old-format work. If the format cannot be decoded, leave the backlog intact and contact Azure support rather than deleting the queue or settling unreadable messages. Draining with the old WCF receiver is an option only when SBMP access has been explicitly confirmed for that migration.
 
 1. Test the new sender and consumer together on a separate test queue with representative successful, malformed, duplicate and failed operations.
-2. If old and new applications must share a queue temporarily, test all four producer/consumer combinations. Otherwise separate formats by queue and switch both sides together.
-3. Stop new writes through `NetMessagingBinding`. Drain or explicitly account for in-flight and dead-lettered old-format messages, then start the new sender and consumer. Include rollback and duplicate-processing handling in the cutover plan.
+2. If old and new applications must share a queue temporarily and SBMP access has been explicitly confirmed, test all four producer/consumer combinations. Otherwise separate formats by queue and switch both sides together.
+3. Stop new writes through `NetMessagingBinding`. Process old-format messages with the tested AMQP converter, or with the old WCF receiver only when SBMP access is explicitly confirmed. Account for in-flight and dead-lettered messages before starting the new sender and consumer. Include rollback of the new path without assuming SBMP remains available, and handle duplicate processing in the cutover plan.
 4. Confirm that processing succeeds through AMQP and that no application process still opens an SBMP session. Ask your support or account team to confirm service-side protocol activity for the namespace; queue metrics alone do not identify the binding.
 
 Appending `;TransportType=Amqp` is **not** a binding-level fix. [Legacy AMQP guidance](https://learn.microsoft.com/azure/service-bus-messaging/service-bus-amqp-dotnet) applies to legacy messaging libraries; the traced `NetMessagingBinding` transport constructs an SBMP factory. The [WindowsAzure.ServiceBus client migration guide](https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/servicebus/Azure.Messaging.ServiceBus/MigrationGuide_WindowsAzureServiceBus.md) compares messaging APIs, not WCF binding behavior.
@@ -254,7 +254,7 @@ response.EnsureSuccessStatusCode();
 
 For a listener outside Azure without managed identity, use an application identity with `TokenProvider.CreateAzureActiveDirectoryTokenProvider` as described in [Relay application authentication](https://learn.microsoft.com/azure/azure-relay/authenticate-application). If identity authentication is unavailable, the [HTTP quickstart](https://learn.microsoft.com/azure/azure-relay/relay-hybrid-connections-http-requests-dotnet-get-started) also shows SAS-token authentication; protect its keys and scope policies to the required permissions. The managed-identity setup and roles are described in [Relay managed-identity guidance](https://learn.microsoft.com/azure/azure-relay/authenticate-managed-identity). This example confirms that the **live listener** accepted a request; it does not provide queue storage, redelivery or broker-managed settlement. Replace the console output with the actual business operation and define its failure responses before cutover.
 
-Test the live listener being unavailable, restarting and losing its connection. Unlike a successful queue send, a live call depends on the listener being reachable; if work cannot be lost during those outages, retain Service Bus or add a separately designed durable store. Stop the old queued sender and drain its remaining messages before retiring its receiver and queue.
+Test the live listener being unavailable, restarting and losing its connection. Unlike a successful queue send, a live call depends on the listener being reachable; if work cannot be lost during those outages, retain Service Bus or add a separately designed durable store. Stop the old queued sender and handle its remaining messages using the backlog procedure in section 2 before retiring its receiver and queue.
 
 ## 4. Migrate using WCF Relay when WCF must remain
 
@@ -270,7 +270,7 @@ For example, the [WCF Relay tutorial](https://learn.microsoft.com/azure/azure-re
           contract="Example.IPingService" />
 ```
 
-Create the WCF Relay endpoint in the new Relay namespace, configure authentication on both sides, host and open the service to register its listener, and point the client at that listener. Test the actual WCF contract, including one-way operations, faults and behavior when the listener is offline. Drain queued messages through the old receiver before removing the old queued endpoint.
+Create the WCF Relay endpoint in the new Relay namespace, configure authentication on both sides, host and open the service to register its listener, and point the client at that listener. Test the actual WCF contract, including one-way operations, faults and behavior when the listener is offline. Handle queued messages using the backlog procedure in section 2 before removing the old queued endpoint.
 
 The WCF Relay tutorial uses the legacy `WindowsAzure.ServiceBus` package. [Azure Relay continues to support WCF Relay](https://learn.microsoft.com/azure/azure-relay/relay-faq), and Microsoft [confirms support for this package with WCF Relay continues until further notice](https://learn.microsoft.com/answers/questions/1822432/retiring-of-the-windowsazure-servicebus-nuget-pack). That is distinct from retiring the queued Service Bus messaging path that uses SBMP. Moving a queued workload to WCF Relay is not a migration to the current Service Bus client library. For a new live-connection design, prefer Hybrid Connections. Use WCF Relay when the WCF service contract must remain.
 
