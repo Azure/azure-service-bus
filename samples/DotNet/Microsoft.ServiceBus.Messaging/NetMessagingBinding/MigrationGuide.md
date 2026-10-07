@@ -19,7 +19,7 @@ This guide covers three migration options:
 
 **Keep Service Bus if messages must wait while the receiver is offline.**
 Neither Relay option stores requests for later delivery or preserves queue
-settlement. For either Relay option, [create a dedicated Azure Relay
+settlement. For either Relay option, [create a separate Azure Relay
 namespace](https://learn.microsoft.com/azure/azure-relay/relay-create-namespace-portal)
 and its endpoint. Keep the existing Service Bus namespace and queue until
 the queued backlog is drained. A new Relay namespace can be created and
