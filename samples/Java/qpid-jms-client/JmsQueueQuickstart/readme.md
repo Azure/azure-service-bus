@@ -44,14 +44,10 @@ mvn clean package
 and then run with (or just from VS Code or another Java IDE)
 
 ```bash
-java -jar ./target/azure-servicebus-samples-jmsqueuequickstart-1.0.0-jar-with-dependencies.jar
+java -jar ./target/jmsqueuequickstart-1.0.0-jar-with-dependencies.jar
 ```
 
-The sample accept the connection string as an argument that can either be supplied on the command line or via environment
-variables. The setup script discussed in the overview readme sets the environment variables for you.
-
-* -c (env: SB_SAMPLES_CONNECTIONSTRING) - Service Bus connection string with credentials or 
-                                          token granting send and listen rights for the namespace
+Set `SB_SAMPLES_NAMESPACE`, `SB_SAMPLES_SAS_KEY_NAME`, and `SB_SAMPLES_SAS_KEY` as described in the [overview README](../../readme.md). You can also pass the namespace host with `-n example.servicebus.windows.net`; the environment variable takes precedence. This sample uses Qpid JMS directly and doesn't require the retired `azure-servicebus` library.
 
 The example assumes that the "BasicQueue" exists on the namespace. Please ensure that is created before running the sample.
 

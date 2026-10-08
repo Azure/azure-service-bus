@@ -16,8 +16,7 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.6.1</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <release>11</release>
                     <debug>true</debug>
                     <debuglevel>lines,vars,source</debuglevel> 
                 </configuration>
@@ -47,14 +46,9 @@
     </build>
     <dependencies>
         <dependency>
-            <groupId>com.microsoft.azure</groupId>
-            <artifactId>azure-servicebus</artifactId>
-            <version>1.2.8</version>
-        </dependency>
-        <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-jms-client</artifactId>
-            <version>[0.27.0,]</version>
+            <version>1.16.0</version>
         </dependency>
         <dependency>
             <groupId>org.apache.qpid</groupId>

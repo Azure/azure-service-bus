@@ -1,4 +1,3 @@
-﻿//using Microsoft.Azure.ServiceBus;
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;

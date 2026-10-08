@@ -3,7 +3,6 @@
 
 package com.microsoft.azure.servicebus.samples.jmsqueuequickstart;
 
-import com.microsoft.azure.servicebus.primitives.ConnectionStringBuilder;
 import org.apache.commons.cli.*;
 import org.apache.log4j.*;
 
@@ -28,16 +27,16 @@ public class JmsQueueQuickstart {
     // log4j logger 
     private static Logger logger = Logger.getRootLogger();
 
-    public void run(String connectionString) throws Exception {
-
-        // The connection string builder is the only part of the azure-servicebus SDK library
-        // we use in this JMS sample and for the purpose of robustly parsing the Service Bus 
-        // connection string. 
-        ConnectionStringBuilder csb = new ConnectionStringBuilder(connectionString);
+    public void run(String namespaceHost) throws Exception {
+        String sasKeyName = System.getenv("SB_SAMPLES_SAS_KEY_NAME");
+        String sasKey = System.getenv("SB_SAMPLES_SAS_KEY");
+        if (sasKeyName == null || sasKeyName.isEmpty() || sasKey == null || sasKey.isEmpty()) {
+            throw new IllegalArgumentException("Set SB_SAMPLES_SAS_KEY_NAME and SB_SAMPLES_SAS_KEY.");
+        }
         
         // set up JNDI context
         Hashtable<String, String> hashtable = new Hashtable<>();
-        hashtable.put("connectionfactory.SBCF", "amqps://" + csb.getEndpoint().getHost() + "?amqp.idleTimeout=120000&amqp.traceFrames=true");
+        hashtable.put("connectionfactory.SBCF", "amqps://" + namespaceHost + "?amqp.idleTimeout=120000");
         hashtable.put("queue.QUEUE", "BasicQueue");
         hashtable.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
         Context context = new InitialContext(hashtable);
@@ -50,7 +49,7 @@ public class JmsQueueQuickstart {
         // again to show the receive side separately with minimal clutter
         {
             // Create Connection
-            Connection connection = cf.createConnection(csb.getSasKeyName(), csb.getSasKey());
+            Connection connection = cf.createConnection(sasKeyName, sasKey);
             // Create Session, no transaction, client ack
             Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
@@ -73,7 +72,7 @@ public class JmsQueueQuickstart {
 
         {
             // Create Connection
-            Connection connection = cf.createConnection(csb.getSasKeyName(), csb.getSasKey());
+            Connection connection = cf.createConnection(sasKeyName, sasKey);
             connection.start();
             // Create Session, no transaction, client ack
             Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
@@ -108,10 +107,10 @@ public class JmsQueueQuickstart {
 
     public static void main(String[] args) {
 
-        System.exit(runApp(args, (connectionString) -> {
+        System.exit(runApp(args, (namespaceHost) -> {
             JmsQueueQuickstart app = new JmsQueueQuickstart();
             try {
-                app.run(connectionString);
+                app.run(namespaceHost);
                 return 0;
             } catch (Exception e) {
                 System.out.printf("%s", e.toString());
@@ -120,34 +119,33 @@ public class JmsQueueQuickstart {
         }));
     }
 
-    static final String SB_SAMPLES_CONNECTIONSTRING = "SB_SAMPLES_CONNECTIONSTRING";
+    static final String SB_SAMPLES_NAMESPACE = "SB_SAMPLES_NAMESPACE";
 
     public static int runApp(String[] args, Function<String, Integer> run) {
         try {
 
-            String connectionString = null;
+            String namespaceHost = null;
 
-            // parse connection string from command line
             Options options = new Options();
-            options.addOption(new Option("c", true, "Connection string"));
+            options.addOption(new Option("n", true, "Namespace host, such as example.servicebus.windows.net"));
             CommandLineParser clp = new DefaultParser();
             CommandLine cl = clp.parse(options, args);
-            if (cl.getOptionValue("c") != null) {
-                connectionString = cl.getOptionValue("c");
+            if (cl.getOptionValue("n") != null) {
+                namespaceHost = cl.getOptionValue("n");
             }
 
             // get overrides from the environment
-            String env = System.getenv(SB_SAMPLES_CONNECTIONSTRING);
+            String env = System.getenv(SB_SAMPLES_NAMESPACE);
             if (env != null) {
-                connectionString = env;
+                namespaceHost = env;
             }
 
-            if (connectionString == null) {
+            if (namespaceHost == null || namespaceHost.isEmpty()) {
                 HelpFormatter formatter = new HelpFormatter();
                 formatter.printHelp("run jar with", "", options, "", true);
                 return 2;
             }
-            return run.apply(connectionString);
+            return run.apply(namespaceHost);
         } catch (Exception e) {
             System.out.printf("%s", e.toString());
             return 3;

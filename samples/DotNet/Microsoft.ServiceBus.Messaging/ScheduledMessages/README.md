@@ -1,2 +1,0 @@
-#Scheduled Messages sample
-

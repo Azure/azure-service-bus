@@ -1,5 +1,3 @@
-﻿//using Microsoft.Azure.ServiceBus;
-//using Microsoft.Azure.ServiceBus.Core;
 using System;
 using System.Text;
 using System.Threading;
@@ -127,4 +125,3 @@ namespace BasicSendReceiveTutorialWithFilters
         }
     }
 }
-
