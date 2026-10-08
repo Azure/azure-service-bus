@@ -21,5 +21,6 @@ The [management samples](Management) demonstrate namespace and entity management
 Use the migration guide for your library:
 
 - [WindowsAzure.ServiceBus](https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/servicebus/Azure.Messaging.ServiceBus/MigrationGuide_WindowsAzureServiceBus.md)
+- [NetMessagingBinding](DotNet/Microsoft.ServiceBus.Messaging/NetMessagingBinding/MigrationGuide.md)
 - [Microsoft.Azure.ServiceBus](https://github.com/Azure/azure-sdk-for-net/blob/main/sdk/servicebus/Azure.Messaging.ServiceBus/MigrationGuide.md)
 - [com.microsoft.azure:azure-servicebus](https://github.com/Azure/azure-sdk-for-java/blob/main/sdk/servicebus/azure-messaging-servicebus/migration-guide.md)
