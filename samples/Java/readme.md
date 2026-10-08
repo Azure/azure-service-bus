@@ -15,7 +15,7 @@ For JMS 2.0 with Service Bus Premium, see the [Azure Service Bus JMS samples](ht
 
 ## Prerequisites
 
-Install JDK 8 or later and Maven. Create a [Service Bus namespace](https://learn.microsoft.com/azure/service-bus-messaging/service-bus-quickstart-portal) and the entities used by your sample:
+Install JDK 11 or later and Maven. Create a [Service Bus namespace](https://learn.microsoft.com/azure/service-bus-messaging/service-bus-quickstart-portal) and the entities used by your sample:
 
 - Queue sample: `BasicQueue`.
 - Topic sample: `BasicTopic` with subscriptions `Subscription1`, `Subscription2`, and `Subscription3`.
