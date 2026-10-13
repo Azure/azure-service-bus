@@ -22,6 +22,7 @@
     </build>
 
     <modules>
+        <module>azure-messaging-servicebus</module>
         <module>qpid-jms-client/JmsQueueQuickstart</module>
         <module>qpid-jms-client/JmsTopicQuickstart</module>
     </modules>

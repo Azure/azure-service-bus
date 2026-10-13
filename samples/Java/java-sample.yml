@@ -1,7 +1,7 @@
 ### YamlMime:Sample
 sample:
-- name: Azure Service Bus JMS quickstarts
-  description: Send and receive Service Bus messages from Java with Apache Qpid JMS.
+- name: Azure Service Bus Java samples
+  description: Current Java SDK feature scenarios and Apache Qpid JMS quickstarts.
   generateZip: true
   author: celemensv
   readme: readme.md
