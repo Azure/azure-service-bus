@@ -1,7 +1,7 @@
 {
-    "itemDisplayName": "Create a Service Bus Namespace and Queue",
-    "description": "This template creates a Service Bus Namespace and Queue.",
-    "summary": "This template creates a Service Bus Namespace and Queue.",
+    "itemDisplayName": "Create disposable Standard Service Bus sample entities",
+    "description": "Creates a Standard namespace with queues, topics, subscriptions, filters and autoforwarding for sample use. Requires a new namespace in an isolated resource group; does not output credentials.",
+    "summary": "Disposable Standard Service Bus sample namespace and entities.",
     "githubUsername": "clemensv",
-    "dateUpdated": "2017-09-20"
+    "dateUpdated": "2026-10-09"
   }

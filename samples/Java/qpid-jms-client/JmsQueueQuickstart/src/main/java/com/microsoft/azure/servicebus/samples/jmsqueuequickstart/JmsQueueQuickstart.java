@@ -4,13 +4,23 @@
 package com.microsoft.azure.servicebus.samples.jmsqueuequickstart;
 
 import org.apache.commons.cli.*;
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.qpid.jms.JmsConnectionFactory;
+import com.azure.core.credential.TokenCredential;
+import com.azure.identity.DefaultAzureCredentialBuilder;
+import com.microsoft.azure.servicebus.jms.ServiceBusJmsConnectionFactory;
+import com.microsoft.azure.servicebus.jms.ServiceBusJmsConnectionFactorySettings;
 
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -20,89 +30,119 @@ import java.util.function.Function;
  */
 public class JmsQueueQuickstart {
 
-    // Number of messages to send
-    private static int totalSend = 10;
-    //Tracking counter for how many messages have been received; used as termination condition
-    private static AtomicInteger totalReceived = new AtomicInteger(0);
-    // log4j logger 
-    private static Logger logger = Logger.getRootLogger();
+    private static final int TOTAL_SEND = 10;
+    private static final Logger logger = LoggerFactory.getLogger(JmsQueueQuickstart.class);
 
     public void run(String namespaceHost) throws Exception {
-        String sasKeyName = System.getenv("SB_SAMPLES_SAS_KEY_NAME");
-        String sasKey = System.getenv("SB_SAMPLES_SAS_KEY");
-        if (sasKeyName == null || sasKeyName.isEmpty() || sasKey == null || sasKey.isEmpty()) {
-            throw new IllegalArgumentException("Set SB_SAMPLES_SAS_KEY_NAME and SB_SAMPLES_SAS_KEY.");
-        }
+        String mode = authenticationMode(System.getenv("SB_SAMPLES_AUTH"));
+        boolean sas = "sas".equals(mode);
+        String sasKeyName = sas ? System.getenv("SB_SAMPLES_SAS_KEY_NAME") : null;
+        String sasKey = sas ? System.getenv("SB_SAMPLES_SAS_KEY") : null;
+        ConnectionFactory factory = connectionFactory(mode, namespaceHost, sasKeyName, sasKey,
+            sas ? null : new DefaultAzureCredentialBuilder().build());
         
         // set up JNDI context
         Hashtable<String, String> hashtable = new Hashtable<>();
-        hashtable.put("connectionfactory.SBCF", "amqps://" + namespaceHost + "?amqp.idleTimeout=120000");
         hashtable.put("queue.QUEUE", "BasicQueue");
         hashtable.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
         Context context = new InitialContext(hashtable);
-        ConnectionFactory cf = (ConnectionFactory) context.lookup("SBCF");
-        
-        // Look up queue
-        Destination queue = (Destination) context.lookup("QUEUE");
+        run(context, factory, sasKeyName, sasKey);
+    }
 
-        // we create a scope here so we can use the same set of local variables cleanly 
-        // again to show the receive side separately with minimal clutter
-        {
-            // Create Connection
-            Connection connection = cf.createConnection(sasKeyName, sasKey);
-            // Create Session, no transaction, client ack
-            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+    static String authenticationMode(String configured) {
+        if (configured == null) return "entra";
+        if (!"entra".equals(configured) && !"sas".equals(configured)) {
+            throw new IllegalArgumentException("SB_SAMPLES_AUTH must be entra (Premium) or sas (Standard/Premium). No automatic SAS fallback.");
+        }
+        return configured;
+    }
 
-            // Create producer
-            MessageProducer producer = session.createProducer(queue);
+    static ConnectionFactory connectionFactory(String mode, String host, String keyName, String key,
+        TokenCredential credential) {
+        authenticationMode(mode);
+        if ("sas".equals(mode)) {
+            if (keyName == null || keyName.isBlank() || key == null || key.isBlank()) {
+                throw new IllegalArgumentException("SAS mode requires SB_SAMPLES_SAS_KEY_NAME and SB_SAMPLES_SAS_KEY.");
+            }
+            return new JmsConnectionFactory(keyName, key, "amqps://" + host + "?amqp.idleTimeout=120000");
+        }
+        System.out.println("Using Microsoft Entra ID. This JMS mode requires a Premium namespace and Service Bus data roles.");
+        ServiceBusJmsConnectionFactorySettings settings = new ServiceBusJmsConnectionFactorySettings(120000, false);
+        // Keep the quickstart's direct-connection behavior, not the wrapper's unlimited failover retries.
+        settings.setShouldReconnect(false);
+        return new ServiceBusJmsConnectionFactory(credential, host, settings);
+    }
 
-            // Send messages
-            for (int i = 0; i < totalSend; i++) {
+    void run(Context context, String sasKeyName, String sasKey) throws Exception {
+        run(context, null, sasKeyName, sasKey);
+    }
+
+    void run(Context context, ConnectionFactory factory, String sasKeyName, String sasKey) throws Exception {
+        try (AutoCloseable closeContext = context::close) {
+            ConnectionFactory cf = factory == null ? (ConnectionFactory) context.lookup("SBCF") : factory;
+            Destination queue = (Destination) context.lookup("QUEUE");
+            String runId = UUID.randomUUID().toString();
+            sendMessages(cf, queue, sasKeyName, sasKey, runId);
+            receiveMessages(cf, queue, sasKeyName, sasKey, runId);
+        }
+        System.out.println("Received and acknowledged this run's ten messages; all clients closed.");
+    }
+
+    static void sendMessages(ConnectionFactory factory, Destination queue, String keyName, String key, String runId) throws JMSException {
+        try (Connection connection = createConnection(factory, keyName, key);
+             Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+             MessageProducer producer = session.createProducer(queue)) {
+            for (int i = 0; i < TOTAL_SEND; i++) {
                 BytesMessage message = session.createBytesMessage();
-                message.writeBytes(String.valueOf(i).getBytes());
+                message.writeBytes(String.valueOf(i).getBytes(StandardCharsets.UTF_8));
+                message.setStringProperty("SampleRunId", runId);
+                message.setIntProperty("SampleSequence", i);
                 producer.send(message);
                 System.out.printf("Sent message %d.\n", i + 1);
             }
-
-            producer.close();
-            session.close();
-            connection.stop();
-            connection.close();
         }
+    }
 
-        {
-            // Create Connection
-            Connection connection = cf.createConnection(sasKeyName, sasKey);
+    static void receiveMessages(ConnectionFactory factory, Destination queue, String keyName, String key, String runId) throws JMSException {
+        Set<Integer> received = new HashSet<>();
+        try (Connection connection = createConnection(factory, keyName, key);
+             Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+             MessageConsumer consumer = session.createConsumer(queue)) {
             connection.start();
-            // Create Session, no transaction, client ack
-            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-            // Create consumer
-            MessageConsumer consumer = session.createConsumer(queue);
-            // create a listener callback to receive the messages
-            consumer.setMessageListener(message -> {
-                try {
-                    // receives message is passed to callback
-                    System.out.printf("Received message %d with sq#: %s\n",
-                            totalReceived.incrementAndGet(), // increments the tracking counter
-                            message.getJMSMessageID());
-                    message.acknowledge();
-                } catch (Exception e) {
-                    logger.error(e);
-                }
-            });
-
-            // wait on the main thread until all sent messages have been received
-            while (totalReceived.get() < totalSend) {
-                Thread.sleep(1000);
+            long deadline = System.nanoTime() + Duration.ofSeconds(90).toNanos();
+            while (received.size() < TOTAL_SEND) {
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) throw new JMSException("Timed out waiting for this run's ten messages.");
+                Message message = consumer.receive(Math.max(1, Duration.ofNanos(remaining).toMillis()));
+                if (message == null) throw new JMSException("Timed out waiting for this run's ten messages.");
+                validateAndAcknowledge(message, runId, received);
+                System.out.printf("Received message %d with ID %s.\n", received.size(), message.getJMSMessageID());
             }
-            consumer.close();
-            session.close();
-            connection.stop();
-            connection.close();
         }
+    }
 
-        System.out.printf("Received all messages, exiting the sample.\n");
-        System.out.printf("Closing queue client.\n");
+    static void validateAndAcknowledge(Message message, String runId, Set<Integer> received) throws JMSException {
+        if (!(message instanceof BytesMessage) || !runId.equals(message.getStringProperty("SampleRunId")) ||
+            !message.propertyExists("SampleSequence")) {
+            throw new JMSException("Unexpected message; leaving it unsettled. Use an empty disposable queue with no competing consumer.");
+        }
+        int sequence = message.getIntProperty("SampleSequence");
+        if (sequence < 0 || sequence >= TOTAL_SEND || received.contains(sequence)) {
+            throw new JMSException("Unexpected or duplicate sample sequence; leaving it unsettled.");
+        }
+        byte[] expected = String.valueOf(sequence).getBytes(StandardCharsets.UTF_8);
+        BytesMessage bytes = (BytesMessage) message;
+        byte[] actual = new byte[expected.length];
+        if (bytes.getBodyLength() != expected.length || bytes.readBytes(actual) != expected.length ||
+            !java.util.Arrays.equals(expected, actual)) {
+            throw new JMSException("Unexpected sample payload; leaving it unsettled.");
+        }
+        message.acknowledge();
+        received.add(sequence);
+    }
+
+    static Connection createConnection(ConnectionFactory factory, String keyName, String key) throws JMSException {
+        return keyName == null ? factory.createConnection() : factory.createConnection(keyName, key);
     }
 
     public static void main(String[] args) {
@@ -140,7 +180,7 @@ public class JmsQueueQuickstart {
                 namespaceHost = env;
             }
 
-            if (namespaceHost == null || namespaceHost.isEmpty()) {
+            if (namespaceHost == null || namespaceHost.isBlank()) {
                 HelpFormatter formatter = new HelpFormatter();
                 formatter.printHelp("run jar with", "", options, "", true);
                 return 2;

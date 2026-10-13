@@ -4,14 +4,24 @@
 package com.microsoft.azure.servicebus.samples.jmstopicquickstart;
 
 import org.apache.commons.cli.*;
-import org.apache.log4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.apache.qpid.jms.JmsConnectionFactory;
+import com.azure.core.credential.TokenCredential;
+import com.azure.identity.DefaultAzureCredentialBuilder;
+import com.microsoft.azure.servicebus.jms.ServiceBusJmsConnectionFactory;
+import com.microsoft.azure.servicebus.jms.ServiceBusJmsConnectionFactorySettings;
 
 import javax.jms.*;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -22,101 +32,125 @@ import java.util.function.Function;
  */
 public class JmsTopicQuickstart {
 
-    // number of messages to send
-    private static int totalSend = 10;
-    // log4j logger
-    private static Logger logger = Logger.getRootLogger();
+    private static final int TOTAL_SEND = 10;
+    private static final Logger logger = LoggerFactory.getLogger(JmsTopicQuickstart.class);
 
     public void run(String namespaceHost) throws Exception {
-        String sasKeyName = System.getenv("SB_SAMPLES_SAS_KEY_NAME");
-        String sasKey = System.getenv("SB_SAMPLES_SAS_KEY");
-        if (sasKeyName == null || sasKeyName.isEmpty() || sasKey == null || sasKey.isEmpty()) {
-            throw new IllegalArgumentException("Set SB_SAMPLES_SAS_KEY_NAME and SB_SAMPLES_SAS_KEY.");
-        }
+        String mode = authenticationMode(System.getenv("SB_SAMPLES_AUTH"));
+        boolean sas = "sas".equals(mode);
+        String sasKeyName = sas ? System.getenv("SB_SAMPLES_SAS_KEY_NAME") : null;
+        String sasKey = sas ? System.getenv("SB_SAMPLES_SAS_KEY") : null;
+        ConnectionFactory factory = connectionFactory(mode, namespaceHost, sasKeyName, sasKey,
+            sas ? null : new DefaultAzureCredentialBuilder().build());
 
         // set up the JNDI context 
         Hashtable<String, String> hashtable = new Hashtable<>();
-        hashtable.put("connectionfactory.SBCF", "amqps://" + namespaceHost + "?amqp.idleTimeout=120000");
         hashtable.put("topic.TOPIC", "BasicTopic");
         hashtable.put("queue.SUBSCRIPTION1", "BasicTopic/Subscriptions/Subscription1");
         hashtable.put("queue.SUBSCRIPTION2", "BasicTopic/Subscriptions/Subscription2");
         hashtable.put("queue.SUBSCRIPTION3", "BasicTopic/Subscriptions/Subscription3");
         hashtable.put(Context.INITIAL_CONTEXT_FACTORY, "org.apache.qpid.jms.jndi.JmsInitialContextFactory");
         Context context = new InitialContext(hashtable);
+        run(context, factory, sasKeyName, sasKey);
+    }
 
-        ConnectionFactory cf = (ConnectionFactory) context.lookup("SBCF");
+    static String authenticationMode(String configured) {
+        if (configured == null) return "entra";
+        if (!"entra".equals(configured) && !"sas".equals(configured)) {
+            throw new IllegalArgumentException("SB_SAMPLES_AUTH must be entra (Premium) or sas (Standard/Premium). No automatic SAS fallback.");
+        }
+        return configured;
+    }
 
-        // Look up the topic
-        Destination topic = (Destination) context.lookup("TOPIC");
+    static ConnectionFactory connectionFactory(String mode, String host, String keyName, String key,
+        TokenCredential credential) {
+        authenticationMode(mode);
+        if ("sas".equals(mode)) {
+            if (keyName == null || keyName.isBlank() || key == null || key.isBlank()) {
+                throw new IllegalArgumentException("SAS mode requires SB_SAMPLES_SAS_KEY_NAME and SB_SAMPLES_SAS_KEY.");
+            }
+            return new JmsConnectionFactory(keyName, key, "amqps://" + host + "?amqp.idleTimeout=120000");
+        }
+        System.out.println("Using Microsoft Entra ID. This JMS mode requires a Premium namespace and Service Bus data roles.");
+        ServiceBusJmsConnectionFactorySettings settings = new ServiceBusJmsConnectionFactorySettings(120000, false);
+        // Keep the quickstart's direct-connection behavior, not the wrapper's unlimited failover retries.
+        settings.setShouldReconnect(false);
+        return new ServiceBusJmsConnectionFactory(credential, host, settings);
+    }
 
-        // we create a scope here so we can use the same set of local variables cleanly 
-        // again to show the receive side seperately with minimal clutter
-        {
-            // Create Connection
-            Connection connection = cf.createConnection(sasKeyName, sasKey);
-            connection.start();
-            // Create Session, no transaction, client ack
-            Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+    void run(Context context, String sasKeyName, String sasKey) throws Exception {
+        run(context, null, sasKeyName, sasKey);
+    }
 
-            // Create producer
-            MessageProducer producer = session.createProducer(topic);
+    void run(Context context, ConnectionFactory factory, String sasKeyName, String sasKey) throws Exception {
+        try (AutoCloseable closeContext = context::close) {
+            ConnectionFactory cf = factory == null ? (ConnectionFactory) context.lookup("SBCF") : factory;
+            Destination topic = (Destination) context.lookup("TOPIC");
+            String runId = UUID.randomUUID().toString();
+            sendMessages(cf, topic, sasKeyName, sasKey, runId);
+            for (String name : new String[] {"SUBSCRIPTION1", "SUBSCRIPTION2", "SUBSCRIPTION3"}) {
+                System.out.println("Subscription " + name + ":");
+                receiveMessages(cf, (Destination) context.lookup(name), sasKeyName, sasKey, runId);
+            }
+        }
+        System.out.println("Received and acknowledged this run's ten messages on each subscription; all clients closed.");
+    }
 
-            // Send messaGES
-            for (int i = 0; i < totalSend; i++) {
+    static void sendMessages(ConnectionFactory factory, Destination topic, String keyName, String key, String runId) throws JMSException {
+        try (Connection connection = createConnection(factory, keyName, key);
+             Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+             MessageProducer producer = session.createProducer(topic)) {
+            for (int i = 0; i < TOTAL_SEND; i++) {
                 BytesMessage message = session.createBytesMessage();
-                message.writeBytes(String.valueOf(i).getBytes());
+                message.writeBytes(String.valueOf(i).getBytes(StandardCharsets.UTF_8));
+                message.setStringProperty("SampleRunId", runId);
+                message.setIntProperty("SampleSequence", i);
                 producer.send(message);
                 System.out.printf("Sent message %d.\n", i + 1);
             }
-
-            producer.close();
-            session.close();
-            connection.stop();
-            connection.close();
         }
-
-        // Look up the subscription (pretending it's a queue)
-        receiveFromSubscription(sasKeyName, sasKey, context, cf, "SUBSCRIPTION1");
-        receiveFromSubscription(sasKeyName, sasKey, context, cf, "SUBSCRIPTION2");
-        receiveFromSubscription(sasKeyName, sasKey, context, cf, "SUBSCRIPTION3");
-
-        System.out.printf("Received all messages, exiting the sample.\n");
-        System.out.printf("Closing queue client.\n");
     }
 
-    private void receiveFromSubscription(String sasKeyName, String sasKey, Context context, ConnectionFactory cf, String name)
-            throws NamingException, JMSException, InterruptedException {
-        AtomicInteger totalReceived = new AtomicInteger(0);
-        System.out.printf("Subscription %s: \n", name);
-
-        Destination subscription = (Destination) context.lookup(name);
-        // Create Connection
-        Connection connection = cf.createConnection(sasKeyName, sasKey);
-        connection.start();
-        // Create Session, no transaction, client ack
-        Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-        // Create consumer
-        MessageConsumer consumer = session.createConsumer(subscription);
-        // Set callback listener. Gets called for each received message.
-        consumer.setMessageListener(message -> {
-            try {
-                System.out.printf("Received message %d with sq#: %s\n",
-                        totalReceived.incrementAndGet(),  // increments the counter
-                        message.getJMSMessageID());
-                message.acknowledge();
-            } catch (Exception e) {
-                System.out.printf("%s", e.toString());
+    static void receiveMessages(ConnectionFactory factory, Destination subscription, String keyName, String key, String runId) throws JMSException {
+        Set<Integer> received = new HashSet<>();
+        try (Connection connection = createConnection(factory, keyName, key);
+             Session session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+             MessageConsumer consumer = session.createConsumer(subscription)) {
+            connection.start();
+            long deadline = System.nanoTime() + Duration.ofSeconds(90).toNanos();
+            while (received.size() < TOTAL_SEND) {
+                long remaining = deadline - System.nanoTime();
+                if (remaining <= 0) throw new JMSException("Timed out waiting for this run's ten subscription messages.");
+                Message message = consumer.receive(Math.max(1, Duration.ofNanos(remaining).toMillis()));
+                if (message == null) throw new JMSException("Timed out waiting for this run's ten subscription messages.");
+                validateAndAcknowledge(message, runId, received);
+                System.out.printf("Received message %d with ID %s.\n", received.size(), message.getJMSMessageID());
             }
-        });
-
-        // wait on the main thread until all sent messages have been received
-        while (totalReceived.get() < totalSend) {
-            Thread.sleep(1000);
         }
-        consumer.close();
-        session.close();
-        connection.stop();
-        connection.close();
+    }
+
+    static void validateAndAcknowledge(Message message, String runId, Set<Integer> received) throws JMSException {
+        if (!(message instanceof BytesMessage) || !runId.equals(message.getStringProperty("SampleRunId")) ||
+            !message.propertyExists("SampleSequence")) {
+            throw new JMSException("Unexpected message; leaving it unsettled. Use empty disposable subscriptions with no competing consumers.");
+        }
+        int sequence = message.getIntProperty("SampleSequence");
+        if (sequence < 0 || sequence >= TOTAL_SEND || received.contains(sequence)) {
+            throw new JMSException("Unexpected or duplicate sample sequence; leaving it unsettled.");
+        }
+        byte[] expected = String.valueOf(sequence).getBytes(StandardCharsets.UTF_8);
+        BytesMessage bytes = (BytesMessage) message;
+        byte[] actual = new byte[expected.length];
+        if (bytes.getBodyLength() != expected.length || bytes.readBytes(actual) != expected.length ||
+            !java.util.Arrays.equals(expected, actual)) {
+            throw new JMSException("Unexpected sample payload; leaving it unsettled.");
+        }
+        message.acknowledge();
+        received.add(sequence);
+    }
+
+    static Connection createConnection(ConnectionFactory factory, String keyName, String key) throws JMSException {
+        return keyName == null ? factory.createConnection() : factory.createConnection(keyName, key);
     }
 
     public static void main(String[] args) {
@@ -154,7 +188,7 @@ public class JmsTopicQuickstart {
                 namespaceHost = env;
             }
 
-            if (namespaceHost == null || namespaceHost.isEmpty()) {
+            if (namespaceHost == null || namespaceHost.isBlank()) {
                 HelpFormatter formatter = new HelpFormatter();
                 formatter.printHelp("run jar with", "", options, "", true);
                 return 2;

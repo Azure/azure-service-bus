@@ -21,18 +21,20 @@ namespace SendAndReceiveMessages
     using System.Text;
     using System.Threading.Tasks;
     using Azure.Messaging.ServiceBus;
+    using Azure.Identity;
     using Newtonsoft.Json;
     
     public class Program 
     {
-        const string TopicName = "TopicFilterSampleTopic";
+        const string TopicName = "topicfiltersampletopic";
         const string SubscriptionAllMessages = "AllOrders";
         const string SubscriptionColorBlueSize10Orders = "ColorBlueSize10Orders";
         const string SubscriptionColorRed = "ColorRed";
         const string SubscriptionHighPriorityOrders = "HighPriorityRedOrders";
 
-        // connection string to your Service Bus namespace
-        static string connectionString = "<SERVICE BUS NAMESPACE - CONNECTION STRING>";
+        static readonly string fullyQualifiedNamespace =
+            Environment.GetEnvironmentVariable("SERVICEBUS_FULLY_QUALIFIED_NAMESPACE") is string host && !string.IsNullOrWhiteSpace(host)
+                ? host : throw new InvalidOperationException("Set SERVICEBUS_FULLY_QUALIFIED_NAMESPACE (example.servicebus.windows.net).");
 
         // the client that owns the connection and can be used to create senders and receivers
         static ServiceBusClient client;
@@ -40,31 +42,30 @@ namespace SendAndReceiveMessages
         // the sender used to publish messages to the topic
         static ServiceBusSender sender;
 
-        // the receiver used to receive messages from the subscription 
-        static ServiceBusReceiver receiver;
-
-        public async Task SendAndReceiveTestsAsync(string connectionString)
+        public async Task SendAndReceiveTestsAsync(string fullyQualifiedNamespace)
         {
+            await using var ownedClient = new ServiceBusClient(fullyQualifiedNamespace, new DefaultAzureCredential());
+            client = ownedClient;
             // This sample demonstrates how to use advanced filters with ServiceBus topics and subscriptions.
             // The sample creates a topic and 3 subscriptions with different filter definitions.
             // Each receiver will receive matching messages depending on the filter associated with a subscription.
 
             // Send sample messages.
-            await this.SendMessagesToTopicAsync(connectionString);
+            await this.SendMessagesToTopicAsync();
 
             // Receive messages from subscriptions.
-            await this.ReceiveAllMessageFromSubscription(connectionString, SubscriptionAllMessages);
-            await this.ReceiveAllMessageFromSubscription(connectionString, SubscriptionColorBlueSize10Orders);
-            await this.ReceiveAllMessageFromSubscription(connectionString, SubscriptionColorRed);
-            await this.ReceiveAllMessageFromSubscription(connectionString, SubscriptionHighPriorityOrders);
+            await this.ReceiveAllMessageFromSubscription(SubscriptionAllMessages);
+            await this.ReceiveAllMessageFromSubscription(SubscriptionColorBlueSize10Orders);
+            await this.ReceiveAllMessageFromSubscription(SubscriptionColorRed);
+            await this.ReceiveAllMessageFromSubscription(SubscriptionHighPriorityOrders);
         }
 
 
-        async Task SendMessagesToTopicAsync(string connectionString)
+        async Task SendMessagesToTopicAsync()
         {
             // Create the clients that we'll use for sending and processing messages.
-            client = new ServiceBusClient(connectionString);
-            sender = client.CreateSender(TopicName);
+            await using var ownedSender = client.CreateSender(TopicName);
+            sender = ownedSender;
 
             Console.WriteLine("\nSending orders to topic.");
 
@@ -106,11 +107,11 @@ namespace SendAndReceiveMessages
             Console.WriteLine("Sent order with Color={0}, Quantity={1}, Priority={2}", order.Color, order.Quantity, order.Priority);
         }
 
-        async Task ReceiveAllMessageFromSubscription(string connectionString, string subsName)
+        async Task ReceiveAllMessageFromSubscription(string subsName)
         {
             var receivedMessages = 0;
 
-            receiver = client.CreateReceiver(TopicName, subsName, new ServiceBusReceiverOptions() { ReceiveMode = ServiceBusReceiveMode.ReceiveAndDelete } );
+            await using var receiver = client.CreateReceiver(TopicName, subsName, new ServiceBusReceiverOptions() { ReceiveMode = ServiceBusReceiveMode.ReceiveAndDelete } );
             
             // Create a receiver from the subscription client and receive all messages.
             Console.WriteLine("\nReceiving messages from subscription {0}.", subsName);
@@ -141,11 +142,12 @@ namespace SendAndReceiveMessages
             try
             {
                 Program app = new Program();
-                await app.SendAndReceiveTestsAsync(connectionString);
+                await app.SendAndReceiveTestsAsync(fullyQualifiedNamespace);
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                Console.Error.WriteLine(e.ToString());
+                throw;
             }
         }
     }
