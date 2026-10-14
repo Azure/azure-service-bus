@@ -4,7 +4,26 @@ import org.junit.Assert;
 
 public class JmsQueueQuickstartTest {
     @org.junit.Test
+    public void parsesNamespaceWithoutConnecting() {
+        String configured = System.getenv("SB_SAMPLES_NAMESPACE");
+        Assert.assertEquals(0, JmsQueueQuickstart.runApp(new String[] {"-n", "example.servicebus.windows.net"}, host -> {
+            Assert.assertEquals(configured == null ? "example.servicebus.windows.net" : configured, host);
+            return 0;
+        }));
+    }
+
+    @org.junit.Test
+    public void rejectsUnknownArgumentsWithoutConnecting() {
+        Assert.assertEquals(3, JmsQueueQuickstart.runApp(new String[] {"--unknown"}, host -> {
+            Assert.fail("Must reject invalid arguments before invoking the sample.");
+            return 0;
+        }));
+    }
+
+    @org.junit.Test
     public void runApp() throws Exception {
+        org.junit.Assume.assumeTrue("Live test requires -Dservicebus.integration=true",
+                Boolean.getBoolean("servicebus.integration"));
         Assert.assertEquals(0,
                 JmsQueueQuickstart.runApp(new String[0], (connectionString) -> {
                     JmsQueueQuickstart app = new JmsQueueQuickstart();

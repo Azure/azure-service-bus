@@ -1,5 +1,3 @@
-﻿//using Microsoft.Azure.ServiceBus;
-//using Microsoft.Azure.ServiceBus.Core;
 using System;
 using System.Text;
 using System.Threading;
@@ -8,12 +6,13 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using Azure.Messaging.ServiceBus;
 using System.Linq;
+using Azure.Identity;
 
 namespace BasicSendReceiveTutorialWithFilters
 {
     class SendReceive
     {
-        public string ServiceBusConnectionString;
+        public string FullyQualifiedNamespace;
         public string TopicName;
         public string[] Subscriptions;
         public string[] Store;
@@ -21,29 +20,25 @@ namespace BasicSendReceiveTutorialWithFilters
 
         public async Task SendMessages()
         {
-            try
-            {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+            await using var client = new ServiceBusClient(FullyQualifiedNamespace, new DefaultAzureCredential());
+            await SendMessages(client, timeout.Token);
+        }
 
-                await using var client = new ServiceBusClient(ServiceBusConnectionString);
-                var taskList = new List<Task>();
-                for (int i = 0; i < Store.Length; i++)
-                {
-                    taskList.Add(SendItems(client, Store[i]));
-                }
-
-                await Task.WhenAll(taskList);
-            }
-            catch (Exception ex)
+        internal async Task SendMessages(ServiceBusClient client, CancellationToken token)
+        {
+            var taskList = new List<Task>();
+            for (int i = 0; i < Store.Length; i++)
             {
-                Console.WriteLine(ex.ToString());
+                taskList.Add(SendItems(client, Store[i], token));
             }
+            await Task.WhenAll(taskList);
             Console.WriteLine("\nAll messages sent.\n");
         }
 
-        private async Task SendItems(ServiceBusClient client, string store)
+        private async Task SendItems(ServiceBusClient client, string store, CancellationToken token)
         {
-            // create the sender
-            ServiceBusSender tc = client.CreateSender(TopicName);
+            await using ServiceBusSender tc = client.CreateSender(TopicName);
 
             for (int i = 0; i < NrOfMessagesPerStore; i++)
             {
@@ -58,73 +53,52 @@ namespace BasicSendReceiveTutorialWithFilters
                 message.ApplicationProperties.Add("Color", item.GetColor());
                 message.ApplicationProperties.Add("Category", item.GetItemCategory());
 
-                await tc.SendMessageAsync(message);
+                await tc.SendMessageAsync(message, token);
                 Console.WriteLine($"Sent item to Store {store}. Price={item.GetPrice()}, Color={item.GetColor()}, Category={item.GetItemCategory()}"); ;
             }
         }
 
         public async Task Receive()
         {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+            await using var client = new ServiceBusClient(FullyQualifiedNamespace, new DefaultAzureCredential());
+            await Receive(client, timeout.Token);
+        }
+
+        internal async Task Receive(ServiceBusClient client, CancellationToken token)
+        {
             var taskList = new List<Task>();
             for (var i = 0; i < Subscriptions.Length; i++)
             {
-                taskList.Add(this.ReceiveMessages(Subscriptions[i]));
+                taskList.Add(this.ReceiveMessages(client, Subscriptions[i], token));
             }
 
             await Task.WhenAll(taskList);
         }
 
-        private async Task ReceiveMessages(string subscription)
+        private async Task ReceiveMessages(ServiceBusClient client, string subscription, CancellationToken token)
         {
-            await using var client = new ServiceBusClient(ServiceBusConnectionString);
-            ServiceBusReceiver receiver = client.CreateReceiver(TopicName, subscription);
+            await using ServiceBusReceiver receiver = client.CreateReceiver(TopicName, subscription);
 
-            // In reality you would not break out of the loop like in this example but would keep looping. The receiver keeps the connection open
-            // to the broker for the specified amount of seconds and the broker returns messages as soon as they arrive. The client then initiates
-            // a new connection. So in reality you would not want to break out of the loop. 
-            // Also note that the code shows how to batch receive, which you would do for performance reasons. For convenience you can also always
-            // use the regular receive pump which we show in our Quick Start and in other github samples.
             while (true)
             {
-                try
+                var messages = await receiver.ReceiveMessagesAsync(100, TimeSpan.FromSeconds(5), token);
+                if (messages.Count == 0)
+                    break;
+                foreach (var message in messages)
                 {
-                    //IList<Message> messages = await receiver.ReceiveAsync(10, TimeSpan.FromSeconds(2));
-                    // Note the extension class which is serializing an deserializing messages and testing messages is null or 0.
-                    // If you think you did not receive all messages, just press M and receive again via the menu.
-                    IReadOnlyList<ServiceBusReceivedMessage> messages = await receiver.ReceiveMessagesAsync(maxMessages: 100);
-
-                    if (messages.Any())
+                    token.ThrowIfCancellationRequested();
+                    lock (Console.Out)
                     {
-                        foreach (ServiceBusReceivedMessage message in messages)
-                        {
-                            lock (Console.Out)
-                            {
-                                Item item = message.As<Item>();
-                                IReadOnlyDictionary<string, object> myApplicationProperties = message.ApplicationProperties;
-                                Console.WriteLine($"StoreId={myApplicationProperties["StoreId"]}");
-                                if (message.Subject != null)
-                                {
-                                    Console.WriteLine($"Subject={message.Subject}");
-                                }
-                                Console.WriteLine(
-                                    $"Item data: Price={item.GetPrice()}, Color={item.GetColor()}, Category={item.GetItemCategory()}");
-                            }
-
-                            await receiver.CompleteMessageAsync(message);
-                        }
+                        Item item = message.As<Item>();
+                        Console.WriteLine($"StoreId={message.ApplicationProperties["StoreId"]}");
+                        if (message.Subject != null)
+                            Console.WriteLine($"Subject={message.Subject}");
+                        Console.WriteLine($"Item data: Price={item.GetPrice()}, Color={item.GetColor()}, Category={item.GetItemCategory()}");
                     }
-                    else
-                    {
-                        break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex.ToString());
+                    await receiver.CompleteMessageAsync(message, token);
                 }
             }
-
         }
     }
 }
-

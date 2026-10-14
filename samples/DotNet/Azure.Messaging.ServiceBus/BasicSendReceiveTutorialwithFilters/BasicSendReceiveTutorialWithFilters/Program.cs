@@ -1,16 +1,18 @@
-﻿//using Microsoft.Azure.ServiceBus;
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Azure.Messaging.ServiceBus;
 using Azure.Messaging.ServiceBus.Administration;
+using Azure.Identity;
 
 namespace BasicSendReceiveTutorialWithFilters
 {
     class Program
     {
-        string ServiceBusConnectionString;
+        string FullyQualifiedNamespace;
         string TopicName;
+        readonly string RulePrefix = $"sample-{Guid.NewGuid():N}";
+        readonly List<(string Subscription, string Rule)> CreatedRules = new();
 
         static readonly string[] Subscriptions = { "S1", "S2", "S3" };
         static readonly IDictionary<string, string[]> SubscriptionFilters = new Dictionary<string, string[]> {
@@ -29,11 +31,11 @@ namespace BasicSendReceiveTutorialWithFilters
         //static string CustomField = "StoreId";
         static readonly int NrOfMessagesPerStore = 1; // Send at least 1.
 
-        static Program StartProgram(string ServiceBusConnectionString, string TopicName)
+        static Program StartProgram(string FullyQualifiedNamespace, string TopicName)
         {
             var program = new Program
             {
-                ServiceBusConnectionString = ServiceBusConnectionString,
+                FullyQualifiedNamespace = FullyQualifiedNamespace,
                 TopicName = TopicName
             };
 
@@ -41,32 +43,43 @@ namespace BasicSendReceiveTutorialWithFilters
         }
         static void Main(string[] args)
         {
-            string ServiceBusConnectionString = "";
-            string TopicName = "";
+            if (args.Length == 1 && args[0] == "--self-test")
+            {
+                OfflineChecks.RunAsync().GetAwaiter().GetResult();
+                return;
+            }
+            string FullyQualifiedNamespace = Environment.GetEnvironmentVariable("SERVICEBUS_FULLY_QUALIFIED_NAMESPACE") ?? "";
+            string TopicName = Environment.GetEnvironmentVariable("SERVICEBUS_TOPIC") ?? "";
 
             for (int i = 0; i < args.Length; i++)
             {
-                if (args[i] == "-ConnectionString")
+                if (args[i] == "-FullyQualifiedNamespace")
                 {
-                    Console.WriteLine($"ConnectionString: {args[i + 1]}");
-                    ServiceBusConnectionString = args[i + 1]; // Alternatively enter your connection string here.
+                    if (++i >= args.Length)
+                        throw new ArgumentException("-FullyQualifiedNamespace requires a value.");
+                    FullyQualifiedNamespace = args[i];
                 }
                 else if (args[i] == "-TopicName")
                 {
-                    Console.WriteLine($"TopicName: {args[i + 1]}");
-                    TopicName = args[i + 1]; // Alternatively enter your queue name here.
+                    if (++i >= args.Length)
+                        throw new ArgumentException("-TopicName requires a value.");
+                    TopicName = args[i];
+                }
+                else
+                {
+                    throw new ArgumentException($"Unknown argument: {args[i]}. Use -FullyQualifiedNamespace and -TopicName.");
                 }
             }
 
-            if (ServiceBusConnectionString != "" && TopicName != "")
+            if (!string.IsNullOrWhiteSpace(FullyQualifiedNamespace) && !string.IsNullOrWhiteSpace(TopicName))
             {
-                Program P = StartProgram(ServiceBusConnectionString, TopicName);
+                Program P = StartProgram(FullyQualifiedNamespace, TopicName);
                 P.PresentMenu().GetAwaiter().GetResult();
             }
             else
             {
-                Console.WriteLine("Specify -Connectionstring and -TopicName to execute the example.");
-                Console.ReadKey();
+                Console.Error.WriteLine("Set SERVICEBUS_FULLY_QUALIFIED_NAMESPACE (example.servicebus.windows.net) and SERVICEBUS_TOPIC, or specify -FullyQualifiedNamespace and -TopicName.");
+                Environment.ExitCode = 1;
             }
         }
 
@@ -75,7 +88,7 @@ namespace BasicSendReceiveTutorialWithFilters
             Console.WriteLine("Choose an action:");
             Console.WriteLine("[1] Remove the default filters which accept all messages. DO THIS ALWAYS FIRST.");
             Console.WriteLine("[2] Create your own filters. DO THIS SECOND.");
-            Console.WriteLine("[3] Remove your own filters. OPTIONAL");
+            Console.WriteLine("[3] Remove only filters created by this running process. OPTIONAL");
             Console.WriteLine("[4] Send messages.");
             Console.WriteLine("[5] Receive messages.\n");
 
@@ -105,8 +118,7 @@ namespace BasicSendReceiveTutorialWithFilters
                     await Receive();
                     break;
                 default:
-                    Console.WriteLine("Unknown command, press enter to exit");
-                    Console.ReadLine();
+                    Console.WriteLine("Exiting.");
                     break;
             }
         }
@@ -115,7 +127,7 @@ namespace BasicSendReceiveTutorialWithFilters
         {
             SendReceive sr = new SendReceive
             {
-                ServiceBusConnectionString = ServiceBusConnectionString,
+                FullyQualifiedNamespace = FullyQualifiedNamespace,
                 TopicName = TopicName,
                 Subscriptions = Subscriptions,
                 Store = Store,
@@ -131,14 +143,14 @@ namespace BasicSendReceiveTutorialWithFilters
         {
             SendReceive sr = new SendReceive
             {
-                ServiceBusConnectionString = ServiceBusConnectionString,
+                FullyQualifiedNamespace = FullyQualifiedNamespace,
                 TopicName = TopicName,
                 Subscriptions = Subscriptions,
                 Store = Store,
                 NrOfMessagesPerStore = NrOfMessagesPerStore
             };
            
-            Console.WriteLine("\nReceiveing messages. Press any key to exit once all messages have been received. Alternatively press \"M\" to get to the menu\n");
+            Console.WriteLine("\nReceiving until the subscriptions are idle, with a two-minute deadline. After receiving, press M for the menu or another key to exit.\n");
 
             await sr.Receive();
 
@@ -157,96 +169,70 @@ namespace BasicSendReceiveTutorialWithFilters
         {
             Console.WriteLine($"Starting to remove default filters.");
 
-            try
+            var client = new ServiceBusAdministrationClient(FullyQualifiedNamespace, new DefaultAzureCredential());
+            foreach (var subscription in Subscriptions)
             {
-                var client = new ServiceBusAdministrationClient(ServiceBusConnectionString);
-                foreach (var subscription in Subscriptions)
-                {
-                    await client.DeleteRuleAsync(TopicName, subscription, CreateRuleOptions.DefaultRuleName);
-                    Console.WriteLine($"Default filter for {subscription} has been removed.");
-                }
-
-                Console.WriteLine("All default Rules have been removed.\n");
+                await client.DeleteRuleAsync(TopicName, subscription, CreateRuleOptions.DefaultRuleName);
+                Console.WriteLine($"Default filter for {subscription} has been removed.");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-
+            Console.WriteLine("All default rules have been removed.\n");
             await PresentMenu();
         }
 
         private async Task CreateCustomFilters()
         {
-            try
+            var client = new ServiceBusAdministrationClient(FullyQualifiedNamespace, new DefaultAzureCredential());
+            for (int i = 0; i < Subscriptions.Length; i++)
             {
-                for (int i = 0; i < Subscriptions.Length; i++)
+                string[] filters = SubscriptionFilters[Subscriptions[i]];
+                for (int filterIndex = 0; filterIndex < filters.Length; filterIndex++)
                 {
-                    var client = new ServiceBusAdministrationClient(ServiceBusConnectionString);
-                    string[] filters = SubscriptionFilters[Subscriptions[i]];
-                    if (filters[0] != "")
-                    {
-                        int count = 0;
-                        foreach (var myFilter in filters)
-                        {
-                            count++;
-
-                            string action = SubscriptionAction[Subscriptions[i]];
-                            if (action != "")
-                            {
-                                await client.CreateRuleAsync(TopicName, Subscriptions[i], new CreateRuleOptions
-                                {
-                                    Filter = new SqlRuleFilter(myFilter),
-                                    Action = new SqlRuleAction(action),
-                                    Name = $"MyRule{count}"
-                                });
-                            }
-                            else
-                            {
-                                await client.CreateRuleAsync(TopicName, Subscriptions[i], new CreateRuleOptions
-                                {
-                                    Filter = new SqlRuleFilter(myFilter),
-                                    Name = $"MyRule{count}"
-                                });
-                            }
-                        }
-                    }
-
-                    Console.WriteLine($"Filters and actions for {Subscriptions[i]} have been created.");
+                    if (string.IsNullOrEmpty(filters[filterIndex]))
+                        continue;
+                    string name = $"{RulePrefix}-{CreatedRules.Count}-{filterIndex}";
+                    string action = SubscriptionAction[Subscriptions[i]];
+                    var options = new CreateRuleOptions(name, new SqlRuleFilter(filters[filterIndex]));
+                    if (filterIndex == 0 && !string.IsNullOrEmpty(action))
+                        options.Action = new SqlRuleAction(action);
+                    Console.WriteLine($"Creating rule {TopicName}/{Subscriptions[i]}/{name}. If creation fails, inspect this exact name before retrying.");
+                    await client.CreateRuleAsync(TopicName, Subscriptions[i], options);
+                    CreatedRules.Add((Subscriptions[i], name));
+                    Console.WriteLine($"Created rule {name}.");
                 }
-
-                Console.WriteLine("All filters and actions have been created.\n");
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex.ToString());
-            }
-
+            Console.WriteLine("All filters and actions have been created.\n");
             await PresentMenu();
         }
 
         private async Task CleanUpCustomFilters()
         {
-            foreach (var subscription in Subscriptions)
+            var client = new ServiceBusAdministrationClient(FullyQualifiedNamespace, new DefaultAzureCredential());
+            await CleanupRulesAsync(CreatedRules,
+                owned => client.DeleteRuleAsync(TopicName, owned.Subscription, owned.Rule));
+            Console.WriteLine("All rules recorded as created by this process have been removed. Other rules were not changed.\n");
+            await PresentMenu();
+        }
+
+        internal static async Task CleanupRulesAsync(List<(string Subscription, string Rule)> createdRules,
+            Func<(string Subscription, string Rule), Task> delete)
+        {
+            var failures = new List<Exception>();
+            foreach (var owned in createdRules.ToArray())
             {
                 try
                 {
-                    var client = new ServiceBusAdministrationClient(ServiceBusConnectionString);
-                    IAsyncEnumerator<RuleProperties> rules = client.GetRulesAsync(TopicName, subscription).GetAsyncEnumerator();
-                    while (await rules.MoveNextAsync())
-                    {
-                        await client.DeleteRuleAsync(TopicName, subscription, rules.Current.Name);
-                        Console.WriteLine($"Rule {rules.Current.Name} has been removed.");
-                    }
+                    await delete(owned);
+                    createdRules.Remove(owned);
+                    Console.WriteLine($"Removed this run's rule {owned.Subscription}/{owned.Rule}.");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.ToString());
+                    Console.Error.WriteLine($"Could not delete {owned.Subscription}/{owned.Rule}: {ex.Message}");
+                    failures.Add(ex);
                 }
             }
-            Console.WriteLine("All default filters have been removed.\n");
-
-            await PresentMenu();
+            if (failures.Count != 0)
+                throw new AggregateException("Some owned rules remain; inspect the reported names.", failures);
         }
     }
 }

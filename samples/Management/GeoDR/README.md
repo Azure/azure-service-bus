@@ -1,74 +1,101 @@
-# Azure Service Bus Geo-disaster recovery
+# Metadata-only Geo-disaster recovery
 
-To learn more about Azure Service Bus, please visit our [marketing page](https://azure.microsoft.com/en-us/services/service-bus/).
+These .NET 10 examples use `Azure.ResourceManager.ServiceBus` 1.2.0 and
+`Azure.Identity` 1.21.0. They cover **existing metadata-only Geo-DR deployments**,
+not message replication. Prefer [managed Geo-Replication](https://learn.microsoft.com/azure/service-bus-messaging/service-bus-geo-replication)
+for new, eligible Premium DR designs. Neither feature is arbitrary active/active
+application federation.
 
-To learn more about our Geo-DR feature in general please follow [this](https://docs.microsoft.com/azure/service-bus-messaging/service-bus-geo-dr) link.
+Choose the [separate alias](SBGeoDR2/SBGeoDR2) or
+[existing namespace-name alias](SBGeoDR2/SBGeoDR_existing_namespace_name) variant.
+Both compile the same management implementation; only the alias setup differs.
 
-This sample shows how to: 
+## Prerequisites and configuration
 
-1. Achieve Geo-DR for an Service Bus namespace. 
-2. Create a namespace with live metadata replication between two customer chosen regions
+Install the .NET 10 SDK and sign in with `az login`. `DefaultAzureCredential`
+also supports managed identity or the standard `AZURE_TENANT_ID`,
+`AZURE_CLIENT_ID` and `AZURE_CLIENT_SECRET` environment variables for a service
+principal. No ADAL or secrets in `App.config` are required.
 
-This sample consists of three parts:
+Use disposable **Premium** namespaces in different regions, with an empty
+secondary. Your identity needs management-plane permissions for the namespace
+and disaster-recovery operations, for example Contributor scoped to the test
+resource group. Owner and data-plane message permissions are not required merely
+to run these management operations.
 
-1. The main scenario showing management (Setup, failover, remove pairing) of new or existing namespaces sample can be found [here](https://github.com/Azure/azure-service-bus/tree/master/samples/DotNet/Microsoft.ServiceBus.Messaging/GeoDR/SBGeoDR2/SBGeoDR2)
-2. The scenario in which you want to use an existing namespace name as alias can be found [here](https://github.com/Azure/azure-service-bus/tree/master/samples/DotNet/Microsoft.ServiceBus.Messaging/GeoDR/SBGeoDR2/SBGeoDR_existing_namespace_name). Make sure to thoroughly look through the comments as this diverges slightly from the main scenario. Examine both, App.config and Program.cs. ***Note:*** If you do not failover but just do break pairing, there is no need to execute delete alias as namespace name and alias are the same. If you do failover you would need to delete the alias if you would want to use the namespace outside of a DR setup.
-3. A sample on how to access the alias connection string which can be found [here](https://github.com/Azure/azure-service-bus/tree/master/samples/DotNet/Microsoft.ServiceBus.Messaging/GeoDR/TestGeoDR/ConsoleApp1).
+Existing namespaces must also meet the
+[metadata Geo-DR pairing prerequisites](https://learn.microsoft.com/azure/service-bus-messaging/service-bus-geo-dr),
+including compatible partitioning settings and matching partition counts.
+Do not assume any two Premium namespaces can be paired; verify their actual
+configuration before `pair`.
 
-## Getting Started
-### Prerequisites
+Application recovery requires separate preparation. Microsoft Entra data-role
+assignments are not replicated: grant the application's required Sender and/or
+Receiver roles on the secondary, and configure its firewall, private endpoints
+and DNS for the application's network. Test access to both namespaces before
+failover and the alias endpoint after failover. Management Contributor access
+or a successful `status` command does not prove messaging authorization,
+network reachability or application recovery.
 
-In order to get started using the sample (as it uses the Service Bus management libraries), you must authenticate with Azure Active Directory (AAD). This requires you to authenticate as a Service Principal, which provides access to your Azure resources. 
-To obtain a service principal please do the following steps:
+Set these environment variables in PowerShell:
 
-1. Go to the Azure Portal and select Azure Active Directory in the left menu.
-2. Create a new Application under App registrations / + New application registration.
-	1. The application should be of type Web app / API.
-	2. You can provide any URL for your application as sign on URL.
-	3. Navigate to your newly created application
-3. Application or AppId is the client Id. Note it down as you will need it for the sample.
-4. Select keys and create a new key. Note down the Value as you won't be able to access it later.
-5. Go back to the root Azure Active Directory and select properties.
-	1. Note down the Directory ID as this is your TenantId.
-6. You must have ‘Owner’ permissions under Role for the resource group that you wish to run the sample on. Regardless if you want to use an existing namespace or create a new one, make sure to add the newly created application as owner under Access Control (IAM).
+```powershell
+$env:AZURE_SUBSCRIPTION_ID = "<subscription-guid>"
+$env:SERVICEBUS_RESOURCE_GROUP = "<existing-test-resource-group>"
+$env:SERVICEBUS_PRIMARY_NAMESPACE = "<primary-name>"
+$env:SERVICEBUS_SECONDARY_NAMESPACE = "<secondary-name>"
+$env:SERVICEBUS_ALIAS = "<alias-name>"
+```
 
-For more information on creating a Service Principal, refer to the following articles:
+Only `create-namespaces` also needs `SERVICEBUS_PRIMARY_LOCATION` and
+`SERVICEBUS_SECONDARY_LOCATION` (for example `southcentralus` and `northcentralus`).
+That command creates two billable Premium namespaces and refuses to overwrite
+either existing namespace. It does not create a resource group. To pair existing
+namespaces, skip it.
 
-*	[Use the Azure Portal to create Active Directory application and service principal that can access resources](https://docs.microsoft.com/azure/azure-resource-manager/resource-group-create-service-principal-portal)
-*	[Use Azure PowerShell to create a service principal to access resources](https://docs.microsoft.com/azure/azure-resource-manager/resource-group-authenticate-service-principal)
-*	[Use Azure CLI to create a service principal to access resources](https://docs.microsoft.com/azure/azure-resource-manager/resource-group-authenticate-service-principal-cli)
+## Run one operation at a time
 
-<!-- The above articles helps you to obtain an AppId (ClientId), TenantId, and ClientSecret (Authentication Key), all of which are required to authenticate the management libraries.  Finally, when creating your Active Directory application, if you do not have a sign-on URL to input in the create step, simply input any URL format string e.g. https://contoso.org/exampleapp -->
+From either project directory:
 
-### Required NuGet packages
+```powershell
+dotnet build
+dotnet run -- --help
+dotnet run -- --self-test
+dotnet run -- status
+# Each command below changes Azure. Run only the specific intended operation.
+dotnet run -- create-namespaces --confirm-alias $env:SERVICEBUS_ALIAS
+dotnet run -- pair --confirm-alias $env:SERVICEBUS_ALIAS
+```
 
-1.	Microsoft.Azure.Management.ServiceBus
-2.	Microsoft.IdentityModel.Clients.ActiveDirectory - used to authenticate with AAD
+Create test queues/topics on the primary separately, then inspect `status` and
+pending metadata replication before using the alias endpoint with a
+[supported messaging client](https://learn.microsoft.com/azure/service-bus-messaging/service-bus-dotnet-get-started-with-queues).
 
-### Running the sample
+Other explicit commands are `failover`, `break-pairing`,
+`delete-primary-alias`, and `delete-secondary-alias`. Every mutation requires
+`--confirm-alias` with the exact configured alias. No command automatically
+fails over, deletes namespaces or prints access keys.
 
-1.	Please use Visual Studio 2017
-2.	Make sure all assemblies are in place.
-2.	Populate the regarding values in the App.config.
-3.	Build the solution.
-4.	Make sure to execute on Screen option A before any other option.
+**Failover is disruptive and one-way for the pairing.** It is sent to the
+secondary; the program reports request acceptance, not an assumed completion
+after a fixed delay. Inspect `status` and verify the alias endpoint before
+resuming applications. Metadata-only Geo-DR does **not** copy messages: messages
+remaining in the old primary need a separate recovery plan.
 
-The Geo DR actions could be
+Break pairing before deleting a primary alias. Delete the secondary alias only
+when the post-failover recovery plan permits it. If the alias matches the original
+namespace name, breaking pairing without failover does not require deleting that
+alias; the namespace-name variant rejects `delete-primary-alias`. After failover,
+delete the alias before reusing that namespace outside the pairing.
 
-*	CreatePairing
-For creating a paired region. After this, you should see metadata (i.e. Queues, Topics and Subscriptions replicated to the secondary namespace).
+`status` reads the primary and secondary independently, with a two-minute budget
+for each, and reports failure after observing both outcomes. The two offline
+`--self-test` cases cover a failed or timed-out primary without Azure calls.
+Mutating commands have a 15-minute client deadline. Timeout is not rollback: an accepted
+Azure operation may continue, and partially created namespaces can remain
+billable. Check the portal before retrying. Resource deletion is deliberately a
+separate manual step.
 
-*	FailOver
-Simulating a failover. After this action, the secondary namespace becomes the primary
-
-*	BreakPairing
-For breaking the pairing between a primary and secondary namespace
-
-*	DeleteAlias
-For deleting an alias, that contains information about the primary-secondary pairing
-
-*	GetConnectionStrings
-In a Geo DR enabled namespace, the Service Bus should be accessed only via the alias. This is because, the alias can point to either the primary Service Bus or the failed over Service Bus. This way, the user does not have to adjust the connection strings in his/her apps to point to a different Service Bus in the case of a failover.    
-The way to get the alias connection string is shown in a seperate console app which you can also use to test your newly geo paired namespaces. It can be found [here](https://github.com/Azure/azure-service-bus/tree/master/samples/DotNet/Microsoft.ServiceBus.Messaging/GeoDR/TestGeoDR).
-   
-***Note:*** The AAD access data for the GeoDR sample must also be used for the Test sample.
+Read the [metadata-only Geo-DR guidance](https://learn.microsoft.com/azure/service-bus-messaging/service-bus-geo-dr)
+before making any changes. Local builds and help output do not validate pairing,
+replication or failover in Azure.

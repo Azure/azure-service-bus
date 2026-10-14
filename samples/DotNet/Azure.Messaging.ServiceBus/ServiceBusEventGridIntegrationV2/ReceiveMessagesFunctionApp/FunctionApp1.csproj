@@ -1,14 +1,14 @@
-<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Azure.Functions.Sdk/1.0.1">
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
-    <AzureFunctionsVersion>v4</AzureFunctionsVersion>
-    <_FunctionsSkipCleanOutput>true</_FunctionsSkipCleanOutput>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.18.2" />
-    <PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid" Version="3.4.2" />
-    <PackageReference Include="Microsoft.NET.Sdk.Functions" Version="4.5.0" />
-    <PackageReference Include="System.Memory.Data" Version="9.0.0" />
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.21.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker" Version="2.52.0" />
+    <PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.EventGrid" Version="3.6.0" />
   </ItemGroup>
   <ItemGroup>
     <None Update="host.json">
