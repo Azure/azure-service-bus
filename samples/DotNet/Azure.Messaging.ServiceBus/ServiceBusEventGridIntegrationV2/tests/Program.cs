@@ -1,9 +1,10 @@
 using Azure.Messaging.EventGrid;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Azure.Functions.Worker;
-using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Logging;
 using ReceiveMessagesFunctionApp;
 using System.Reflection;
+using System.Text.Json;
 
 const string eventType = "Microsoft.ServiceBus.ActiveMessagesAvailableWithNoListeners";
 EventGridEvent Event(string type = eventType, string data = """{"topicName":"orders","subscriptionName":"processor"}""") =>
@@ -18,20 +19,35 @@ Check(method.GetCustomAttribute<FunctionAttribute>()?.Name == "EventGridTriggerF
 Check(method.GetParameters()[0].GetCustomAttribute<EventGridTriggerAttribute>() is not null, "Missing isolated Event Grid binding.");
 
 var client = new RecordingClient();
-var function = new ReceiveMessagesOnEvent(client, NullLogger<ReceiveMessagesOnEvent>.Instance);
-await function.Run(Event(), CancellationToken.None);
+var context = new RecordingContext();
+var logger = new RecordingLogger();
+var function = new ReceiveMessagesOnEvent(client, logger);
+var inputEvent = Event();
+await function.Run(inputEvent, context, CancellationToken.None);
 Check(client.Topic == "orders" && client.Subscription == "processor", "Incorrect event routing.");
 Check(client.Receiver.Completed.SequenceEqual(new[] { "one", "two" }), "Each message must be completed after processing.");
 Check(client.Receiver.Disposed, "Receiver must be disposed.");
+var eventLine = logger.Lines.Single(line => line.Contains(" received event "));
+using (var envelope = JsonDocument.Parse(eventLine[(eventLine.IndexOf(" received event ") + " received event ".Length)..]))
+{
+    Check(eventLine.Contains(context.InvocationId) && envelope.RootElement.GetProperty("id").GetString() == inputEvent.Id,
+        "The event envelope must carry the actual event and invocation IDs.");
+    Check(envelope.RootElement.GetProperty("data").GetProperty("topicName").GetString() == "orders",
+        "The event envelope must preserve the trigger payload.");
+}
+Check(logger.Lines.Count(line => line.Contains(" completed message ")) == 2, "Each accepted settlement must be logged.");
+Check(logger.Lines.Last() == $"Event Grid invocation {context.InvocationId} completed event {inputEvent.Id}.",
+    "Event completion must follow receiver disposal.");
 
 client = new RecordingClient();
-function = new ReceiveMessagesOnEvent(client, NullLogger<ReceiveMessagesOnEvent>.Instance);
-await function.Run(Event("Microsoft.Storage.BlobCreated"), CancellationToken.None);
+logger = new RecordingLogger();
+function = new ReceiveMessagesOnEvent(client, logger);
+await function.Run(Event("Microsoft.Storage.BlobCreated"), context, CancellationToken.None);
 Check(client.Topic is null, "Unsupported events must not access Service Bus.");
 
 try
 {
-    await function.Run(Event(data: "{}"), CancellationToken.None);
+    await function.Run(Event(data: "{}"), context, CancellationToken.None);
     throw new Exception("Expected missing topic/subscription to fail.");
 }
 catch (InvalidOperationException)
@@ -40,12 +56,12 @@ catch (InvalidOperationException)
 }
 
 client = new RecordingClient();
-function = new ReceiveMessagesOnEvent(client, NullLogger<ReceiveMessagesOnEvent>.Instance);
+function = new ReceiveMessagesOnEvent(client, new RecordingLogger());
 using var cancelled = new CancellationTokenSource();
 cancelled.Cancel();
 try
 {
-    await function.Run(Event(), cancelled.Token);
+    await function.Run(Event(), context, cancelled.Token);
     throw new Exception("Expected cancellation.");
 }
 catch (OperationCanceledException)
@@ -55,14 +71,14 @@ catch (OperationCanceledException)
 
 client = new RecordingClient();
 client.Receiver.Empty = true;
-function = new ReceiveMessagesOnEvent(client, NullLogger<ReceiveMessagesOnEvent>.Instance);
-await function.Run(Event(), CancellationToken.None);
+function = new ReceiveMessagesOnEvent(client, new RecordingLogger());
+await function.Run(Event(), context, CancellationToken.None);
 Check(client.Receiver.Disposed && client.Receiver.Completed.Count == 0, "Empty batch must dispose without settlement.");
 
 client = new RecordingClient();
 client.Receiver.ReceiveFailure = new InvalidOperationException("receive failed");
-function = new ReceiveMessagesOnEvent(client, NullLogger<ReceiveMessagesOnEvent>.Instance);
-try { await function.Run(Event(), CancellationToken.None); throw new Exception("Expected receive failure."); }
+function = new ReceiveMessagesOnEvent(client, new RecordingLogger());
+try { await function.Run(Event(), context, CancellationToken.None); throw new Exception("Expected receive failure."); }
 catch (InvalidOperationException e) when (ReferenceEquals(e, client.Receiver.ReceiveFailure))
 {
     Check(client.Receiver.Disposed && client.Receiver.Completed.Count == 0, "Failed receive must dispose without settlement.");
@@ -70,23 +86,61 @@ catch (InvalidOperationException e) when (ReferenceEquals(e, client.Receiver.Rec
 
 client = new RecordingClient();
 client.Receiver.FailSecondCompletion = true;
-function = new ReceiveMessagesOnEvent(client, NullLogger<ReceiveMessagesOnEvent>.Instance);
-try { await function.Run(Event(), CancellationToken.None); throw new Exception("Expected settlement failure."); }
+logger = new RecordingLogger();
+function = new ReceiveMessagesOnEvent(client, logger);
+try { await function.Run(Event(), context, CancellationToken.None); throw new Exception("Expected settlement failure."); }
 catch (InvalidOperationException e) when (e.Message == "second completion failed")
 {
     Check(client.Receiver.Disposed && client.Receiver.Completed.SequenceEqual(new[] { "one" }), "Failed settlement must not report completion.");
+    Check(logger.Lines.Count(line => line.Contains(" completed message ")) == 1 &&
+        !logger.Lines.Any(line => line.Contains(" completed event ")), "Failed settlement must not log message or event success.");
 }
 
 using var midBatch = new CancellationTokenSource();
 client = new RecordingClient();
 client.Receiver.CancelAfterFirst = midBatch;
-function = new ReceiveMessagesOnEvent(client, NullLogger<ReceiveMessagesOnEvent>.Instance);
-try { await function.Run(Event(), midBatch.Token); throw new Exception("Expected mid-batch cancellation."); }
+function = new ReceiveMessagesOnEvent(client, new RecordingLogger());
+try { await function.Run(Event(), context, midBatch.Token); throw new Exception("Expected mid-batch cancellation."); }
 catch (OperationCanceledException)
 {
     Check(client.Receiver.Disposed && client.Receiver.Completed.SequenceEqual(new[] { "one" }), "Cancellation must not complete remaining messages.");
 }
-Console.WriteLine("PASS: 9 offline Function cases, including empty/failed receive, settlement failure and mid-batch cancellation. No Azure calls.");
+client = new RecordingClient();
+client.Receiver.DisposeFailure = new InvalidOperationException("dispose failed");
+logger = new RecordingLogger();
+function = new ReceiveMessagesOnEvent(client, logger);
+try { await function.Run(Event(), context, CancellationToken.None); throw new Exception("Expected disposal failure."); }
+catch (InvalidOperationException e) when (ReferenceEquals(e, client.Receiver.DisposeFailure))
+{
+    Check(!logger.Lines.Any(line => line.Contains(" completed event ")), "Failed disposal must not log event completion.");
+}
+Console.WriteLine("PASS: 10 offline Function cases, including correlated event/settlement logs and disposal failure. No Azure calls.");
+
+sealed class RecordingLogger : ILogger<ReceiveMessagesOnEvent>
+{
+    public List<string> Lines { get; } = [];
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+    public bool IsEnabled(LogLevel logLevel) => true;
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+        Func<TState, Exception?, string> formatter) => Lines.Add(formatter(state, exception));
+}
+
+sealed class RecordingContext : FunctionContext
+{
+    public override string InvocationId => "11111111-2222-3333-4444-555555555555";
+    public override string FunctionId => throw new NotSupportedException();
+    public override TraceContext TraceContext => throw new NotSupportedException();
+    public override BindingContext BindingContext => throw new NotSupportedException();
+    public override RetryContext RetryContext => throw new NotSupportedException();
+    public override IServiceProvider InstanceServices
+    {
+        get => throw new NotSupportedException();
+        set => throw new NotSupportedException();
+    }
+    public override FunctionDefinition FunctionDefinition => throw new NotSupportedException();
+    public override IDictionary<object, object> Items { get; set; } = new Dictionary<object, object>();
+    public override IInvocationFeatures Features => throw new NotSupportedException();
+}
 
 sealed class RecordingClient : ServiceBusClient
 {
@@ -107,6 +161,7 @@ sealed class RecordingReceiver : ServiceBusReceiver
     public bool Disposed { get; private set; }
     public bool Empty { get; set; }
     public Exception? ReceiveFailure { get; set; }
+    public Exception? DisposeFailure { get; set; }
     public bool FailSecondCompletion { get; set; }
     public CancellationTokenSource? CancelAfterFirst { get; set; }
     public override Task<IReadOnlyList<ServiceBusReceivedMessage>> ReceiveMessagesAsync(
@@ -133,6 +188,7 @@ sealed class RecordingReceiver : ServiceBusReceiver
     public override ValueTask DisposeAsync()
     {
         Disposed = true;
+        if (DisposeFailure is not null) throw DisposeFailure;
         return ValueTask.CompletedTask;
     }
 }

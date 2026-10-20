@@ -9,13 +9,18 @@ use the [Service Bus trigger](https://learn.microsoft.com/azure/azure-functions/
 Processing must be idempotent: Event Grid notifications and Service Bus messages
 can be delivered more than once.
 
+Logs include the Event Grid envelope and Function invocation ID. Message
+completion is logged after settlement succeeds, and event completion follows
+receiver disposal. The Functions host reports the invocation outcome separately.
+
 ## Build and run locally
 
 Run `dotnet run --project .\tests\FunctionSmokeTests.csproj` from this folder
-for nine offline checks covering the isolated binding, real Event Grid payload
+for ten offline checks covering the isolated binding, real Event Grid payload
 decoding, mocked receive/settlement/disposal, malformed/unsupported events and
 cancellation, empty batches, receive/settlement failures and mid-batch
-cancellation. These do not start a Functions host or connect to Azure.
+cancellation, correlated logs and disposal failure. These do not start a
+Functions host or connect to Azure.
 
 Install the .NET 10 SDK, Azure Functions Core Tools v4 and Azurite. Use a
 disposable **Premium** Service Bus namespace with a topic and subscription
