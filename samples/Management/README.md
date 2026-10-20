@@ -38,7 +38,9 @@ operations; do not grant Owner merely to run a sample.
 `-WhatIf` on these creation operations performs no Azure calls. Remove it only
 after reviewing the target and creation cost; the scripts request confirmation.
 Creation refuses to overwrite an existing namespace. Native CLI failures stop
-the script. Partial resources may remain after any failure, and cleanup is
+the script. `SubscriptionFilterPS.ps1` stops on Az cmdlet errors, including
+nonterminating errors, and reports creation only after all commands succeed.
+Partial resources may remain after any failure, and cleanup is
 deliberately manual. Scripts neither print access keys nor delete resource groups.
 
 The two Geo-DR scripts require existing Premium namespaces and a **separate

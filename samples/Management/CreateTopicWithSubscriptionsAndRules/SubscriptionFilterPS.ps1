@@ -9,7 +9,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 if (-not $PSCmdlet.ShouldProcess("$SubscriptionId/$ResourceGroupName/$NamespaceName", "Create Standard namespace, topic '$TopicName' and three filtered subscriptions")) { return }
-$scope = @{ SubscriptionId = $SubscriptionId; ResourceGroupName = $ResourceGroupName }
+# Az module functions do not inherit this script's error preference.
+$scope = @{ SubscriptionId = $SubscriptionId; ResourceGroupName = $ResourceGroupName; ErrorAction = 'Stop' }
 if (Get-AzServiceBusNamespace @scope | Where-Object Name -EQ $NamespaceName) {
     throw 'Refusing to overwrite an existing namespace. Choose a new disposable namespace name.'
 }
