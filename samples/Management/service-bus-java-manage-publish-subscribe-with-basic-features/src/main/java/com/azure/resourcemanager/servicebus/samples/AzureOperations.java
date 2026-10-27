@@ -33,6 +33,7 @@ import com.azure.resourcemanager.servicebus.models.ServiceBusNamespace;
 import com.azure.resourcemanager.servicebus.models.ServiceBusSubscription;
 import com.azure.resourcemanager.servicebus.models.Topic;
 import java.io.PrintStream;
+import java.net.URI;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -201,7 +202,20 @@ final class AzureOperations implements ServiceBusPublishSubscribeBasic.Operation
     }
 
     private ServiceBusClientBuilder messagingBuilder() {
-        return new ServiceBusClientBuilder().credential(namespace.fqdn(), credential)
+        return messagingBuilder(namespace.fqdn(), credential);
+    }
+
+    static ServiceBusClientBuilder messagingBuilder(String namespaceEndpoint, TokenCredential credential) {
+        require(namespaceEndpoint != null, "Namespace endpoint is missing");
+        // The management SDK's fqdn() returns serviceBusEndpoint, an HTTPS URL, not an AMQP hostname.
+        URI endpoint = URI.create(namespaceEndpoint);
+        require("https".equalsIgnoreCase(endpoint.getScheme()) && endpoint.getHost() != null
+            && (endpoint.getPort() == -1 || endpoint.getPort() == 443)
+            && endpoint.getRawUserInfo() == null && endpoint.getRawQuery() == null
+            && endpoint.getRawFragment() == null
+            && ("".equals(endpoint.getRawPath()) || "/".equals(endpoint.getRawPath())),
+            "Expected an HTTPS namespace endpoint without credentials, query, or entity path");
+        return new ServiceBusClientBuilder().credential(endpoint.getHost(), credential)
             .retryOptions(new AmqpRetryOptions().setMaxRetries(2).setTryTimeout(Duration.ofSeconds(15)));
     }
 

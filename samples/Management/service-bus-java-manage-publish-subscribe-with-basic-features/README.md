@@ -45,6 +45,8 @@ Every live run performs the same management and messaging sequence:
    the explicitly named `RootManageSharedAccessKey` keys and regenerate its secondary
    key. This optional administrative demonstration never prints or uses those keys.
 5. Send `Hello World` with a unique message ID using Microsoft Entra authentication.
+   The management SDK returns an HTTPS namespace endpoint; the sample passes only
+   its hostname (without scheme, port, or trailing slash) to the messaging clients.
    Receive the matching ID and body from **each** subscription in PeekLock mode,
    explicitly complete both copies, and check a five-second quiet window for unexpected
    additional deliveries. Success requires readback and settlement, not just a send.
