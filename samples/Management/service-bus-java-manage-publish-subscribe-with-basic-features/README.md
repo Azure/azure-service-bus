@@ -61,11 +61,12 @@ Every live run performs the same management and messaging sequence:
 | `--sku=standard` | Standard namespace (default). Basic does not support topics and is rejected. |
 | `--sku=premium` | Premium namespace, one messaging unit; higher charges may apply. |
 | `--rotate-keys` | Opt into key retrieval and secondary-key rotation on this run's namespace only. |
+| `--access-checkpoint=<new-absolute-directory>` | Optionally coordinate namespace-only access setup and role removal with an external administrator; each acknowledgment wait is limited to five minutes. Does not grant permission to change roles. |
 
 ## Build and offline checks
 
 Use **JDK 11 or later** and **Maven 3.9.16 or later**. This project compiles with
-`--release 11` and is exercised on Microsoft OpenJDK 11.0.28. The dedicated management
+`--release 11` and is exercised on Microsoft OpenJDK 11.0.32. The dedicated management
 SDKs publish Java 8 base bytecode; Java 11 is this sample's minimum, not a claim that
 the management SDK requires a newer JDK. In an IDE, import `pom.xml`, choose JDK 11+
 for both the project and Maven runner, and use the main class below.
@@ -120,15 +121,18 @@ Use a dedicated, approved test subscription. Before running, arrange:
   in that subscription, such as Contributor in an isolated lab subscription or a
   tailored role. `--rotate-keys` additionally needs key-list and regeneration actions.
 - **Azure Service Bus Data Sender** and **Azure Service Bus Data Receiver** permissions
-  inherited by the newly created namespace. ARM Contributor alone does not grant
-  messaging access. Have an administrator arrange the appropriate scope beforehand;
-  this program never creates or changes role assignments. Role propagation can take time.
+  inherited by the newly created namespace, or an administrator coordinating new
+  namespace-only assignments through the optional checkpoint below. ARM Owner or
+  Contributor alone does not grant messaging access. This program never creates
+  or changes role assignments. Role propagation can take time.
 - Access to Azure Resource Manager/identity HTTPS endpoints and Service Bus AMQP
   over TLS (port 5671). This sample targets public Azure.
 
 Do not enable SDK/HTTP body, header, or verbose diagnostic logging for this sample.
-`AZURE_LOG_LEVEL` must be unset or `none` (including a Java system-property override).
-The sample rejects other levels before client creation, disables management HTTP
+`AZURE_LOG_LEVEL` must be unset or `5` (including a Java system-property override).
+The pinned Azure Core SDK maps `5` to `NOT_SET`, which disables its default logger;
+`none`, `off`, and blank values are not supported. The sample rejects other values
+before client creation, disables management HTTP
 logging, and prints only operation names and exception types on failure. Do not add
 a logging backend that overrides this policy or share credential-bearing traces.
 
@@ -138,7 +142,7 @@ In PowerShell, replace the UUID placeholders with your approved configuration:
 $env:AZURE_TENANT_ID = "<tenant-uuid>"
 $env:AZURE_SUBSCRIPTION_ID = "<subscription-uuid>"
 $env:AZURE_REGION = "westus" # Optional; defaults to westus
-$env:AZURE_LOG_LEVEL = "none"
+$env:AZURE_LOG_LEVEL = "5"
 
 # Choose one entry point, not both (each invocation creates a separate environment).
 mvn compile exec:java "-Dexec.args=--run"
@@ -156,6 +160,47 @@ and `1` for an operation or cleanup failure. `exec:java` turns a nonzero applica
 exit into a failed Maven invocation (Maven's process exit code need not equal the
 application's exit code).
 
+### Optional namespace-only access coordination
+
+The default remains noninteractive and requires inherited data access. If that
+access is unavailable, an approved external coordinator can use
+`--access-checkpoint=<new-absolute-directory>` with either entry point, SKU, and key
+option. The directory must not exist; its parent must already exist. The sample
+creates it before initializing Azure clients and refuses to reuse it. Use a private
+local directory writable only by the sample operator and trusted coordinator.
+
+Immediately after confirmed namespace creation, the sample writes `access-request.txt`
+and waits up to five minutes for `access-ready.txt`. Each file contains exactly the
+new namespace resource ID followed by one LF, in UTF-8 without a BOM. The coordinator
+must verify the run's confirmed creation and ownership, arrange and read back only
+the approved new namespace-scoped Data Sender and Data Receiver assignments for the
+sample identity, then atomically publish the matching acknowledgment. Do not use a
+fixed delay as permission evidence or grant subscription-wide access to avoid this
+checkpoint. An acknowledgment permits the messaging attempt; it is not proof of
+broker authorization or successful delivery. The existing bounded send/readback/
+settlement operations still determine success, including propagation failures.
+
+Before namespace deletion, or before resource-group cleanup following a failure,
+the sample writes `cleanup-request.txt` and waits up to five minutes for
+`roles-removed.txt`, with the same exact namespace-ID content. The coordinator must
+remove and confirm absence of only the assignments it created for this run before
+publishing that acknowledgment. Never alter existing assignments. A failed or timed-out
+cleanup checkpoint blocks both namespace and resource-group deletion and is not
+retried by the `finally` cleanup path. If creation was never confirmed and no access
+request was attempted, no access/role-removal handshake is needed.
+
+The sample publishes each request using a same-directory hard link after writing
+all bytes to a temporary file, without replacing an existing request. The checkpoint
+filesystem must support hard links; unsupported publication fails closed.
+
+Publish acknowledgments by writing a temporary file in the same directory and
+atomically renaming it to the expected filename; partial, mismatched, or non-regular
+files fail closed. Keep the directory as evidence until cleanup is independently
+confirmed. A coordinator failure or terminated JVM can leave billable resources
+and assignments; inspect the exact IDs and obtain approved recovery authority.
+The checkpoint itself grants no Azure or key-rotation permission, makes no role
+changes, and does not expand the original scenarios.
+
 ## Ownership, limits, and cleanup failures
 
 The program does not accept existing resource names and never deliberately adopts
@@ -170,12 +215,21 @@ different ownership tag. Use an isolated test environment: Azure create/update A
 are not a cross-client locking protocol. Do not have other actors mutate these
 resources concurrently, even if names or tags are known.
 
-Each management operation (including paginated listing and creation polling) has
-a five-minute deadline. Each deletion request plus absence polling has a ten-minute
-deadline; HTTP attempts have 10-second connect and 30-second response/read/write
-timeouts, with at most two retries. Messaging operations have 60-second deadlines
-and AMQP attempts use 15 seconds with two retries. These are per-operation deadlines,
-not a single whole-program timer.
+Management operations (including paginated listing and creation polling) use
+five-minute reactive waits; deletion plus absence polling uses ten-minute reactive
+waits. HTTP attempts have 10-second connect and 30-second response/read/write
+timeouts, with at most two retries. Send and each subscription's
+receive/settlement/quiet-window sequence use 60-second waits; AMQP attempts use
+15 seconds with two retries. The receive subscription stays open through settlement
+and the five-second duplicate quiet window.
+
+These settings are not hard whole-process or credential-subprocess deadlines.
+In particular, Azure Identity 1.18.7's CLI credential reads process output before its
+timed process wait; synchronous credential work can outlive a reactive wait.
+An external runner's root-process return alone does not prove that descendants,
+SDK background activity or service-side work have stopped.
+The optional access and role-removal acknowledgment waits are each limited to
+five minutes.
 
 Cleanup runs after failure as well as success. A delete request being accepted is
 not completion: `Confirmed deleted` is printed only after absence is observed.

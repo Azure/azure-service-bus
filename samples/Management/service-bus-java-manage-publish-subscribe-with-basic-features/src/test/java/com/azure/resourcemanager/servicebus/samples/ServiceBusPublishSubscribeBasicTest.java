@@ -3,6 +3,7 @@
 
 package com.azure.resourcemanager.servicebus.samples;
 
+import com.azure.core.util.logging.LogLevel;
 import com.azure.resourcemanager.samples.Utils;
 import com.azure.resourcemanager.servicebus.models.AuthorizationKeys;
 import java.io.ByteArrayOutputStream;
@@ -84,13 +85,75 @@ public class ServiceBusPublishSubscribeBasicTest {
 
     @Test
     public void configuredSdkLoggingIsRejectedBeforeClientInitialization() {
-        Map<String, String> env = environment();
-        env.put("AZURE_LOG_LEVEL", "verbose");
-        assertEquals(2, ServiceBusPublishSubscribeBasic.execute(new String[] {"--run"}, env,
-            log, log, config -> { throw new AssertionError("Client initialization"); }));
+        for (String level : Arrays.asList("none", "off", "", " ", "verbose", "error", "4", "5 ")) {
+            Map<String, String> env = environment();
+            env.put("AZURE_LOG_LEVEL", level);
+            assertEquals(2, ServiceBusPublishSubscribeBasic.execute(new String[] {"--run"}, env,
+                log, log, config -> { throw new AssertionError("Client initialization"); }));
+        }
         assertThrows(IllegalArgumentException.class,
             () -> ServiceBusPublishSubscribeBasic.Configuration.requireLoggingDisabled("error"));
-        ServiceBusPublishSubscribeBasic.Configuration.requireLoggingDisabled("none");
+        ServiceBusPublishSubscribeBasic.Configuration.requireLoggingDisabled("5");
+        assertThrows(IllegalArgumentException.class,
+            () -> ServiceBusPublishSubscribeBasic.Configuration.requireLoggingDisabled("none"));
+        assertTrue(output.toString().contains("Leave AZURE_LOG_LEVEL unset or set it to 5"));
+    }
+
+    @Test
+    public void disabledLoggingValuesMatchThePinnedSdk() {
+        for (String level : Arrays.asList(null, "5")) {
+            ServiceBusPublishSubscribeBasic.Configuration.requireLoggingDisabled(level);
+            assertEquals(LogLevel.NOT_SET, LogLevel.fromString(level));
+            Map<String, String> env = environment();
+            if (level != null) {
+                env.put("AZURE_LOG_LEVEL", level);
+            }
+            ServiceBusPublishSubscribeBasic.Configuration.parse(new String[] {"--run"}, env);
+        }
+    }
+
+    @Test
+    public void unsupportedLoggingPropertyIsRejectedBeforeClientInitialization() {
+        String previous = System.getProperty("AZURE_LOG_LEVEL");
+        try {
+            for (String level : Arrays.asList("none", "off", "", " ", "verbose", "error", "4", "5 ")) {
+                System.setProperty("AZURE_LOG_LEVEL", level);
+                assertEquals(2, ServiceBusPublishSubscribeBasic.execute(new String[] {"--run"}, environment(),
+                    log, log, config -> { throw new AssertionError("Client initialization"); }));
+            }
+        } finally {
+            if (previous == null) {
+                System.clearProperty("AZURE_LOG_LEVEL");
+            } else {
+                System.setProperty("AZURE_LOG_LEVEL", previous);
+            }
+        }
+    }
+
+    @Test
+    public void optionalCheckpointPreservesSkuAndRotationConfiguration() {
+        Path directory = Path.of(System.getProperty("java.io.tmpdir")).toAbsolutePath().resolve("x03-checkpoint");
+        for (String sku : Arrays.asList("standard", "premium")) {
+            ServiceBusPublishSubscribeBasic.Configuration config = ServiceBusPublishSubscribeBasic.Configuration.parse(
+                new String[] {"--run", "--sku=" + sku, "--rotate-keys", "--access-checkpoint=" + directory},
+                environment());
+            assertEquals(directory, config.accessCheckpoint);
+            assertEquals("premium".equals(sku), config.premium);
+            assertTrue(config.rotateKeys);
+        }
+        assertNull(ServiceBusPublishSubscribeBasic.Configuration.parse(new String[] {"--run"}, environment())
+            .accessCheckpoint);
+    }
+
+    @Test
+    public void invalidCheckpointOptionNeverConstructsClients() {
+        for (String[] args : new String[][] {
+            {"--run", "--access-checkpoint"}, {"--run", "--access-checkpoint="},
+            {"--run", "--access-checkpoint=relative"},
+            {"--run", "--access-checkpoint=relative", "--access-checkpoint=relative"}}) {
+            assertEquals(2, ServiceBusPublishSubscribeBasic.execute(args, environment(), log, log,
+                config -> { throw new AssertionError("Client initialization"); }));
+        }
     }
 
     @Test

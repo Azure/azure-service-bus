@@ -4,6 +4,10 @@
 package com.azure.resourcemanager.servicebus.samples;
 
 import com.azure.core.http.HttpClient;
+import com.azure.core.management.AzureEnvironment;
+import com.azure.core.management.profile.AzureProfile;
+import com.azure.core.util.logging.ClientLogger;
+import com.azure.core.util.logging.LogLevel;
 import com.azure.identity.DefaultAzureCredentialBuilder;
 import com.azure.json.JsonProviders;
 import com.azure.json.JsonReader;
@@ -69,7 +73,22 @@ public class PackagedJarIT {
         }
     }
 
+    @Test
+    public void packagedDisabledLoggerInitializesAzureProfileWithoutNetwork() throws Exception {
+        String classpath = jar + File.pathSeparator + Path.of("target", "test-classes");
+        for (String level : Arrays.asList(null, "5")) {
+            assertTrue(runWithLogging(0, level, "-cp", classpath, LoggingProbe.class.getName())
+                .contains("Disabled SDK logger initialized; no credentials or network operations performed."));
+        }
+        assertTrue(runWithLogging(0, null, "-DAZURE_LOG_LEVEL=5", "-cp", classpath, LoggingProbe.class.getName())
+            .contains("Disabled SDK logger initialized; no credentials or network operations performed."));
+    }
+
     private static String run(int expected, String... args) throws Exception {
+        return runWithLogging(expected, null, args);
+    }
+
+    private static String runWithLogging(int expected, String level, String... args) throws Exception {
         List<String> command = new ArrayList<>();
         command.add(Path.of(System.getProperty("java.home"), "bin", "java").toString());
         command.addAll(Arrays.asList(args));
@@ -77,6 +96,9 @@ public class PackagedJarIT {
         builder.environment().remove("AZURE_TENANT_ID");
         builder.environment().remove("AZURE_SUBSCRIPTION_ID");
         builder.environment().remove("AZURE_LOG_LEVEL");
+        if (level != null) {
+            builder.environment().put("AZURE_LOG_LEVEL", level);
+        }
         Process process = builder.start();
         try {
             assertTrue("Packaged JVM must finish without network", process.waitFor(30, TimeUnit.SECONDS));
@@ -85,6 +107,23 @@ public class PackagedJarIT {
             return text;
         } finally {
             process.destroyForcibly();
+        }
+    }
+
+    public static final class LoggingProbe {
+        public static void main(String[] args) {
+            ServiceBusPublishSubscribeBasic.Configuration.requireLoggingDisabled(System.getenv("AZURE_LOG_LEVEL"));
+            ServiceBusPublishSubscribeBasic.Configuration.requireLoggingDisabled(System.getProperty("AZURE_LOG_LEVEL"));
+            new AzureProfile("11111111-2222-3333-4444-555555555555",
+                "11111111-2222-3333-4444-555555555555", AzureEnvironment.AZURE);
+            ClientLogger logger = new ClientLogger(LoggingProbe.class);
+            for (LogLevel level : Arrays.asList(LogLevel.ERROR, LogLevel.WARNING,
+                LogLevel.INFORMATIONAL, LogLevel.VERBOSE)) {
+                if (logger.canLogAtLevel(level)) {
+                    throw new IllegalStateException("SDK diagnostic logging is enabled");
+                }
+            }
+            System.out.println("Disabled SDK logger initialized; no credentials or network operations performed.");
         }
     }
 

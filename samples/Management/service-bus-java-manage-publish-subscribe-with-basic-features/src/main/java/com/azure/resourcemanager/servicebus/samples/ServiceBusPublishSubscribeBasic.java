@@ -5,6 +5,7 @@ package com.azure.resourcemanager.servicebus.samples;
 
 import com.azure.resourcemanager.samples.Utils;
 import java.io.PrintStream;
+import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -29,10 +30,11 @@ public final class ServiceBusPublishSubscribeBasic {
     static int execute(String[] args, Map<String, String> environment, PrintStream out,
         PrintStream err, Function<Configuration, Operations> factory) {
         if (args.length == 1 && "--help".equals(args[0])) {
-            out.println("Usage: --run [--sku=standard|premium] [--rotate-keys]");
+            out.println("Usage: --run [--sku=standard|premium] [--rotate-keys] [--access-checkpoint=<new-absolute-directory>]");
             out.println("Requires AZURE_TENANT_ID and AZURE_SUBSCRIPTION_ID; optional AZURE_REGION (westus).");
             out.println("Creates billable resources, sends/receives messages, then deletes owned resources.");
             out.println("--rotate-keys also reads the default namespace keys and rotates its secondary key.");
+            out.println("--access-checkpoint optionally waits for external access setup and role-removal acknowledgments.");
             return 0;
         }
         final Configuration configuration;
@@ -41,7 +43,7 @@ public final class ServiceBusPublishSubscribeBasic {
             Configuration.requireLoggingDisabled(System.getProperty("AZURE_LOG_LEVEL"));
         } catch (IllegalArgumentException failure) {
             err.println("Configuration error: use --help, explicitly pass --run, and set valid "
-                + "AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID UUIDs. Disable AZURE_LOG_LEVEL logging. "
+                + "AZURE_TENANT_ID / AZURE_SUBSCRIPTION_ID UUIDs. Leave AZURE_LOG_LEVEL unset or set it to 5. "
                 + "No Azure operations started.");
             return 2;
         }
@@ -109,25 +111,35 @@ public final class ServiceBusPublishSubscribeBasic {
         final String region;
         final boolean premium;
         final boolean rotateKeys;
+        final Path accessCheckpoint;
 
         private Configuration(String tenantId, String subscriptionId, String region, boolean premium,
-            boolean rotateKeys) {
+            boolean rotateKeys, Path accessCheckpoint) {
             this.tenantId = tenantId;
             this.subscriptionId = subscriptionId;
             this.region = region;
             this.premium = premium;
             this.rotateKeys = rotateKeys;
+            this.accessCheckpoint = accessCheckpoint;
         }
 
         static Configuration parse(String[] args, Map<String, String> environment) {
             boolean run = false;
             boolean premium = false;
             boolean rotateKeys = false;
+            Path accessCheckpoint = null;
             Set<String> seen = new HashSet<>();
             for (String arg : args) {
                 String name = arg.split("=", 2)[0];
                 if (!seen.add(name)) {
                     throw new IllegalArgumentException("Duplicate option");
+                }
+                if ("--access-checkpoint".equals(name) && arg.startsWith("--access-checkpoint=")) {
+                    accessCheckpoint = Path.of(arg.substring("--access-checkpoint=".length()));
+                    if (!accessCheckpoint.isAbsolute()) {
+                        throw new IllegalArgumentException("Checkpoint directory must be absolute");
+                    }
+                    continue;
                 }
                 switch (arg) {
                     case "--run": run = true; break;
@@ -147,12 +159,12 @@ public final class ServiceBusPublishSubscribeBasic {
             if (!region.matches("[a-z][a-z0-9]{1,40}")) {
                 throw new IllegalArgumentException("Invalid region");
             }
-            return new Configuration(tenant, subscription, region, premium, rotateKeys);
+            return new Configuration(tenant, subscription, region, premium, rotateKeys, accessCheckpoint);
         }
 
         static void requireLoggingDisabled(String level) {
-            if (level != null && !level.isBlank() && !"none".equalsIgnoreCase(level)) {
-                throw new IllegalArgumentException("SDK logging must be disabled");
+            if (level != null && !"5".equals(level)) {
+                throw new IllegalArgumentException("SDK logging must be unset or 5 (NOT_SET)");
             }
         }
 

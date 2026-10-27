@@ -19,13 +19,17 @@ import java.io.PrintStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -36,13 +40,24 @@ import static org.junit.Assert.*;
  * No bearer-token policy, socket transport, or credential acquisition is installed.
  */
 public class AzureOperationsTest {
+    @Rule public TemporaryFolder temporary = new TemporaryFolder();
     private final ByteArrayOutputStream output = new ByteArrayOutputStream();
     private final PrintStream log = new PrintStream(output);
     private final ArmTransport transport = new ArmTransport();
 
     private AzureOperations operations(boolean premium) {
+        return operations(premium, null);
+    }
+
+    private AzureOperations operations(boolean premium, Path checkpoint) {
+        List<String> args = new ArrayList<>();
+        args.add("--run");
+        args.add("--sku=" + (premium ? "premium" : "standard"));
+        if (checkpoint != null) {
+            args.add("--access-checkpoint=" + checkpoint);
+        }
         ServiceBusPublishSubscribeBasic.Configuration config = ServiceBusPublishSubscribeBasic.Configuration.parse(
-            new String[] {"--run", "--sku=" + (premium ? "premium" : "standard")},
+            args.toArray(new String[0]),
             ServiceBusPublishSubscribeBasicTest.environment());
         AzureProfile profile = new AzureProfile(config.tenantId, config.subscriptionId, AzureEnvironment.AZURE);
         HttpPipeline pipeline = new HttpPipelineBuilder().httpClient(transport).build();
@@ -126,6 +141,50 @@ public class AzureOperationsTest {
             new com.azure.core.exception.HttpResponseException("not found",
                 new Response(new HttpRequest(com.azure.core.http.HttpMethod.GET,
                     "https://management.azure.com/test"), 404, "{}")))).block());
+    }
+
+    @Test
+    public void accessCheckpointFailureBlocksEntitiesButAllowsConfirmedRoleRemovalCleanup() throws Exception {
+        Path directory = temporary.getRoot().toPath().resolve("access");
+        AzureOperations operations = operations(false, directory);
+        operations.createResourceGroup();
+        Files.writeString(directory.resolve("access-ready.txt"), "wrong-namespace\n");
+        assertThrows(IllegalStateException.class, operations::createNamespace);
+        assertFalse(transport.requests.stream().anyMatch(request -> request.contains("/topics")));
+        assertFalse(transport.requests.stream().anyMatch(request -> request.startsWith("DELETE ")));
+        String namespace = Files.readString(directory.resolve("access-request.txt"));
+        assertTrue(namespace.contains("/providers/Microsoft.ServiceBus/namespaces/sb-pubsub-"));
+        Files.writeString(directory.resolve("roles-removed.txt"), namespace);
+        operations.cleanupResourceGroup();
+        assertTrue(Files.exists(directory.resolve("cleanup-request.txt")));
+        assertTrue(transport.stored.isEmpty());
+    }
+
+    @Test
+    public void failedRoleRemovalBlocksNamespaceDeleteAndFinallyGroupDelete() throws Exception {
+        Path directory = temporary.getRoot().toPath().resolve("cleanup");
+        AzureOperations operations = operations(false, directory);
+        operations.createResourceGroup();
+        Files.writeString(directory.resolve("access-ready.txt"), "wrong-namespace\n");
+        assertThrows(IllegalStateException.class, operations::createNamespace);
+        Files.writeString(directory.resolve("roles-removed.txt"), "wrong-namespace\n");
+        assertThrows(IllegalStateException.class, operations::deleteNamespace);
+        assertThrows(IllegalStateException.class, operations::cleanupResourceGroup);
+        assertFalse(transport.requests.stream().anyMatch(request -> request.startsWith("DELETE ")));
+        assertFalse(transport.stored.isEmpty());
+    }
+
+    @Test
+    public void namespaceCollisionNeedsNoAccessOrRoleRemovalAcknowledgment() throws Exception {
+        Path directory = temporary.getRoot().toPath().resolve("collision");
+        AzureOperations operations = operations(false, directory);
+        operations.createResourceGroup();
+        transport.nameAvailable = false;
+        assertThrows(IllegalStateException.class, operations::createNamespace);
+        operations.cleanupResourceGroup();
+        assertFalse(Files.exists(directory.resolve("access-request.txt")));
+        assertFalse(Files.exists(directory.resolve("cleanup-request.txt")));
+        assertTrue(transport.stored.isEmpty());
     }
 
     private static final class ArmTransport implements HttpClient {

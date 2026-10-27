@@ -40,10 +40,12 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.Sinks;
 
 import static com.azure.resourcemanager.servicebus.samples.ResourceLifecycle.await;
 import static com.azure.resourcemanager.servicebus.samples.ResourceLifecycle.require;
@@ -64,12 +66,14 @@ final class AzureOperations implements ServiceBusPublishSubscribeBasic.Operation
     private final String namespaceName = "sb-pubsub-" + runId.replace("-", "");
     private final String namespaceId;
     private final ResourceLifecycle lifecycle;
+    private final AccessCheckpoint accessCheckpoint;
     private ServiceBusNamespace namespace;
     private Topic topic;
 
     AzureOperations(ServiceBusPublishSubscribeBasic.Configuration configuration) {
         this.configuration = configuration;
         this.out = System.out;
+        accessCheckpoint = new AccessCheckpoint(configuration.accessCheckpoint, out);
         AzureProfile profile = new AzureProfile(configuration.tenantId, configuration.subscriptionId,
             AzureEnvironment.AZURE);
         credential = new DefaultAzureCredentialBuilder().tenantId(configuration.tenantId).build();
@@ -97,6 +101,7 @@ final class AzureOperations implements ServiceBusPublishSubscribeBasic.Operation
         this.serviceBus = serviceBus;
         this.credential = credential;
         this.out = out;
+        accessCheckpoint = new AccessCheckpoint(configuration.accessCheckpoint, out);
         String groupId = "/subscriptions/" + configuration.subscriptionId + "/resourceGroups/" + groupName;
         namespaceId = groupId + "/providers/Microsoft.ServiceBus/namespaces/" + namespaceName;
         lifecycle = new ResourceLifecycle(groupId, runId, out);
@@ -134,7 +139,9 @@ final class AzureOperations implements ServiceBusPublishSubscribeBasic.Operation
         require(expectedSku.name().equals(namespace.sku().name())
             && expectedSku.tier().equals(namespace.sku().tier())
             && expectedSku.capacity() == namespace.sku().capacity(), "Namespace SKU readback mismatch");
+        require(namespaceId.equalsIgnoreCase(namespace.id()), "Namespace ID readback mismatch");
         out.println("Created namespace: " + namespace.id() + " SKU=" + namespace.sku().name());
+        accessCheckpoint.awaitAccess(namespaceId);
     }
 
     @Override
@@ -247,12 +254,19 @@ final class AzureOperations implements ServiceBusPublishSubscribeBasic.Operation
     static void verifyDelivery(Supplier<Flux<ServiceBusReceivedMessage>> receive,
         Function<ServiceBusReceivedMessage, Mono<Void>> complete, String messageId,
         Duration timeout, Duration quietPeriod) {
-        ServiceBusReceivedMessage message = receive.get().next().block(timeout);
-        verifyMessage(message, messageId);
-        complete.apply(message).block(timeout);
-        List<ServiceBusReceivedMessage> extras = receive.get().take(quietPeriod).take(1)
-            .collectList().block(timeout);
-        require(extras != null && extras.isEmpty(), "Unexpected additional message on subscription");
+        AtomicBoolean received = new AtomicBoolean();
+        Sinks.One<Void> settled = Sinks.one();
+        // Keep the receive link alive until settlement and the duplicate quiet window finish.
+        receive.get().concatMap(message -> {
+            require(received.compareAndSet(false, true), "Unexpected additional message on subscription");
+            verifyMessage(message, messageId);
+            return complete.apply(message)
+                .doOnSuccess(ignored -> settled.emitEmpty(Sinks.EmitFailureHandler.FAIL_FAST))
+                .thenReturn(message);
+        }, 1).concatWith(Mono.error(new IllegalStateException("Receive ended before the quiet window completed")))
+            .takeUntilOther(settled.asMono().then(Mono.delay(quietPeriod)))
+            .then().block(timeout);
+        require(received.get(), "Message readback mismatch");
     }
 
     @Override
@@ -273,6 +287,7 @@ final class AzureOperations implements ServiceBusPublishSubscribeBasic.Operation
 
     @Override
     public void deleteNamespace() {
+        accessCheckpoint.beforeCleanup();
         requireNamespaceOwnership();
         ResourceLifecycle.deleteAndConfirm(namespaceId, () -> serviceBus.namespaces().deleteByIdAsync(namespaceId),
             () -> present(serviceBus.namespaces().getByIdAsync(namespaceId)), ResourceLifecycle.CLEANUP_TIMEOUT,
@@ -288,6 +303,7 @@ final class AzureOperations implements ServiceBusPublishSubscribeBasic.Operation
 
     @Override
     public void cleanupResourceGroup() {
+        accessCheckpoint.beforeCleanup();
         lifecycle.cleanup(this::readOwner, () -> verifyGroupContents()
             .then(resources.resourceGroups().deleteByNameAsync(groupName)),
             () -> present(resources.resourceGroups().getByNameAsync(groupName)), ResourceLifecycle.CLEANUP_TIMEOUT);

@@ -59,12 +59,15 @@ public class DefaultRuleTest {
         ServiceBusReceivedMessage message = message("Hello World", "id");
         AtomicInteger receives = new AtomicInteger();
         AtomicInteger completions = new AtomicInteger();
-        AzureOperations.verifyDelivery(() -> receives.incrementAndGet() == 1 ? Flux.just(message) : Flux.never(),
+        AzureOperations.verifyDelivery(() -> {
+            receives.incrementAndGet();
+            return Flux.concat(Flux.just(message), Flux.never());
+        },
             received -> { completions.incrementAndGet(); return Mono.empty(); }, "id",
             Duration.ofSeconds(1), Duration.ofMillis(10));
         assertEquals(1, completions.get());
-        assertEquals(2, receives.get());
-        assertThrows(IllegalStateException.class, () -> AzureOperations.verifyDelivery(() -> Flux.just(message),
+        assertEquals(1, receives.get());
+        assertThrows(IllegalStateException.class, () -> AzureOperations.verifyDelivery(() -> Flux.just(message, message),
             received -> Mono.empty(), "id", Duration.ofSeconds(1), Duration.ofMillis(10)));
     }
 
