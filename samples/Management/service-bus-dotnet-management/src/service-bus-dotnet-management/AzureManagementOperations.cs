@@ -20,6 +20,8 @@ public sealed class AzureManagementOperations : IManagementOperations
     private readonly ResourceGroupResource group;
     private readonly ServiceBusNamespaceResource serviceBusNamespace;
     private readonly ServiceBusAdministrationClient administration;
+    private bool namespaceCreated;
+    private bool namespaceDeletionConfirmed;
 
     public AzureManagementOperations(AppOptions options, ResourcePlan plan, TokenCredential credential,
         ArmClientOptions? armOptions = null, ServiceBusAdministrationClientOptions? administrationOptions = null)
@@ -67,11 +69,16 @@ public sealed class AzureManagementOperations : IManagementOperations
                 RequireTag(createdGroup.Data.Tags);
                 break;
             case ResourceKind.Namespace:
+                namespaceCreated = false;
+                namespaceDeletionConfirmed = false;
                 var namespaceOperation = await group.GetServiceBusNamespaces().CreateOrUpdateAsync(
                     WaitUntil.Started, plan.NamespaceName, options.CreateNamespaceData(plan.RunId), cancellationToken);
                 RequireCreated(namespaceOperation.GetRawResponse());
                 var createdNamespace = (await namespaceOperation.WaitForCompletionAsync(cancellationToken)).Value;
                 RequireTag(createdNamespace.Data.Tags);
+                if (!createdNamespace.Id.Equals(serviceBusNamespace.Id))
+                    throw new SampleException("Created namespace ID does not match this run; no ownership was granted.");
+                namespaceCreated = true;
                 break;
             case ResourceKind.Queue:
                 var queue = await administration.CreateQueueAsync(plan.QueueOptions(options), cancellationToken);
@@ -139,6 +146,8 @@ public sealed class AzureManagementOperations : IManagementOperations
 
     public async Task DeleteOwnedAsync(ResourceStep resource, CancellationToken cancellationToken)
     {
+        if (resource.Kind == ResourceKind.Namespace)
+            namespaceDeletionConfirmed = false;
         if (!await ExistsAsync(resource, cancellationToken))
             return; // A successful absence read confirms deletion; a failed read is never treated as absence.
         await VerifyAsync(resource, cancellationToken);
@@ -165,16 +174,30 @@ public sealed class AzureManagementOperations : IManagementOperations
                     throw new SampleException("Namespace cleanup refused: unexpected queues remain.");
                 await foreach (var _ in administration.GetTopicsAsync(cancellationToken))
                     throw new SampleException("Namespace cleanup refused: unexpected topics remain.");
-                await serviceBusNamespace.DeleteAsync(WaitUntil.Completed, cancellationToken);
+                var deletion = await serviceBusNamespace.DeleteAsync(WaitUntil.Completed, cancellationToken);
+                if (!deletion.HasCompleted)
+                    throw new SampleException("Namespace deletion has not completed.");
                 break;
             case ResourceKind.ResourceGroup:
-                await foreach (var _ in group.GetGenericResourcesAsync(cancellationToken: cancellationToken))
-                    throw new SampleException("Resource-group cleanup refused: unexpected resources remain.");
+                await foreach (var remaining in group.GetGenericResourcesAsync(cancellationToken: cancellationToken))
+                {
+                    // Reconcile only this instance's completed owned deletion, using a fresh exact-resource read.
+                    if (!namespaceDeletionConfirmed ||
+                        !remaining.Id.Equals(serviceBusNamespace.Id) ||
+                        !remaining.Data.ResourceType.Equals(ServiceBusNamespaceResource.ResourceType) ||
+                        !await NamespaceIsAbsentAsync(cancellationToken))
+                        throw new SampleException("Resource-group cleanup refused: unexpected resources remain.");
+                }
                 await group.DeleteAsync(WaitUntil.Completed, cancellationToken: cancellationToken);
                 break;
         }
-        if (await ExistsAsync(resource, cancellationToken))
+        var absent = resource.Kind == ResourceKind.Namespace
+            ? await NamespaceIsAbsentAsync(cancellationToken)
+            : !await ExistsAsync(resource, cancellationToken);
+        if (!absent)
             throw new SampleException("Deletion is not confirmed by an absence read; resource remains in the inventory.");
+        if (resource.Kind == ResourceKind.Namespace)
+            namespaceDeletionConfirmed = namespaceCreated;
     }
 
     public async Task VerifyRoutingAsync(CancellationToken cancellationToken)
@@ -201,6 +224,12 @@ public sealed class AzureManagementOperations : IManagementOperations
         nonmatching.ApplicationProperties["myproperty"] = "different";
         var missing = new ServiceBusMessage("missing property") { MessageId = $"{runId}-missing", TimeToLive = TimeSpan.FromMinutes(2) };
         return [matching, nonmatching, missing];
+    }
+
+    private async Task<bool> NamespaceIsAbsentAsync(CancellationToken cancellationToken)
+    {
+        var exists = await group.GetServiceBusNamespaces().ExistsAsync(plan.NamespaceName, cancellationToken);
+        return !exists.Value && exists.GetRawResponse().Status == 404;
     }
 
     private async Task<List<RuleProperties>> GetRulesAsync(CancellationToken cancellationToken)

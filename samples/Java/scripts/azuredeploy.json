@@ -84,14 +84,13 @@
               "resources": [
 				{
 					"apiVersion": "[variables('apiVersion')]",
-					"name": "$Default",
+					"name": "AllOrdersRule",
 					"type": "rules",
 					"dependsOn": [ "allorders" ],
 					"properties": {
 						"filterType": "SqlFilter",
 						"sqlFilter": {
-						   "sqlExpression": "1=1",
-						   "requiresPreprocessing": false
+						   "sqlExpression": "1=1"
 						}
 					}
 				}
@@ -106,14 +105,13 @@
               "resources": [
 					{
 					"apiVersion": "[variables('apiVersion')]",
-					"name": "$Default",
+					"name": "ColorBlueSize10OrdersRule",
 					"type": "rules",
 					"dependsOn": [ "ColorBlueSize10Orders" ],
 					"properties": {
 					"filterType": "SqlFilter",
 					   "sqlFilter": {
-						  "sqlExpression": "color = 'blue' AND quantity = 10",
-						  "requiresPreprocessing": false
+						  "sqlExpression": "color = 'blue' AND quantity = 10"
 					   }
 					}
 				 }
@@ -128,14 +126,13 @@
               "resources": [
 					{
 						"apiVersion": "[variables('apiVersion')]",
-						"name": "$Default",
+						"name": "ColorRedRule",
 						"type": "rules",
 						"dependsOn": [ "ColorRed" ],
 						"properties": {
 						"filterType": "SqlFilter",
 						   "sqlFilter": {
-							  "sqlExpression": "color = 'red'",
-							  "requiresPreprocessing": false
+							  "sqlExpression": "color = 'red'"
 						   },
 						   "action": {
 							  "sqlExpression": "SET quantity = quantity / 2; REMOVE priority; SET sys.CorrelationId = 'low';"
@@ -153,7 +150,7 @@
               "resources": [
 				{
 					"apiVersion": "[variables('apiVersion')]",
-					"name": "$Default",
+					"name": "HighPriorityOrdersRule",
 					"type": "rules",
 					"dependsOn": [ "HighPriorityOrders" ],
 					"properties": {

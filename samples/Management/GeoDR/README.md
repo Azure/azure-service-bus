@@ -28,6 +28,7 @@ Existing namespaces must also meet the
 including compatible partitioning settings and matching partition counts.
 Do not assume any two Premium namespaces can be paired; verify their actual
 configuration before `pair`.
+`pair` also rejects a secondary with an alternate name left by an earlier pairing.
 
 Application recovery requires separate preparation. Microsoft Entra data-role
 assignments are not replicated: grant the application's required Sender and/or

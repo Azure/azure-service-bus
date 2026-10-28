@@ -223,7 +223,8 @@ public static class ServiceBusManagementSample
                 try
                 {
                     record.State = "deleting";
-                    Checkpoint();
+                    if (!Checkpoint())
+                        throw new SampleException("Cleanup refused: deletion inventory could not be persisted.");
                     await operations.DeleteOwnedAsync(record.Resource, cleanupDeadline.Token);
                     record.State = "deleted";
                 }

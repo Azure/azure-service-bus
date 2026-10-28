@@ -365,7 +365,7 @@ foreach (var minutes in new[] { -1, 1, 3 })
         Check.Equal(2, handler.Requests.Count);
     });
 
-AsyncTest("inventory write failure stops provisioning, retains evidence and still cleans confirmed resources", async () =>
+AsyncTest("inventory write failure stops provisioning and retains confirmed resources without deletion", async () =>
 {
     var fake = new FakeOperations();
     var report = await Fixtures.Run(fake, persist: snapshot =>
@@ -375,9 +375,54 @@ AsyncTest("inventory write failure stops provisioning, retains evidence and stil
     });
     Check.True(!report.Success);
     Check.Equal(3, fake.Created.Count);
-    Check.Equal(3, fake.Deleted.Count);
+    Check.Equal(0, fake.Deleted.Count);
+    Check.True(report.Resources.Where(record => record.Owned).All(record => record.State != "deleted"));
+    Check.Equal("cleanup-failed", report.Resources[2].State);
     Check.True(report.Failures.Any(failure => failure.StartsWith("Resource inventory write failed", StringComparison.Ordinal)));
 });
+AsyncTest("deletion inventory is persisted before every cleanup dispatch", async () =>
+{
+    var fake = new FakeOperations();
+    var deletionCheckpoints = new List<ResourceKind>();
+    var report = await Fixtures.Run(fake, persist: snapshot =>
+    {
+        if (snapshot.Resources.SingleOrDefault(record => record.State == "deleting") is { } deleting)
+        {
+            Check.Equal(fake.Deleted.Count, deletionCheckpoints.Count);
+            Check.True(!fake.Deleted.Contains(deleting.Resource.Kind));
+            deletionCheckpoints.Add(deleting.Resource.Kind);
+        }
+    });
+    Check.True(report.Success);
+    Check.True(deletionCheckpoints.SequenceEqual(Enum.GetValues<ResourceKind>().Reverse()));
+    Check.True(fake.Deleted.SequenceEqual(deletionCheckpoints));
+});
+foreach (var kind in Enum.GetValues<ResourceKind>())
+{
+    AsyncTest($"{kind} deleting inventory failure prevents that and all later deletion requests", async () =>
+    {
+        var fake = new FakeOperations();
+        var persistenceFailures = 0;
+        var report = await Fixtures.Run(fake, persist: snapshot =>
+        {
+            if (snapshot.Resources.Single(record => record.Resource.Kind == kind).State == "deleting")
+            {
+                persistenceFailures++;
+                throw new IOException("offline deletion write failure");
+            }
+        });
+        Check.True(!report.Success);
+        Check.Equal(1, persistenceFailures);
+        Check.Equal(5, fake.Created.Count);
+        Check.True(fake.Deleted.SequenceEqual(
+            Enum.GetValues<ResourceKind>().Reverse().TakeWhile(candidate => candidate != kind)));
+        var refused = report.Resources.Single(record => record.Resource.Kind == kind);
+        Check.Equal("cleanup-failed", refused.State);
+        Check.Equal("Cleanup refused: deletion inventory could not be persisted.", refused.Error);
+        Check.True(report.Failures.Any(failure =>
+            failure.StartsWith("Resource inventory write failed", StringComparison.Ordinal)));
+    });
+}
 AsyncTest("initial inventory failure makes zero resource calls", async () =>
 {
     var fake = new FakeOperations();
@@ -492,14 +537,204 @@ AsyncTest("actual adapter refuses recursive group deletion when an unexpected re
 {
     var options = Fixtures.Options();
     var plan = new ResourcePlan(options);
-    using var handler = new OfflineHandler(request => OfflineHandler.Json(HttpStatusCode.OK,
-        request.RequestUri!.AbsolutePath.EndsWith("/resources", StringComparison.Ordinal)
-            ? JsonSerializer.Serialize(new { value = new[] { new { id = $"{plan.Steps[0].Id}/providers/Microsoft.Storage/storageAccounts/foreign", name = "foreign", type = "Microsoft.Storage/storageAccounts" } } })
-            : Fixtures.ArmBody(plan, ResourceKind.ResourceGroup)));
+    var inventories = 0;
+    using var handler = new OfflineHandler(request =>
+    {
+        if (request.RequestUri!.AbsolutePath.Equals($"{plan.Steps[0].Id}/resources", StringComparison.OrdinalIgnoreCase))
+        {
+            inventories++;
+            return OfflineHandler.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new
+            {
+                value = new[] { new { id = $"{plan.Steps[0].Id}/providers/Microsoft.Storage/storageAccounts/foreign", name = "foreign", type = "Microsoft.Storage/storageAccounts" } }
+            }));
+        }
+        return OfflineHandler.Json(HttpStatusCode.OK, Fixtures.ArmBody(plan, ResourceKind.ResourceGroup));
+    });
     await Check.ThrowsAsync<SampleException>(() =>
         Fixtures.Azure(options, plan, handler, new OfflineCredential()).DeleteOwnedAsync(plan.Steps[0], CancellationToken.None));
     Check.True(handler.Requests.All(request => request.Method == "GET"));
+    Check.Equal(1, inventories);
 });
+AsyncTest("namespace inventory reconciliation accepts the captured exact owned deleted namespace scenario", async () =>
+{
+    var options = Fixtures.Options();
+    var plan = new ResourcePlan(options);
+    using var handler = new NamespaceCleanupHandler(plan);
+    var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+    await operations.CreateAsync(plan.Steps[1], CancellationToken.None);
+    await operations.DeleteOwnedAsync(plan.Steps[1], CancellationToken.None);
+    await operations.DeleteOwnedAsync(plan.Steps[0], CancellationToken.None);
+    Check.Equal(1, handler.NamespaceDeletes);
+    Check.Equal(1, handler.NamespaceDeletionPolls);
+    Check.Equal(1, handler.PostDeleteReads);
+    Check.Equal(1, handler.ResourceLists);
+    Check.Equal(1, handler.ReconciliationReads);
+    Check.Equal(1, handler.GroupDeletes);
+    Check.Equal(1, handler.GroupDeletionPolls);
+    Check.Equal(1, handler.GroupAbsenceReads);
+});
+foreach (var kind in new[] { ResourceKind.Queue, ResourceKind.Topic })
+    AsyncTest($"namespace cleanup still refuses a remaining {kind}", async () =>
+    {
+        var options = Fixtures.Options();
+        var plan = new ResourcePlan(options);
+        using var handler = new NamespaceCleanupHandler(plan) { UnexpectedEntityKind = kind };
+        var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+        await operations.CreateAsync(plan.Steps[1], CancellationToken.None);
+        var failure = await Check.ThrowsAsync<SampleException>(() => operations.DeleteOwnedAsync(plan.Steps[1], CancellationToken.None));
+        Check.Equal($"Namespace cleanup refused: unexpected {(kind == ResourceKind.Queue ? "queues" : "topics")} remain.", failure.Message);
+        Check.Equal(0, handler.NamespaceDeletes);
+        Check.Equal(0, handler.GroupDeletes);
+    });
+foreach (var variant in new[] { "foreign ID", "same prefix", "different group", "wrong type", "missing type" })
+    AsyncTest($"namespace inventory reconciliation refuses {variant}", async () =>
+    {
+        var options = Fixtures.Options();
+        var plan = new ResourcePlan(options);
+        using var handler = new NamespaceCleanupHandler(plan);
+        handler.Resources.Clear();
+        handler.Resources.Add(variant switch
+        {
+            "foreign ID" => ($"{plan.Steps[0].Id}/providers/Microsoft.Storage/storageAccounts/foreign", "Microsoft.Storage/storageAccounts"),
+            "same prefix" => ($"{plan.Steps[1].Id}-foreign", "Microsoft.ServiceBus/namespaces"),
+            "different group" => (plan.Steps[1].Id.Replace(plan.ResourceGroupName, $"{plan.ResourceGroupName}-foreign", StringComparison.Ordinal), "Microsoft.ServiceBus/namespaces"),
+            "wrong type" => (plan.Steps[1].Id, "Microsoft.Storage/storageAccounts"),
+            _ => (plan.Steps[1].Id, null)
+        });
+        var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+        await operations.CreateAsync(plan.Steps[1], CancellationToken.None);
+        await operations.DeleteOwnedAsync(plan.Steps[1], CancellationToken.None);
+        await Check.ThrowsAsync<SampleException>(() => operations.DeleteOwnedAsync(plan.Steps[0], CancellationToken.None));
+        Check.Equal(1, handler.ResourceLists);
+        Check.Equal(0, handler.ReconciliationReads);
+        Check.Equal(0, handler.GroupDeletes);
+    });
+foreach (var nextPage in new[] { false, true })
+    AsyncTest($"namespace inventory reconciliation refuses a foreign item on {(nextPage ? "the next page" : "the same page")}", async () =>
+    {
+        var options = Fixtures.Options();
+        var plan = new ResourcePlan(options);
+        using var handler = new NamespaceCleanupHandler(plan) { ForeignOnNextPage = nextPage };
+        if (!nextPage) handler.Resources.Add(($"{plan.Steps[1].Id}-foreign", "Microsoft.ServiceBus/namespaces"));
+        var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+        await operations.CreateAsync(plan.Steps[1], CancellationToken.None);
+        await operations.DeleteOwnedAsync(plan.Steps[1], CancellationToken.None);
+        await Check.ThrowsAsync<SampleException>(() => operations.DeleteOwnedAsync(plan.Steps[0], CancellationToken.None));
+        Check.Equal(nextPage ? 2 : 1, handler.ResourceLists);
+        Check.Equal(1, handler.ReconciliationReads);
+        Check.Equal(0, handler.GroupDeletes);
+    });
+foreach (var creation in new[] { "not attempted", "HTTP 200", "HTTP 202", "wrong ID", "wrong marker" })
+    AsyncTest($"namespace inventory reconciliation refuses unconfirmed creation: {creation}", async () =>
+    {
+        var options = Fixtures.Options();
+        var plan = new ResourcePlan(options);
+        using var handler = new NamespaceCleanupHandler(plan)
+        {
+            CreateStatus = creation == "HTTP 200" ? HttpStatusCode.OK :
+                creation == "HTTP 202" ? HttpStatusCode.Accepted : HttpStatusCode.Created,
+            WrongCreatedId = creation == "wrong ID",
+            WrongCreatedMarker = creation == "wrong marker"
+        };
+        var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+        if (creation != "not attempted")
+            await Check.ThrowsAsync<SampleException>(() => operations.CreateAsync(plan.Steps[1], CancellationToken.None));
+        await operations.DeleteOwnedAsync(plan.Steps[1], CancellationToken.None);
+        await Check.ThrowsAsync<SampleException>(() => operations.DeleteOwnedAsync(plan.Steps[0], CancellationToken.None));
+        Check.Equal(1, handler.ResourceLists);
+        Check.Equal(1, handler.PostDeleteReads);
+        Check.Equal(0, handler.ReconciliationReads);
+        Check.Equal(0, handler.GroupDeletes);
+    });
+AsyncTest("namespace inventory reconciliation refuses a namespace never deleted by this instance", async () =>
+{
+    var options = Fixtures.Options();
+    var plan = new ResourcePlan(options);
+    using var handler = new NamespaceCleanupHandler(plan);
+    var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+    await operations.CreateAsync(plan.Steps[1], CancellationToken.None);
+    await Check.ThrowsAsync<SampleException>(() => operations.DeleteOwnedAsync(plan.Steps[0], CancellationToken.None));
+    Check.Equal(0, handler.NamespaceDeletes);
+    Check.Equal(1, handler.ResourceLists);
+    Check.Equal(0, handler.ReconciliationReads);
+    Check.Equal(0, handler.GroupDeletes);
+});
+AsyncTest("namespace inventory reconciliation refuses in-flight and cancelled deletion", async () =>
+{
+    var options = Fixtures.Options();
+    var plan = new ResourcePlan(options);
+    using var handler = new NamespaceCleanupHandler(plan) { HoldNamespaceDeletion = true };
+    var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+    await operations.CreateAsync(plan.Steps[1], CancellationToken.None);
+    using var cancellation = new CancellationTokenSource();
+    var deletion = operations.DeleteOwnedAsync(plan.Steps[1], cancellation.Token);
+    try
+    {
+        await handler.PollStarted.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        Check.True(!deletion.IsCompleted);
+        await Check.ThrowsAsync<SampleException>(() => operations.DeleteOwnedAsync(plan.Steps[0], CancellationToken.None));
+    }
+    finally { cancellation.Cancel(); }
+    await Check.ThrowsAsync<OperationCanceledException>(() => deletion);
+    await Check.ThrowsAsync<SampleException>(() => operations.DeleteOwnedAsync(plan.Steps[0], CancellationToken.None));
+    Check.Equal(2, handler.ResourceLists);
+    Check.Equal(0, handler.ReconciliationReads);
+    Check.Equal(0, handler.GroupDeletes);
+});
+AsyncTest("namespace inventory reconciliation refuses failed deletion", async () =>
+{
+    var options = Fixtures.Options();
+    var plan = new ResourcePlan(options);
+    using var handler = new NamespaceCleanupHandler(plan) { DeleteCompletionStatus = HttpStatusCode.InternalServerError };
+    var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+    await operations.CreateAsync(plan.Steps[1], CancellationToken.None);
+    var failure = await Check.ThrowsAsync<RequestFailedException>(() => operations.DeleteOwnedAsync(plan.Steps[1], CancellationToken.None));
+    Check.Equal(500, failure.Status);
+    await Check.ThrowsAsync<SampleException>(() => operations.DeleteOwnedAsync(plan.Steps[0], CancellationToken.None));
+    Check.Equal(1, handler.ResourceLists);
+    Check.Equal(0, handler.PostDeleteReads);
+    Check.Equal(0, handler.ReconciliationReads);
+    Check.Equal(0, handler.GroupDeletes);
+});
+AsyncTest("namespace inventory reconciliation requires exact absence after completed deletion", async () =>
+{
+    var options = Fixtures.Options();
+    var plan = new ResourcePlan(options);
+    using var handler = new NamespaceCleanupHandler(plan) { PostDeleteStatus = HttpStatusCode.OK };
+    var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+    await operations.CreateAsync(plan.Steps[1], CancellationToken.None);
+    await Check.ThrowsAsync<SampleException>(() => operations.DeleteOwnedAsync(plan.Steps[1], CancellationToken.None));
+    await Check.ThrowsAsync<SampleException>(() => operations.DeleteOwnedAsync(plan.Steps[0], CancellationToken.None));
+    Check.Equal(1, handler.NamespaceDeletionPolls);
+    Check.Equal(1, handler.PostDeleteReads);
+    Check.Equal(1, handler.ResourceLists);
+    Check.Equal(0, handler.ReconciliationReads);
+    Check.Equal(0, handler.GroupDeletes);
+});
+foreach (var status in new[] { HttpStatusCode.OK, HttpStatusCode.Accepted, HttpStatusCode.NoContent,
+    HttpStatusCode.Forbidden, HttpStatusCode.TooManyRequests, HttpStatusCode.InternalServerError })
+    AsyncTest($"namespace inventory reconciliation refuses exact GET HTTP {(int)status}", async () =>
+    {
+        var options = Fixtures.Options();
+        var plan = new ResourcePlan(options);
+        using var handler = new NamespaceCleanupHandler(plan) { ReconciliationStatus = status };
+        var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+        await operations.CreateAsync(plan.Steps[1], CancellationToken.None);
+        await operations.DeleteOwnedAsync(plan.Steps[1], CancellationToken.None);
+        if (status == HttpStatusCode.OK)
+        {
+            var failure = await Check.ThrowsAsync<SampleException>(() => operations.DeleteOwnedAsync(plan.Steps[0], CancellationToken.None));
+            Check.Equal("Resource-group cleanup refused: unexpected resources remain.", failure.Message);
+        }
+        else
+        {
+            var requestFailure = await Check.ThrowsAsync<RequestFailedException>(() => operations.DeleteOwnedAsync(plan.Steps[0], CancellationToken.None));
+            Check.Equal((int)status, requestFailure.Status);
+        }
+        Check.Equal(1, handler.ResourceLists);
+        Check.Equal(1, handler.ReconciliationReads);
+        Check.Equal(0, handler.GroupDeletes);
+    });
 AsyncTest("actual group and namespace readback rejects a different location before cleanup", async () =>
 {
     var options = Fixtures.Options();
@@ -545,8 +780,15 @@ AsyncTest("actual ARM and administration clients share the selected credential w
     Check.True(credential.Scopes.Contains("https://servicebus.azure.net/.default"));
 });
 
+var selected = args.Length == 0 ? tests : tests.Where(test => args.Contains(test.Name, StringComparer.Ordinal)).ToList();
+var unknown = args.Except(tests.Select(test => test.Name), StringComparer.Ordinal).ToArray();
+if (unknown.Length > 0)
+{
+    Console.Error.WriteLine($"Unknown offline test name(s): {string.Join(", ", unknown)}");
+    return 2;
+}
 var failed = 0;
-foreach (var (name, run) in tests)
+foreach (var (name, run) in selected)
 {
     try
     {
@@ -559,7 +801,7 @@ foreach (var (name, run) in tests)
         Console.Error.WriteLine($"FAIL {name}: {exception}");
     }
 }
-Console.WriteLine($"Offline tests: {tests.Count - failed} passed, {failed} failed, 0 skipped; no Azure credentials or network used.");
+Console.WriteLine($"Offline tests: {selected.Count - failed} passed, {failed} failed, {tests.Count - selected.Count} skipped; no Azure credentials or network used.");
 return failed == 0 ? 0 : 1;
 
 static class Check
@@ -786,5 +1028,128 @@ sealed class DeleteHandler(ResourcePlan plan) : HttpMessageHandler
             return OfflineHandler.Json(HttpStatusCode.NotFound, """{"error":{"code":"ResourceGroupNotFound"}}""");
         }
         return OfflineHandler.Json(HttpStatusCode.OK, Fixtures.ArmBody(plan, ResourceKind.ResourceGroup));
+    }
+}
+
+sealed class NamespaceCleanupHandler(ResourcePlan plan) : HttpMessageHandler
+{
+    public HttpStatusCode CreateStatus { get; init; } = HttpStatusCode.Created;
+    public bool WrongCreatedId { get; init; }
+    public bool WrongCreatedMarker { get; init; }
+    public HttpStatusCode DeleteCompletionStatus { get; init; } = HttpStatusCode.NoContent;
+    public HttpStatusCode PostDeleteStatus { get; init; } = HttpStatusCode.NotFound;
+    public HttpStatusCode ReconciliationStatus { get; init; } = HttpStatusCode.NotFound;
+    public bool HoldNamespaceDeletion { get; init; }
+    public bool ForeignOnNextPage { get; init; }
+    public ResourceKind? UnexpectedEntityKind { get; init; }
+    public List<(string Id, string? Type)> Resources { get; } = [(plan.Steps[1].Id, "Microsoft.ServiceBus/namespaces")];
+    public TaskCompletionSource PollStarted { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    public int NamespaceDeletes { get; private set; }
+    public int NamespaceDeletionPolls { get; private set; }
+    public int PostDeleteReads { get; private set; }
+    public int ResourceLists { get; private set; }
+    public int ReconciliationReads { get; private set; }
+    public int GroupDeletes { get; private set; }
+    public int GroupDeletionPolls { get; private set; }
+    public int GroupAbsenceReads { get; private set; }
+    private bool namespaceDeleted;
+    private bool groupDeleted;
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        var uri = request.RequestUri!;
+        var path = uri.AbsolutePath;
+        if (request.Method == HttpMethod.Get && uri.Host == plan.FullyQualifiedNamespace &&
+            (path.Equals("/$Resources/Queues", StringComparison.OrdinalIgnoreCase) ||
+             path.Equals("/$Resources/Topics", StringComparison.OrdinalIgnoreCase)))
+        {
+            var kind = path.Equals("/$Resources/Queues", StringComparison.OrdinalIgnoreCase) ? ResourceKind.Queue : ResourceKind.Topic;
+            var entity = UnexpectedEntityKind == kind ? Fixtures.EntityXml(kind, plan.RunId) : "";
+            return OfflineHandler.Xml(HttpStatusCode.OK, $"""
+                <feed xmlns="http://www.w3.org/2005/Atom">
+                  <title type="text">{path.Split('/')[^1]}</title>
+                  <id>{uri.GetLeftPart(UriPartial.Path)}</id>
+                  <updated>2026-01-01T00:00:00Z</updated>
+                  {entity}
+                </feed>
+                """);
+        }
+        Check.Equal("management.azure.com", uri.Host);
+        if (path.Equals(plan.Steps[1].Id, StringComparison.OrdinalIgnoreCase))
+        {
+            if (request.Method == HttpMethod.Put)
+            {
+                var body = Fixtures.ArmBody(plan, ResourceKind.Namespace);
+                if (WrongCreatedId) body = body.Replace(plan.NamespaceName, $"{plan.NamespaceName}-foreign", StringComparison.Ordinal);
+                if (WrongCreatedMarker) body = body.Replace(plan.RunId, "unowned", StringComparison.Ordinal);
+                return OfflineHandler.Json(CreateStatus, body);
+            }
+            if (request.Method == HttpMethod.Delete)
+            {
+                NamespaceDeletes++;
+                return Accepted("namespace");
+            }
+            Check.Equal(HttpMethod.Get, request.Method);
+            if (!namespaceDeleted) return OfflineHandler.Json(HttpStatusCode.OK, Fixtures.ArmBody(plan, ResourceKind.Namespace));
+            if (ResourceLists == 0) PostDeleteReads++;
+            else ReconciliationReads++;
+            return NamespaceResponse(ResourceLists == 0 ? PostDeleteStatus : ReconciliationStatus);
+        }
+        if (request.Method == HttpMethod.Get && path == "/operations/offline-namespace-delete")
+        {
+            NamespaceDeletionPolls++;
+            PollStarted.TrySetResult();
+            if (HoldNamespaceDeletion)
+                await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            namespaceDeleted = DeleteCompletionStatus == HttpStatusCode.NoContent;
+            return NamespaceResponse(DeleteCompletionStatus);
+        }
+        if (path.Equals($"{plan.Steps[0].Id}/resources", StringComparison.OrdinalIgnoreCase))
+        {
+            Check.Equal(HttpMethod.Get, request.Method);
+            ResourceLists++;
+            var nextPage = uri.Query.Contains("page=2", StringComparison.Ordinal);
+            var rows = nextPage
+                ? new List<(string Id, string? Type)> { ($"{plan.Steps[1].Id}-foreign", "Microsoft.ServiceBus/namespaces") }
+                : Resources;
+            return OfflineHandler.Json(HttpStatusCode.OK, JsonSerializer.Serialize(new
+            {
+                value = rows.Select(row => row.Type is null
+                    ? new Dictionary<string, string> { ["id"] = row.Id }
+                    : new Dictionary<string, string> { ["id"] = row.Id, ["type"] = row.Type }),
+                nextLink = ForeignOnNextPage && !nextPage ? $"https://management.azure.com{path}?page=2" : null
+            }));
+        }
+        if (path.Equals(plan.Steps[0].Id, StringComparison.OrdinalIgnoreCase))
+        {
+            if (request.Method == HttpMethod.Delete)
+            {
+                GroupDeletes++;
+                return Accepted("group");
+            }
+            Check.Equal(HttpMethod.Get, request.Method);
+            if (!groupDeleted) return OfflineHandler.Json(HttpStatusCode.OK, Fixtures.ArmBody(plan, ResourceKind.ResourceGroup));
+            GroupAbsenceReads++;
+            return OfflineHandler.Json(HttpStatusCode.NotFound, """{"error":{"code":"ResourceGroupNotFound"}}""");
+        }
+        if (request.Method == HttpMethod.Get && path == "/operations/offline-group-delete")
+        {
+            GroupDeletionPolls++;
+            groupDeleted = true;
+            return OfflineHandler.Json(HttpStatusCode.NoContent, "");
+        }
+        throw new InvalidOperationException($"Unexpected offline request: {request.Method} {path}");
+    }
+
+    private HttpResponseMessage NamespaceResponse(HttpStatusCode status) =>
+        OfflineHandler.Json(status, status == HttpStatusCode.OK ? Fixtures.ArmBody(plan, ResourceKind.Namespace) :
+            status == HttpStatusCode.NoContent ? "" : """{"error":{"code":"OfflineNamespaceResponse"}}""");
+
+    private static HttpResponseMessage Accepted(string resource)
+    {
+        var response = OfflineHandler.Json(HttpStatusCode.Accepted, "");
+        response.Headers.Location = new Uri($"https://management.azure.com/operations/offline-{resource}-delete");
+        response.Headers.Add("Retry-After", "0");
+        return response;
     }
 }

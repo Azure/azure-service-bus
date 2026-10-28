@@ -91,6 +91,8 @@ internal static class GeoDrSample
                     throw new InvalidOperationException("Metadata Geo-DR requires Premium namespaces.");
                 if (primaryData.Location == secondaryData.Location)
                     throw new InvalidOperationException("Choose primary and secondary namespaces in different regions.");
+                if (!string.IsNullOrEmpty(secondaryData.AlternateName))
+                    throw new InvalidOperationException("The secondary namespace must not have an alternate name from an earlier pairing.");
                 if (await primary.GetServiceBusDisasterRecoveries().GetAllAsync(token).AnyAsync(token) ||
                     await secondary.GetServiceBusDisasterRecoveries().GetAllAsync(token).AnyAsync(token))
                     throw new InvalidOperationException("A namespace is already paired or has an alias. Refusing to replace it.");

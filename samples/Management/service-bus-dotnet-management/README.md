@@ -81,6 +81,14 @@ It exercises the actual SDK request serializers and credential policy as well
 as configuration, consent, ownership, collision, rule, failure and cleanup
 contracts. These checks do not establish live Azure behavior.
 
+With no arguments the harness runs every test. Pass exact test names after
+`--` to select focused checks; unselected tests are reported as skipped and an
+unknown name exits with code 2 without running tests. For example:
+
+```powershell
+dotnet run --project .\tests\ManagementSample.Tests --configuration Release --no-build -- "namespace inventory reconciliation accepts the captured exact owned deleted namespace scenario"
+```
+
 ## Configuration and authentication
 
 Copy the checked-in configuration to an ignored local file:
@@ -241,11 +249,30 @@ creation; its full ID is included in the report.
 subscription, topic, queue, namespace, then resource group. It checks run
 markers and current settings again, refuses unexpected children, and blocks
 parent deletion after any retained/unknown child. Independent sibling cleanup
-continues after a failure. Deletes are awaited, including ARM long-running
+continues after a resource-operation failure when the inventory remains writable.
+Deletes are awaited, including ARM long-running
 operations, and followed by an absence read. Ctrl+C cancels provisioning but
 does not cancel already-consented cleanup; cleanup has up to five independent
 per-resource budgets. A timeout or failure remains a failure and is recorded.
 Parent emptiness checks are also not atomic against concurrent writers.
+
+Each deletion requires successful persistence of its `deleting` inventory state
+before dispatch. An inventory write failure blocks all further deletion requests,
+including when persistence failed during provisioning. Cleanup reports the refusal;
+the last saved inventory may not contain the later in-memory failure states.
+Keep the printed report and reconcile retained resources manually.
+
+Resource-group inventory can still yield the namespace after its deletion.
+That entry is reconciled only when this invocation confirmed namespace creation
+(initial HTTP 201, completed provisioning, exact ID and run marker), awaited
+its deletion, and observed exact namespace HTTP 404. At group cleanup, the
+entry must match both the full namespace ID and resource type, and a fresh
+namespace-specific SDK GET must again return HTTP 404. Every other entry,
+including later pages, still refuses group deletion. A present namespace,
+uncertain deletion, missing/wrong type or failed/ambiguous read never permits
+this reconciliation. There is no inventory retry, delay or deletion of listed
+resources. This handles the observed disagreement without attributing it to a
+particular ARM or resource-provider cause; scope exclusivity is still required.
 
 Without cleanup consent, inspect the report and later perform **manual**
 cleanup with a separately authorized tool, after verifying exact IDs, markers,
@@ -272,9 +299,9 @@ a new scope, so inspect and reconcile the previous inventory first.
 | Queue (X02-V05) | Create-only contract, tier-specific partitioning | Queue settings match readback |
 | Topic (X02-V06) | Create-only contract, tier-specific partitioning | Topic settings match readback |
 | Subscription (X02-V07) | MaxDeliveryCount, atomic initial-rule request | Subscription and ownership marker match |
-| Rule (X02-V08) | Exact rule set rejects `$Default`, wrong SQL and actions | Only `rule1`; matching/nonmatching/missing-property routing |
+| Rule (X02-V08) | Full enumeration under the operation deadline and cancellation token; exact rule set rejects `$Default`, wrong SQL and actions | Only `rule1`; matching/nonmatching/missing-property routing |
 | All-resource readback (X02-V09) | Readback failures remain failures | All service settings independently read back |
-| Cleanup (X02-V10) | Reverse order, consent, ownership, ambiguity, sibling failures, timeout and cancellation | Actual deletion completion/absence, failure inventories, manual reconciliation of retained resources |
+| Cleanup (X02-V10) | Reverse order, consent, ownership, ambiguity, persistence before deletion, sibling failures, timeout, cancellation and exact-resource reconciliation of a confirmed owned namespace deletion | Actual deletion completion/absence, failure inventories, manual reconciliation of retained resources |
 
 Safe executable modes are no-argument help, `--help`, `--validate`, and `--plan`.
 Live variants are creation/readback with or without cleanup, and
