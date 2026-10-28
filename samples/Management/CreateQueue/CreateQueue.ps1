@@ -1,19 +1,18 @@
-Login-AzureRmAccount
+[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+param(
+    [Parameter(Mandatory)][string]$SubscriptionId,
+    [Parameter(Mandatory)][string]$ResourceGroupName,
+    [Parameter(Mandatory)][string]$NamespaceName,
+    [Parameter(Mandatory)][string]$Location,
+    [string]$QueueName = 'sample-queue'
+)
 
-Select-AzureRmSubscription -SubscriptionName "MyAzureSubName" 
-Get-AzureRmContext
-
-# Create a resource group 
-New-AzureRmResourceGroup –Name my-resourcegroup –Location westus2
-
-# Create a Messaging namespace
-New-AzureRmServiceBusNamespace -ResourceGroupName my-resourcegroup -NamespaceName namespace-name -Location westus2
-
-# Create a queue 
-New-AzureRmServiceBusQueue -ResourceGroupName my-resourcegroup -NamespaceName namespace-name -Name queue-name -EnablePartitioning $False
-
-# Get primary connection string (required in next step)
-Get-AzureRmServiceBusKey -ResourceGroupName my-resourcegroup -Namespace namespace-name -Name RootManageSharedAccessKey
-
-# Delete the created resources if desired
-Remove-AzureRmResourceGroup -Name my-resourcegroup
+$ErrorActionPreference = 'Stop'
+if (-not $PSCmdlet.ShouldProcess("$SubscriptionId/$ResourceGroupName/$NamespaceName", "Create a Standard namespace and queue '$QueueName'")) { return }
+$scope = @{ SubscriptionId = $SubscriptionId; ResourceGroupName = $ResourceGroupName }
+if (Get-AzServiceBusNamespace @scope | Where-Object Name -EQ $NamespaceName) {
+    throw 'Refusing to overwrite an existing namespace. Choose a new disposable namespace name.'
+}
+New-AzServiceBusNamespace @scope -Name $NamespaceName -Location $Location -SkuName Standard
+New-AzServiceBusQueue @scope -NamespaceName $NamespaceName -Name $QueueName
+Write-Output 'Resources remain billable until explicitly deleted. No access keys are printed and no cleanup is automatic.'
