@@ -86,7 +86,12 @@ Break pairing before deleting a primary alias. Delete the secondary alias only
 when the post-failover recovery plan permits it. If the alias matches the original
 namespace name, breaking pairing without failover does not require deleting that
 alias; the namespace-name variant rejects `delete-primary-alias`. After failover,
-delete the alias before reusing that namespace outside the pairing.
+delete the alias and independently verify its absence and the retained namespace
+before reusing that namespace outside the pairing. The delete commands report
+request acknowledgment, not independently observed alias absence.
+`DeleteAsync(WaitUntil.Completed)` returning does not provide that independent
+verification. These commands target only the alias; they do not delete namespaces
+or messages. That scope statement is not a readback of namespace or message state.
 
 `status` reads the primary and secondary independently, with a two-minute budget
 for each, and reports failure after observing both outcomes. The two offline

@@ -119,11 +119,11 @@ internal static class GeoDrSample
                 if (useNamespaceNameAsAlias)
                     throw new InvalidOperationException("Do not delete the namespace-name alias on the primary after breaking pairing.");
                 await primaryAlias.DeleteAsync(WaitUntil.Completed, token);
-                Console.WriteLine("Primary alias deleted; namespaces and messages were not deleted.");
+                Console.WriteLine("Primary alias deletion request acknowledged. Verify alias absence independently; this command does not delete namespaces or messages.");
                 break;
             case "delete-secondary-alias":
                 await secondaryAlias.DeleteAsync(WaitUntil.Completed, token);
-                Console.WriteLine("Secondary alias deleted; namespaces and messages were not deleted.");
+                Console.WriteLine("Secondary alias deletion request acknowledged. Verify alias absence independently; this command does not delete namespaces or messages.");
                 break;
         }
     }
