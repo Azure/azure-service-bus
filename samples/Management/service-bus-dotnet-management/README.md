@@ -173,7 +173,8 @@ for this demonstration.
   disposable test subscription. Namespace creation/readback needs
   `Microsoft.ServiceBus/namespaces/read` and `write` at the generated group.
   The sample pauses after group creation so this group-scoped access can be
-  arranged; enter `continue` only after it is ready.
+  arranged; verify the exact assignment and enter `continue`. The same client
+  then checks read authorization before any namespace write.
   When cleanup is requested, allow the corresponding `delete` actions and
   `Microsoft.Resources/subscriptions/resourceGroups/resources/read` for the
   empty-group check. The `Microsoft.ServiceBus` provider must already be
@@ -197,6 +198,13 @@ Both checkpoints are inside the operation timeout. EOF, any input other than
 the resources already created. The process must have an interactive stdin or
 an operator-controlled input stream. Do not pre-feed confirmation before
 access and scope have actually been verified.
+
+At the group checkpoint, `continue` confirms that the assignment has been
+arranged; it is not proof that ARM has accepted it. Before attempting a namespace
+write, the same ARM client waits for its namespace read to be authorized,
+within `OperationTimeoutSeconds`. Only `403 AuthorizationFailed` is treated as
+pending access. Other authorization errors, token/network failures and writes
+are not retried. An existing namespace still fails the collision check.
 
 Once authorized:
 

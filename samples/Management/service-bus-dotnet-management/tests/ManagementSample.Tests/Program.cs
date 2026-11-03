@@ -470,6 +470,132 @@ AsyncTest("blocked console-style input cannot defeat the operation deadline", as
     finally { input.Release(); }
     await input.Finished.Task.WaitAsync(TimeSpan.FromSeconds(5));
 });
+AsyncTest("namespace checkpoint waits for actual same-client read authorization before writes", async () =>
+{
+    var options = Fixtures.Options();
+    var plan = new ResourcePlan(options);
+    var calls = 0;
+    var fake = new FakeOperations();
+    using var handler = new OfflineHandler(request =>
+    {
+        Check.Equal(HttpMethod.Get, request.Method);
+        Check.True(request.RequestUri!.AbsolutePath.EndsWith($"/namespaces/{plan.NamespaceName}", StringComparison.Ordinal));
+        Check.True(fake.Created.SequenceEqual(new[] { ResourceKind.ResourceGroup }));
+        return ++calls == 1
+            ? OfflineHandler.Json(HttpStatusCode.Forbidden, """{"error":{"code":"AuthorizationFailed","message":"not ready"}}""")
+            : OfflineHandler.Json(HttpStatusCode.NotFound, """{"error":{"code":"ResourceNotFound"}}""");
+    });
+    var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+    using var output = new StringWriter();
+    var report = await ServiceBusManagementSample.RunAsync(plan, fake,
+        TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(1), true, false, _ => { },
+        beforeCreate: (step, token) => step.Kind == ResourceKind.Namespace
+            ? AzureServiceBusDotNetManagement.Program.WaitForNamespaceAccessAsync(step, operations, output, token)
+            : Task.CompletedTask);
+    Check.True(report.Success);
+    Check.Equal(2, calls);
+    Check.Equal(1, fake.Created.Count(kind => kind == ResourceKind.Namespace));
+    Check.True(output.ToString().Contains("Waiting for namespace-management read permission", StringComparison.Ordinal));
+});
+AsyncTest("namespace checkpoint does not retry token policy generic or server failures", async () =>
+{
+    (HttpStatusCode Status, string? Code)[] failures =
+    [
+        (HttpStatusCode.Forbidden, "InvalidAuthenticationToken"),
+        (HttpStatusCode.Forbidden, "RequestDisallowedByPolicy"),
+        (HttpStatusCode.InternalServerError, "AuthorizationFailed"),
+        (HttpStatusCode.Forbidden, null)
+    ];
+    foreach (var failure in failures)
+    {
+        var options = Fixtures.Options();
+        var plan = new ResourcePlan(options);
+        using var handler = new OfflineHandler(_ => failure.Code is null
+            ? OfflineHandler.Xml(failure.Status, "<html>not an ARM authorization response</html>")
+            : OfflineHandler.Json(failure.Status, JsonSerializer.Serialize(new { error = new { code = failure.Code } })));
+        var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+        var error = await Check.ThrowsAsync<RequestFailedException>(() =>
+            AzureServiceBusDotNetManagement.Program.WaitForNamespaceAccessAsync(plan.Steps[1], operations,
+                TextWriter.Null, CancellationToken.None));
+        Check.Equal((int)failure.Status, error.Status);
+        Check.Equal(1, handler.Requests.Count);
+    }
+});
+AsyncTest("namespace checkpoint cancellation bounds waiting and cleans the unattempted parent", async () =>
+{
+    var options = Fixtures.Options();
+    var plan = new ResourcePlan(options);
+    var fake = new FakeOperations();
+    using var cancellation = new CancellationTokenSource();
+    using var handler = new OfflineHandler(_ =>
+    {
+        cancellation.Cancel();
+        return OfflineHandler.Json(HttpStatusCode.Forbidden, """{"error":{"code":"AuthorizationFailed"}}""");
+    });
+    var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+    var report = await ServiceBusManagementSample.RunAsync(plan, fake,
+        TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1), true, false, _ => { }, cancellation.Token,
+        (step, token) => step.Kind == ResourceKind.Namespace
+            ? AzureServiceBusDotNetManagement.Program.WaitForNamespaceAccessAsync(step, operations, TextWriter.Null, token)
+            : Task.CompletedTask);
+    Check.True(!report.Success);
+    Check.True(fake.Created.SequenceEqual(new[] { ResourceKind.ResourceGroup }));
+    Check.True(fake.Deleted.SequenceEqual(new[] { ResourceKind.ResourceGroup }));
+    Check.True(!fake.CleanupUsedCancelledToken);
+    Check.Equal(1, handler.Requests.Count);
+});
+AsyncTest("namespace checkpoint operation deadline bounds waiting without a write", async () =>
+{
+    var options = Fixtures.Options();
+    var plan = new ResourcePlan(options);
+    var fake = new FakeOperations();
+    using var handler = new OfflineHandler(_ =>
+        OfflineHandler.Json(HttpStatusCode.Forbidden, """{"error":{"code":"AuthorizationFailed"}}"""));
+    var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+    var report = await ServiceBusManagementSample.RunAsync(plan, fake,
+        TimeSpan.FromMilliseconds(100), TimeSpan.FromSeconds(1), true, false, _ => { },
+        beforeCreate: (step, token) => step.Kind == ResourceKind.Namespace
+            ? AzureServiceBusDotNetManagement.Program.WaitForNamespaceAccessAsync(step, operations, TextWriter.Null, token)
+            : Task.CompletedTask);
+    Check.True(!report.Success);
+    Check.True(fake.Created.SequenceEqual(new[] { ResourceKind.ResourceGroup }));
+    Check.True(fake.Deleted.SequenceEqual(new[] { ResourceKind.ResourceGroup }));
+    Check.Equal(1, handler.Requests.Count);
+});
+AsyncTest("namespace checkpoint preserves collision refusal and never retries creation", async () =>
+{
+    foreach (var collision in new[] { true, false })
+    {
+        var options = Fixtures.Options();
+        var plan = new ResourcePlan(options);
+        var fake = collision
+            ? new FakeOperations { Collision = ResourceKind.Namespace }
+            : new FakeOperations { RaceCollision = ResourceKind.Namespace };
+        using var handler = new OfflineHandler(_ => collision
+            ? OfflineHandler.Json(HttpStatusCode.OK, "{}")
+            : OfflineHandler.Json(HttpStatusCode.NotFound, """{"error":{"code":"ResourceNotFound"}}"""));
+        var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+        var report = await ServiceBusManagementSample.RunAsync(plan, fake,
+            TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(1), true, false, _ => { },
+            beforeCreate: (step, token) => step.Kind == ResourceKind.Namespace
+                ? AzureServiceBusDotNetManagement.Program.WaitForNamespaceAccessAsync(step, operations, TextWriter.Null, token)
+                : Task.CompletedTask);
+        Check.True(!report.Success);
+        Check.Equal(collision ? 0 : 1, fake.Created.Count(kind => kind == ResourceKind.Namespace));
+        Check.Equal(1, handler.Requests.Count);
+    }
+});
+AsyncTest("namespace checkpoint refuses wrong-operation use without making a request", async () =>
+{
+    var options = Fixtures.Options();
+    var plan = new ResourcePlan(options);
+    using var handler = new OfflineHandler(_ => throw new InvalidOperationException("No request expected."));
+    var operations = Fixtures.Azure(options, plan, handler, new OfflineCredential());
+    await Check.ThrowsAsync<ArgumentException>(() =>
+        AzureServiceBusDotNetManagement.Program.WaitForNamespaceAccessAsync(plan.Steps[2], operations,
+            TextWriter.Null, CancellationToken.None));
+    Check.Equal(0, handler.Requests.Count);
+});
 Test("incomplete inventories never claim success", () =>
 {
     var report = new RunReport(new ResourcePlan(Fixtures.Options()));

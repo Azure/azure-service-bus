@@ -2,6 +2,7 @@
 // Licensed under the MIT license. See LICENSE file in the project root for full license information.
 
 using System.Text.Json;
+using Azure;
 
 namespace AzureServiceBusDotNetManagement;
 
@@ -71,6 +72,7 @@ public static class Program
         After group and namespace creation, execution pauses for narrowly scoped namespace
         management and entity-administration access to be arranged externally.
         Enter continue at each checkpoint on stdin; EOF/cancellation fails safely.
+        Namespace read authorization is checked with the same client before writes.
         Cleanup uses independent per-resource budgets, never a fire-and-forget delete.
         Reserve the generated scope for this run: ARM root creation and empty-parent deletion
         are not atomic against concurrent writers. See README before authorizing live execution.
@@ -138,8 +140,12 @@ public static class Program
                     Console.WriteLine(step.Kind == ResourceKind.Namespace
                         ? "Arrange namespace-management permission at this resource group only (see README)."
                         : "Arrange entity-administration permission at this namespace only (see README).");
-                    Console.WriteLine("No role is assigned by this sample. Enter continue after access has propagated:");
+                    Console.WriteLine(step.Kind == ResourceKind.Namespace
+                        ? "No role is assigned by this sample. Enter continue after the exact scoped assignment is verified; namespace read authorization is checked before writes:"
+                        : "No role is assigned by this sample. Enter continue after access has propagated:");
                     await ConfirmAccessAsync(Console.In, token);
+                    if (step.Kind == ResourceKind.Namespace)
+                        await WaitForNamespaceAccessAsync(step, operations, Console.Out, token);
                 }
                 var report = await ServiceBusManagementSample.RunAsync(plan, operations,
                     TimeSpan.FromSeconds(options.OperationTimeoutSeconds), TimeSpan.FromSeconds(options.CleanupTimeoutSeconds),
@@ -170,5 +176,27 @@ public static class Program
         // Console.In may implement ReadLineAsync synchronously, ignoring cancellation while blocked.
         if (await Task.Run(input.ReadLine, CancellationToken.None).WaitAsync(cancellationToken) != "continue")
             throw new SampleException("Creation was not confirmed after the scoped-access checkpoint.");
+    }
+
+    public static async Task WaitForNamespaceAccessAsync(ResourceStep step, IManagementOperations operations,
+        TextWriter output, CancellationToken cancellationToken)
+    {
+        if (step.Kind != ResourceKind.Namespace)
+            throw new ArgumentException("Only namespace read authorization belongs to this access checkpoint.", nameof(step));
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await operations.ExistsAsync(step, cancellationToken);
+                return;
+            }
+            catch (RequestFailedException exception) when (exception.Status == 403 &&
+                exception.ErrorCode == "AuthorizationFailed")
+            {
+                await output.WriteLineAsync($"Waiting for namespace-management read permission at {step.ParentId}; no namespace write has been attempted.");
+                await Task.Delay(TimeSpan.FromSeconds(1), cancellationToken);
+            }
+        }
     }
 }
