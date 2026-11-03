@@ -1,92 +1,73 @@
-﻿using System;
-using System.Linq;
-using Microsoft.Azure.Management.Monitor;
-using Microsoft.Azure.Management.Monitor.Models;
-using Microsoft.Rest.Azure.OData;
-using System.Threading.Tasks;
-using Microsoft.Rest.Azure.Authentication;
-using Newtonsoft.Json;
+using Azure.Core;
+using Azure.Identity;
+using Azure.ResourceManager;
+using Azure.ResourceManager.Monitor;
+using Azure.ResourceManager.Monitor.Models;
+using System.Globalization;
 
-namespace AccessServiceBusMetricsViaCode
+if (args.Length == 0 || args is ["--help"])
 {
-    class Program
+    Console.WriteLine("Usage: dotnet run -- query");
+    Console.WriteLine("Set SERVICEBUS_RESOURCE_ID to the namespace ARM ID and SERVICEBUS_ENTITY to a queue/topic.");
+    Console.WriteLine("Optional SERVICEBUS_METRIC (default IncomingMessages) and SERVICEBUS_AGGREGATION (default Total).");
+    return;
+}
+if (args is not ["query"])
+    throw new ArgumentException("Unknown arguments. Use --help.");
+
+string Required(string name) => Environment.GetEnvironmentVariable(name) is { Length: > 0 } value
+    ? value : throw new InvalidOperationException($"Set {name}.");
+
+var resourceId = new ResourceIdentifier(Required("SERVICEBUS_RESOURCE_ID"));
+if (resourceId.ResourceType != new ResourceType("Microsoft.ServiceBus/namespaces"))
+    throw new ArgumentException("SERVICEBUS_RESOURCE_ID must identify a Service Bus namespace.");
+var entity = Required("SERVICEBUS_ENTITY");
+var metricName = Environment.GetEnvironmentVariable("SERVICEBUS_METRIC") ?? "IncomingMessages";
+var aggregation = Environment.GetEnvironmentVariable("SERVICEBUS_AGGREGATION") ?? "Total";
+using var timeout = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+var token = timeout.Token;
+var arm = new ArmClient(new DefaultAzureCredential());
+MonitorMetricDefinition? definition = null;
+await foreach (var candidate in arm.GetMonitorMetricDefinitionsAsync(resourceId, cancellationToken: token))
+{
+    if (candidate.Name.Value.Equals(metricName, StringComparison.OrdinalIgnoreCase))
+        definition = candidate;
+}
+if (definition is null)
+    throw new ArgumentException($"Metric {metricName} is not available on this namespace.");
+if (!definition.SupportedAggregationTypes.Any(value => value.ToString().Equals(aggregation, StringComparison.OrdinalIgnoreCase)))
+    throw new ArgumentException($"Aggregation {aggregation} is unsupported. Choose: {string.Join(", ", definition.SupportedAggregationTypes)}");
+if (!definition.Dimensions.Any(value => value.Value.Equals("EntityName", StringComparison.OrdinalIgnoreCase)))
+    throw new ArgumentException($"Metric {metricName} does not support filtering by EntityName.");
+
+var end = DateTime.UtcNow;
+var options = new ArmResourceGetMonitorMetricsOptions
+{
+    Metricnames = definition.Name.Value,
+    Metricnamespace = "Microsoft.ServiceBus/namespaces",
+    Aggregation = aggregation,
+    Timespan = $"{end.AddHours(-1):O}/{end:O}",
+    Interval = TimeSpan.FromMinutes(1),
+    Filter = $"EntityName eq '{entity.Replace("'", "''")}'"
+};
+int records = 0;
+await foreach (var metric in arm.GetMonitorMetricsAsync(resourceId, options, token))
+{
+    if (!string.IsNullOrEmpty(metric.ErrorCode) && metric.ErrorCode != "Success")
+        throw new InvalidOperationException($"{metric.ErrorCode}: {metric.ErrorMessage}");
+    foreach (var series in metric.Timeseries)
     {
-        public static async Task Main(String[] args)
+        foreach (var point in series.Data)
         {
-            await RunSampleAsync();
+            double? value = aggregation.ToLowerInvariant() switch
+            {
+                "total" => point.Total, "average" => point.Average, "minimum" => point.Minimum,
+                "maximum" => point.Maximum, "count" => point.Count,
+                _ => throw new ArgumentException($"Unsupported aggregation output: {aggregation}")
+            };
+            Console.WriteLine($"{point.TimeStamp:O}\t{entity}\t{metric.Name.Value}\t{aggregation}={value?.ToString(CultureInfo.InvariantCulture) ?? "no data"}");
+            records++;
         }
-
-        static async Task RunSampleAsync()
-        {
-            var tenantId = ""; // AAD Tenant
-            var clientId = ""; // AAD Web App ID. Do not use a native app
-            var secret = ""; // Your generated secret                              
-            var resourceId = ""; // resourceId can be taken when you select the namespace you intend to use in the portal and copy the url. Then delete everything before "subscriptions" and after the namespace name.                        
-            string entityName = "";  // Queue or Topic name           
-            string metricName = "ActiveMessages";  // Valid metrics "IncomingMessages,IncomingRequests,ActiveMessages,Messages,Size"            
-            string aggregation = "Total"; // Valid aggregations: Total and Average
-
-            // Create new Metrics token and Management client.
-            var serviceCreds = await ApplicationTokenProvider.LoginSilentAsync(tenantId, clientId, secret);            
-            MonitorManagementClient monitoringClient = new MonitorManagementClient(serviceCreds);           
-
-            var metricDefinitions = monitoringClient.MetricDefinitions.List(resourceId);
-            if (metricDefinitions.FirstOrDefault(
-                    metric => string.Equals(metric.Name.Value, metricName, StringComparison.InvariantCultureIgnoreCase)) == null)
-            {
-                Console.WriteLine("Invalid metric");
-                return;
-            }
-
-            string startDate = DateTime.Now.AddHours(-1).ToString("o");
-            string endDate = DateTime.Now.ToString("o");
-            string timeSpan = startDate + "/" + endDate;
-            ODataQuery<MetadataValue> odataFilterMetrics = new ODataQuery<MetadataValue>($"EntityName eq '{entityName}'");
-
-            // Use this as quick and easy way to understand what metrics are emitted and what to query for. 
-            // When looking for the count and size of an entity the only supported way is using total and 1 minute time slices.
-            // Accessing those metrics via code is mostly for auto scaling purposes on sender and receiver side.
-            Response metrics1 = monitoringClient.Metrics.List(resourceUri: resourceId, metricnames: metricName, odataQuery: odataFilterMetrics, timespan: timeSpan, aggregation: aggregation, interval: TimeSpan.FromMinutes(1));
-            Console.WriteLine(JsonConvert.SerializeObject(metrics1, Newtonsoft.Json.Formatting.Indented));
-
-            // Use this to get a list output to your console                        
-            var metrics = monitoringClient.Metrics.List(resourceId, odataFilterMetrics, timeSpan, TimeSpan.FromMinutes(1), metricName, aggregation);
-            EnumerateMetrics(metrics, resourceId, entityName);
-
-            Console.WriteLine("Press any key to exit.");
-            Console.ReadLine();
-        }       
-        private static void EnumerateMetrics(Response metrics, string armId, string entityName, int maxRecords = 60)
-        {
-            Console.Write(
-                  "Cost: {0}\r\nTimespan: {1}\r\nInterval: {2}\r\n",
-                  metrics.Cost,
-                  metrics.Timespan,
-                  metrics.Interval);
-
-            var numRecords = 0;
-            Console.WriteLine("Printing metrics for Resource " + armId);
-            foreach (var metric in metrics.Value)
-            {
-                foreach (var timeSeries in metric.Timeseries)
-                {
-                    // Use Average and multiplier for bigger time ranges than one minute and when observing bigger time ranges than 5 minutes.
-                    // Use Total for short time ranges and 1 minute interval for observing e.g. one hour worth of data and decide to automatically scale receivers or senders.
-                    foreach (var data in timeSeries.Data)
-                    {
-                        Console.WriteLine(
-                            "{0}\t{1}\t{2}\t{3}", entityName,
-                            metric.Name.Value,
-                            metric.Name.LocalizedValue,
-                            data.Total);
-                    }
-                }
-                numRecords++;
-                if (numRecords >= maxRecords)
-                {
-                    break;
-                }
-            }
-        }        
     }
 }
+Console.WriteLine($"Returned {records} metric points. Missing observations are not zero.");

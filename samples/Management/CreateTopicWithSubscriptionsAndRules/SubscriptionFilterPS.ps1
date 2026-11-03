@@ -1,44 +1,27 @@
-# Logon
-Login-AzureRmAccount
+[CmdletBinding(SupportsShouldProcess, ConfirmImpact = 'High')]
+param(
+    [Parameter(Mandatory)][string]$SubscriptionId,
+    [Parameter(Mandatory)][string]$ResourceGroupName,
+    [Parameter(Mandatory)][string]$NamespaceName,
+    [Parameter(Mandatory)][string]$Location,
+    [string]$TopicName = 'sample-topic'
+)
 
-# Change your subscription if needed
-Select-AzureRmSubscription -SubscriptionName "your subscription"
-
-# Create Resource Group
-New-AzureRmResourceGroup –Name FilterTest –Location westus2
-
-# Create Namespace
-New-AzureRmServiceBusNamespace -ResourceGroup FilterTest -NamespaceName FilterTest -Loc
-ation westus2
-
-# Create Topic
-New-AzureRmServiceBusTopic -ResourceGroupName FilterTest -NamespaceName FilterTest -Nam
-e FilterTest -EnablePartitioning $False
-
-# Create Subscription 1
-New-AzureRmServiceBusSubscription -ResourceGroupName FilterTest -NamespaceName FilterTe
-st -TopicName FilterTest -Name S1
-
-# Create Subscription 2
-New-AzureRmServiceBusSubscription -ResourceGroupName FilterTest -NamespaceName FilterTe
-st -TopicName FilterTest -Name S2
-
-# Create Subscription 3
-New-AzureRmServiceBusSubscription -ResourceGroupName FilterTest -NamespaceName FilterTe
-st -TopicName FilterTest -Name S3
-
-# Sample using SQL filter
-New-AzureRmServiceBusRule -ResourceGroupName FilterTest -Namespace FilterTest -Topic Fi
-lterTest -Subscription S1 -Name MyFilter -SqlExpression "StoreID = 'Store1'"
-
-# Sample using SQL filter
-New-AzureRmServiceBusRule -ResourceGroupName FilterTest -Namespace FilterTest -Topic Fi
-lterTest -Subscription S2 -Name MyFilter -SqlExpression "StoreID = 'Store2'"
-
-# Sample using Header field
-New-AzureRmServiceBusRule -ResourceGroupName FilterTest -Namespace FilterTest -Topic Fi
-lterTest -Subscription S3 -Name MyFilter -SqlExpression "sys.To = 'Store3'"
-
-# Get access key to connect to namespace later on
-Get-AzureRmServiceBusKey -ResourceGroupName FilterTest -NamespaceName FilterTest -Name
-RootManageSharedAccessKey
+$ErrorActionPreference = 'Stop'
+if (-not $PSCmdlet.ShouldProcess("$SubscriptionId/$ResourceGroupName/$NamespaceName", "Create Standard namespace, topic '$TopicName' and three filtered subscriptions")) { return }
+# Az module functions do not inherit this script's error preference.
+$scope = @{ SubscriptionId = $SubscriptionId; ResourceGroupName = $ResourceGroupName; ErrorAction = 'Stop' }
+if (Get-AzServiceBusNamespace @scope | Where-Object Name -EQ $NamespaceName) {
+    throw 'Refusing to overwrite an existing namespace. Choose a new disposable namespace name.'
+}
+New-AzServiceBusNamespace @scope -Name $NamespaceName -Location $Location -SkuName Standard
+New-AzServiceBusTopic @scope -NamespaceName $NamespaceName -Name $TopicName
+for ($i = 1; $i -le 3; $i++) {
+    $subscription = "S$i"
+    $ruleScope = $scope + @{ NamespaceName = $NamespaceName; TopicName = $TopicName; SubscriptionName = $subscription }
+    New-AzServiceBusSubscription @scope -NamespaceName $NamespaceName -TopicName $TopicName -Name $subscription
+    New-AzServiceBusRule @ruleScope -Name 'StoreFilter' -FilterType SqlFilter -SqlExpression "StoreId = 'Store$i'"
+    # Leaving the default true rule would make the new filter ineffective.
+    Remove-AzServiceBusRule @ruleScope -Name '$Default'
+}
+Write-Output 'Created S1/S2/S3 for Store1/Store2/Store3. Resources remain until manually deleted; no keys are printed.'

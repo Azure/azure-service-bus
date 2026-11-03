@@ -1,13 +1,33 @@
 # Topic Subscription Filters
 This sample illustrates creating filtered subscriptions for topics. 
 
+Install the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0).
+Use a disposable Standard or Premium namespace; Basic does not support topics.
+Both applications use Microsoft Entra ID through `DefaultAzureCredential`.
+Sign in with `az login` for local development, or configure a managed identity
+in Azure. In PowerShell, set
+`$env:SERVICEBUS_FULLY_QUALIFIED_NAMESPACE = "example.servicebus.windows.net"`.
+Setup needs **Azure Service Bus Data Owner** on the namespace; the send/receive
+application needs **Azure Service Bus Data Sender** and **Azure Service Bus Data
+Receiver** on the topic. See the [catalog's RBAC setup](../README.md#existing-topic-examples).
+Allow up to five minutes for role assignments to propagate. No SAS fallback
+is configured. The sample creates
+`topicfiltersampletopic` and four subscriptions and does not delete them.
+
+From this folder:
+
+```powershell
+dotnet run --project .\CreateTopicAndSubscriptions
+dotnet run --project .\SendAndReceiveMessages
+```
+
 ## CreateTopicAndSubscription
 
-1. In the **Program.cs** file, replace `<SERVICE BUS NAMESPACE - CONNECTION STRING>` with the connection string to your Service Bus namespace. 
+1. Set `SERVICEBUS_FULLY_QUALIFIED_NAMESPACE` in your environment.
 1. Build the project.
 1. Run the app, which creates the following Service Bus entities:
 
-    1. A topic named `TopicFilterSampleTopic`.
+    1. A topic named `topicfiltersampletopic`.
     2. Subscriptions to the above topic with the following settings. 
 
        | Subscription name |  Filter type |  Filter expression | Action | 
@@ -15,13 +35,14 @@ This sample illustrates creating filtered subscriptions for topics.
        | AllOrders | True Rule filter | `1=1` | |
        | ColorBlueSize10Orders | SQL filter | `color = 'blue' AND quantity = 10` | | 
        | ColorRed | SQL filter | `color = 'red'` | `SET quantity = quantity / 2;REMOVE priority; SET sys.CorrelationId = 'low'`| 
-       | ColorRed | Correlation filter | `"label": "red", "correlationId": "high"` | | 
+       | HighPriorityRedOrders | Correlation filter | `"label": "red", "correlationId": "high"` | |
 
 ## SendAndReceiveMessages
 
-1. In the **Program.cs** file, replace `<SERVICE BUS NAMESPACE - CONNECTION STRING>` with the connection string to your Service Bus namespace. 
+1. Set `SERVICEBUS_FULLY_QUALIFIED_NAMESPACE` in your environment.
 1. Build the project.
-1. Run the app and see the output. 
+1. Run the app and inspect the output. The following transcript is illustrative,
+   not live-run evidence. Send, delivery and property ordering can vary.
 
     ```bash    
     Sending orders to topic.
@@ -62,10 +83,10 @@ This sample illustrates creating filtered subscriptions for topics.
     Received 2 messages from subscription ColorBlueSize10Orders.
     
     Receiving messages from subscription ColorRed.
-    color=red,quantity=5,priority=high,RuleName=RedOrdersWithAction,CorrelationId=high
-    color=red,quantity=2,priority=low,RuleName=RedOrdersWithAction,CorrelationId=low
-    color=red,quantity=5,priority=low,RuleName=RedOrdersWithAction,CorrelationId=low
-    color=red,quantity=2,priority=low,RuleName=RedOrdersWithAction,CorrelationId=low
+    color=red,quantity=5,RuleName=RedOrdersWithAction,CorrelationId=low
+    color=red,quantity=2,RuleName=RedOrdersWithAction,CorrelationId=low
+    color=red,quantity=5,RuleName=RedOrdersWithAction,CorrelationId=low
+    color=red,quantity=2,RuleName=RedOrdersWithAction,CorrelationId=low
     Received 4 messages from subscription ColorRed.
     
     Receiving messages from subscription HighPriorityRedOrders.
@@ -75,4 +96,3 @@ This sample illustrates creating filtered subscriptions for topics.
 
 ## Next steps
 [Read more about topic filters in the documentation.](https://docs.microsoft.com/azure/service-bus-messaging/topic-filters)
-

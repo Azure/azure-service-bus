@@ -14,7 +14,7 @@ This guide covers three migration options:
 
 ## 1. Identify each endpoint and its delivery requirements
 
-Inspect the deployed configuration **and** the client and service call sites. For example, this simplified excerpt from the [NetMessagingBinding WCF sample](Readme.md) shows both endpoints targeting one queue. A working WCF configuration also needs the binding extensions and authentication behaviors shown in that sample:
+Inspect the deployed configuration **and** the client and service call sites. For example, this simplified excerpt from the [historical NetMessagingBinding WCF sample](https://github.com/Azure/azure-service-bus/blob/bf2af60c7eafe6649f5b5b5baa13a88168e363a9/samples/DotNet/Microsoft.ServiceBus.Messaging/NetMessagingBinding/Readme.md) shows both endpoints targeting one queue. A working WCF configuration also needs the binding extensions and authentication behaviors shown in that sample:
 
 ```xml
 <!-- Sender's App.config -->

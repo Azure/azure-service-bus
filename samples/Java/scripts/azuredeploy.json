@@ -5,13 +5,15 @@
   "parameters": {
     "serviceBusNamespaceName": {
       "type": "string",
+      "minLength": 6,
+      "maxLength": 50,
       "metadata": {
-        "description": "Service Bus Namespace Name"
+        "description": "New unique namespace name in a disposable resource group. Verify that this namespace does not already exist before deployment."
       }
     }
   },
   "variables": {
-    "apiVersion": "2017-04-01",
+    "apiVersion": "2024-01-01",
     "rulesTopicName": "TopicFilterSampleTopic",
 	"basicqueuename": "basicqueue",
 	"dedupqueuename": "dupdetectqueue",
@@ -26,7 +28,8 @@
       "name": "[parameters('serviceBusNamespaceName')]",
       "type": "Microsoft.ServiceBus/namespaces",
       "location": "[resourceGroup().location]",
-      "properties": {},
+      "sku": { "name": "Standard", "tier": "Standard" },
+      "properties": { "minimumTlsVersion": "1.2" },
       "resources": [
         {
           "type": "AuthorizationRules",
@@ -81,14 +84,13 @@
               "resources": [
 				{
 					"apiVersion": "[variables('apiVersion')]",
-					"name": "rule1",
+					"name": "AllOrdersRule",
 					"type": "rules",
 					"dependsOn": [ "allorders" ],
 					"properties": {
 						"filterType": "SqlFilter",
 						"sqlFilter": {
-						   "sqlExpression": "1=1",
-						   "requiresPreprocessing": false
+						   "sqlExpression": "1=1"
 						}
 					}
 				}
@@ -103,14 +105,13 @@
               "resources": [
 					{
 					"apiVersion": "[variables('apiVersion')]",
-					"name": "rule1",
+					"name": "ColorBlueSize10OrdersRule",
 					"type": "rules",
 					"dependsOn": [ "ColorBlueSize10Orders" ],
 					"properties": {
 					"filterType": "SqlFilter",
 					   "sqlFilter": {
-						  "sqlExpression": "color = 'blue' AND quantity = 10",
-						  "requiresPreprocessing": false
+						  "sqlExpression": "color = 'blue' AND quantity = 10"
 					   }
 					}
 				 }
@@ -125,14 +126,13 @@
               "resources": [
 					{
 						"apiVersion": "[variables('apiVersion')]",
-						"name": "rule1",
+						"name": "ColorRedRule",
 						"type": "rules",
 						"dependsOn": [ "ColorRed" ],
 						"properties": {
 						"filterType": "SqlFilter",
 						   "sqlFilter": {
-							  "sqlExpression": "color = 'red'",
-							  "requiresPreprocessing": false
+							  "sqlExpression": "color = 'red'"
 						   },
 						   "action": {
 							  "sqlExpression": "SET quantity = quantity / 2; REMOVE priority; SET sys.CorrelationId = 'low';"
@@ -150,7 +150,7 @@
               "resources": [
 				{
 					"apiVersion": "[variables('apiVersion')]",
-					"name": "rule1",
+					"name": "HighPriorityOrdersRule",
 					"type": "rules",
 					"dependsOn": [ "HighPriorityOrders" ],
 					"properties": {
@@ -251,11 +251,6 @@
     "serviceBusNamespaceName" : {
       "type" : "string",
       "value" : "[parameters('serviceBusNamespaceName')]"
-    },
-    "sendListenConnectionString": {
-      "type": "string",
-      "value":
-        "[listkeys(resourceId('Microsoft.ServiceBus/namespaces/AuthorizationRules', parameters('serviceBusNamespaceName'), 'SendListen'),variables('apiVersion')).primaryConnectionString]"
     }
   }
 }

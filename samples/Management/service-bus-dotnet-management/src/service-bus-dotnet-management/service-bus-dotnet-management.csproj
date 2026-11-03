@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <AssemblyName>AzureServiceBusDotNetManagement</AssemblyName>
+    <OutputType>Exe</OutputType>
+    <PackageId>service-bus-dotnet-management</PackageId>
+    <RootNamespace>AzureServiceBusDotNetManagement</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Update="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.Identity" Version="1.21.0" />
+    <PackageReference Include="Azure.ResourceManager.Resources" Version="1.12.0" />
+    <PackageReference Include="Azure.ResourceManager.ServiceBus" Version="1.2.0" />
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.21.0" />
+  </ItemGroup>
+
+</Project>

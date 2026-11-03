@@ -4,25 +4,25 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "taskName": "verify",
+            "label": "verify",
             "command": "mvn -B verify",
             "type": "shell",
             "group": "build"
         },
         {
-            "taskName": "build",
+            "label": "build",
             "command": "mvn package",
             "type": "shell",
             "group": "build"
         },
         {
-            "taskName": "compile",
+            "label": "compile",
             "command": "mvn compile",
             "type": "shell",
             "group": "build"
         },
         {
-            "taskName": "test",
+            "label": "test",
             "command": "mvn -B test",
             "type": "shell",
             "group": "test"

@@ -2,13 +2,18 @@
 using System;
 using System.Text;
 using System.Threading.Tasks;
+using Azure.Identity;
 
 namespace MessageSender
 {
     class Program
     {
-        const string ServiceBusConnectionString = "<SERVICE BUS NAMESPACE - CONNECTION STRING>";
-        const string TopicName = "<TOPIC NAME>";
+        static readonly string FullyQualifiedNamespace =
+            Environment.GetEnvironmentVariable("SERVICEBUS_FULLY_QUALIFIED_NAMESPACE") is string host && !string.IsNullOrWhiteSpace(host)
+                ? host : throw new InvalidOperationException("Set SERVICEBUS_FULLY_QUALIFIED_NAMESPACE (example.servicebus.windows.net).");
+        static readonly string TopicName =
+            Environment.GetEnvironmentVariable("SERVICEBUS_TOPIC") is string topic && !string.IsNullOrWhiteSpace(topic)
+                ? topic : throw new InvalidOperationException("Set SERVICEBUS_TOPIC.");
 
         static void Main(string[] args)
         {
@@ -19,23 +24,17 @@ namespace MessageSender
         {
             const int numberOfMessages = 5;
 
-            Console.WriteLine("================================================");
-            Console.WriteLine("Press any key to exit after sending the message.");
-            Console.WriteLine("================================================");
-
             // Send Messages
             await SendMessagesAsync(numberOfMessages);
-
-            Console.ReadKey();
         }               
 
         static async Task SendMessagesAsync(int numberOfMessagesToSend)
         {
             try
             {
-                await using var client = new ServiceBusClient(ServiceBusConnectionString);
+                await using var client = new ServiceBusClient(FullyQualifiedNamespace, new DefaultAzureCredential());
                 // create the sender
-                ServiceBusSender sender = client.CreateSender(TopicName);
+                await using ServiceBusSender sender = client.CreateSender(TopicName);
 
                 for (var i = 1; i <= numberOfMessagesToSend; i++)
                 {
@@ -52,7 +51,8 @@ namespace MessageSender
             }
             catch (Exception exception)
             {
-                Console.WriteLine($"{DateTime.Now} :: Exception: {exception.Message}");
+                Console.Error.WriteLine($"{DateTime.Now} :: Exception: {exception.Message}");
+                throw;
             }
         }
     }

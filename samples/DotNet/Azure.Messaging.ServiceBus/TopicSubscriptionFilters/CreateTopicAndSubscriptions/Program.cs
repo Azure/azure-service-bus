@@ -18,6 +18,7 @@
 namespace CreateTopicsAndSubscriptionsWithFilters
 {
     using Azure.Messaging.ServiceBus.Administration;
+    using Azure.Identity;
     using System;
     using System.Threading.Tasks;
 
@@ -26,8 +27,9 @@ namespace CreateTopicsAndSubscriptionsWithFilters
         // Service Bus Administration Client object to create topics and subscriptions
         static ServiceBusAdministrationClient adminClient;
 
-        // connection string to the Service Bus namespace
-        static readonly string connectionString = "<SERVICE BUS NAMESPACE - CONNECTION STRING>";
+        static readonly string fullyQualifiedNamespace =
+            Environment.GetEnvironmentVariable("SERVICEBUS_FULLY_QUALIFIED_NAMESPACE") is string host && !string.IsNullOrWhiteSpace(host)
+                ? host : throw new InvalidOperationException("Set SERVICEBUS_FULLY_QUALIFIED_NAMESPACE (example.servicebus.windows.net).");
 
         // name of the Service Bus topic
         static readonly string topicName = "topicfiltersampletopic";
@@ -44,7 +46,7 @@ namespace CreateTopicsAndSubscriptionsWithFilters
             {
 
                 Console.WriteLine("Creating the Service Bus Administration Client object");
-                adminClient = new ServiceBusAdministrationClient(connectionString);
+                adminClient = new ServiceBusAdministrationClient(fullyQualifiedNamespace, new DefaultAzureCredential());
                 
                 Console.WriteLine($"Creating the topic {topicName}");
                 await adminClient.CreateTopicAsync(topicName);
@@ -90,7 +92,8 @@ namespace CreateTopicsAndSubscriptionsWithFilters
             }
             catch (Exception e)
             {
-                Console.WriteLine(e.ToString());
+                Console.Error.WriteLine(e.ToString());
+                throw;
             }
         }
     }

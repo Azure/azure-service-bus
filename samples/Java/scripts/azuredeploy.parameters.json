@@ -4,9 +4,6 @@
     "parameters": {
         "serviceBusNamespaceName": {
             "value": "GEN-UNIQUE"
-        },
-        "serviceBusQueueName": {
-            "value": "GEN-UNIQUE"
         }
     }
 }
